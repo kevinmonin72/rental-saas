@@ -129,7 +129,7 @@ export default function CalendarWidget({ bookings }) {
                     style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
                     <div className={styles.bar} title={b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`).join(', ')}>
-                      {b.equipments?.map(eq => eq.name).join(', ')}
+                      {b.rental_type === 'wingboost' ? '🚀 Wingboost' : '🕒 Ponctuelle'}
                     </div>
                   </div>
                 </div>
