@@ -8,8 +8,9 @@ export default function InventoryPage() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('az');
-  const [selectedIds, setSelectedIds] = useState([]);
-  const { equipment, addEquipment, deleteEquipment, bulkDeleteEquipment } = useStore();
+  const [editingEquipmentId, setEditingEquipmentId] = useState(null);
+  const { equipment, addEquipment, updateEquipment, deleteEquipment, bulkDeleteEquipment } = useStore();
+  const editingEquipment = editingEquipmentId ? equipment.find(e => e.id === editingEquipmentId) : null;
 
   useEffect(() => {
     setMounted(true);
@@ -29,16 +30,24 @@ export default function InventoryPage() {
     return strB.localeCompare(strA);
   });
 
-  const handleAdd = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    addEquipment({
+    const eqData = {
       name: formData.get('name'),
       reference: formData.get('reference'),
       category: formData.get('category'),
       brand: formData.get('brand'),
-      condition: formData.get('condition')
-    });
+      condition: formData.get('condition'),
+      quantity: parseInt(formData.get('quantity'), 10) || 1
+    };
+
+    if (editingEquipmentId) {
+      updateEquipment(editingEquipmentId, eqData);
+      setEditingEquipmentId(null);
+    } else {
+      addEquipment(eqData);
+    }
     e.target.reset();
   };
 
@@ -74,19 +83,26 @@ export default function InventoryPage() {
         
         {/* Add Form */}
         <div className="card">
-          <h2>Nouvel Équipement</h2>
-          <form onSubmit={handleAdd}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>{editingEquipmentId ? 'Modifier Équipement' : 'Nouvel Équipement'}</h2>
+            {editingEquipmentId && (
+              <button onClick={() => setEditingEquipmentId(null)} className="btn btn-secondary" style={{ fontSize: '12px', padding: '4px 8px' }}>
+                Annuler
+              </button>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} key={editingEquipmentId || 'new'}>
             <div className="form-group">
               <label>Nom du modèle</label>
-              <input type="text" name="name" className="input" required />
+              <input type="text" name="name" className="input" defaultValue={editingEquipment?.name || ''} required />
             </div>
             <div className="form-group">
               <label>Référence / SKU</label>
-              <input type="text" name="reference" className="input" />
+              <input type="text" name="reference" className="input" defaultValue={editingEquipment?.reference || ''} />
             </div>
             <div className="form-group">
               <label>Catégorie</label>
-              <select name="category" className="input" required>
+              <select name="category" className="input" defaultValue={editingEquipment?.category || 'Planches'} required>
                 <option value="Planches">Planches</option>
                 <option value="Combinaisons">Combinaisons</option>
                 <option value="Harnais">Harnais</option>
@@ -96,18 +112,24 @@ export default function InventoryPage() {
             </div>
             <div className="form-group">
               <label>Marque</label>
-              <input type="text" name="brand" className="input" />
+              <input type="text" name="brand" className="input" defaultValue={editingEquipment?.brand || ''} />
             </div>
             <div className="form-group">
               <label>État</label>
-              <select name="condition" className="input" required>
+              <select name="condition" className="input" defaultValue={editingEquipment?.condition || 'Neuf'} required>
                 <option value="Neuf">Neuf</option>
                 <option value="Très bon">Très bon</option>
                 <option value="Bon">Bon</option>
                 <option value="Usagé">Usagé</option>
               </select>
             </div>
-            <button type="submit" className="btn btn-primary">Ajouter à l'inventaire</button>
+            <div className="form-group">
+              <label>Quantité en stock</label>
+              <input type="number" name="quantity" className="input" defaultValue={editingEquipment?.quantity || 1} min="1" required />
+            </div>
+            <button type="submit" className="btn btn-primary">
+              {editingEquipmentId ? 'Enregistrer les modifications' : "Ajouter à l'inventaire"}
+            </button>
           </form>
         </div>
 
@@ -179,9 +201,13 @@ export default function InventoryPage() {
                       <span><strong>Réf:</strong> {item.reference || 'N/A'}</span>
                       <span><strong>Marque:</strong> {item.brand || 'N/A'}</span>
                       <span><strong>État:</strong> {item.condition}</span>
+                      <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}><strong>Stock:</strong> {item.quantity || 1}</span>
                     </div>
                   </div>
-                  <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button onClick={() => setEditingEquipmentId(item.id)} className="btn btn-secondary">Éditer</button>
+                    <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
+                  </div>
                 </div>
               ))}
               {sortedEquipment.length > 50 && (
