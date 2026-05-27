@@ -8,6 +8,7 @@ export default function InventoryPage() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('az');
+  const [selectedIds, setSelectedIds] = useState([]);
   const [editingEquipmentId, setEditingEquipmentId] = useState(null);
   const { equipment, addEquipment, updateEquipment, deleteEquipment, bulkDeleteEquipment } = useStore();
   const editingEquipment = editingEquipmentId ? equipment.find(e => e.id === editingEquipmentId) : null;
