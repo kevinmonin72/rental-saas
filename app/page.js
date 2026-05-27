@@ -112,7 +112,7 @@ export default function DashboardHome() {
                       <div>
                         <h3 style={{ margin: '0 0 8px 0', color: '#991B1B' }}>{booking.first_name} {booking.last_name}</h3>
                         <p style={{ margin: '0 0 4px 0', color: '#991B1B' }}>
-                          <strong>Matériel :</strong> {booking.equipment_name} (Réf: {booking.equipment_reference || 'N/A'})
+                          <strong>Matériel :</strong> {booking.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`).join(', ')}
                         </p>
                         <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
                           Devait être rendu le {new Date(booking.end_date).toLocaleDateString('fr-FR')}

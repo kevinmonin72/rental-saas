@@ -128,8 +128,8 @@ export default function CalendarWidget({ bookings }) {
                     className={styles.barContainer}
                     style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
-                    <div className={styles.bar} title={`${b.quantity || b.reference || ''} ${b.equipment_name}`}>
-                      {b.reference ? `Réf: ${b.reference}` : `${b.quantity}x`} {b.equipment_name}
+                    <div className={styles.bar} title={b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`).join(', ')}>
+                      {b.equipments?.map(eq => eq.name).join(', ')}
                     </div>
                   </div>
                 </div>
