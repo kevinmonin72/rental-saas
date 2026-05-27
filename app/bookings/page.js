@@ -71,7 +71,7 @@ export default function BookingsPage() {
 
     // Check for overlap for all selected equipments
     const overlappingEq = selectedEquipments.find(eq => {
-      return bookings.some(b => {
+      const overlappingBookingsCount = bookings.filter(b => {
         if (b.status !== 'active') return false;
         if (editingBookingId && b.id === editingBookingId) return false; // Ignore current booking if editing
         const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
@@ -83,7 +83,10 @@ export default function BookingsPage() {
         eExist.setHours(23,59,59,999);
         
         return (sNew <= eExist && sExist <= eNew);
-      });
+      }).length;
+
+      const totalQty = parseInt(eq.quantity, 10) || 1;
+      return overlappingBookingsCount >= totalQty;
     });
 
     if (overlappingEq) {
