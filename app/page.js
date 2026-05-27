@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Link from 'next/link';
 import CalendarWidget from '../components/CalendarWidget';
 import ExportButton from '../components/ExportButton';
 import { useStore } from '../lib/store';

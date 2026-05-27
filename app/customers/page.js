@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import CsvImporterButton from '../components/CsvImporterButton';
-import { useStore } from '../lib/store';
+import CsvImporterButton from '../../components/CsvImporterButton';
+import { useStore } from '../../lib/store';
 
 export default function CustomersPage() {
   const [mounted, setMounted] = useState(false);
