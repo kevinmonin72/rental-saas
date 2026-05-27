@@ -1,0 +1,147 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import styles from './CalendarWidget.module.css';
+
+// Helper to parse "YYYY-MM-DD" as local midnight
+function parseLocalDate(dateString) {
+  const [y, m, d] = dateString.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function formatDateFr(date) {
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+}
+
+function formatShortDate(date) {
+  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+
+function getDaysDiff(d1, d2) {
+  // difference in days between two Date objects (ignoring time/DST if set to midnight)
+  const diffTime = d2.getTime() - d1.getTime();
+  return Math.round(diffTime / (1000 * 3600 * 24));
+}
+
+export default function CalendarWidget({ bookings }) {
+  const [baseDate, setBaseDate] = useState(null);
+
+  // Initialize date on client to avoid Next.js Server/Client timezone hydration mismatches
+  useEffect(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(today.getDate() - 2);
+    setBaseDate(start);
+  }, []);
+
+  if (!baseDate) {
+    return <div className={styles.container} style={{ padding: '40px', textAlign: 'center' }}>Chargement du calendrier...</div>;
+  }
+
+  const DAYS_TO_SHOW = 14;
+
+  const viewStart = new Date(baseDate);
+  const viewEnd = new Date(baseDate);
+  viewEnd.setDate(baseDate.getDate() + DAYS_TO_SHOW - 1);
+
+  // Generate day headers
+  const days = [];
+  for (let i = 0; i < DAYS_TO_SHOW; i++) {
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate() + i);
+    days.push(d);
+  }
+
+  // Filter bookings that overlap with the view window
+  const visibleBookings = bookings.filter(b => {
+    const bStart = parseLocalDate(b.start_date);
+    const bEnd = parseLocalDate(b.end_date);
+    return bEnd >= viewStart && bStart <= viewEnd;
+  });
+
+  const handlePrev = () => {
+    const newBase = new Date(baseDate);
+    newBase.setDate(baseDate.getDate() - 7);
+    setBaseDate(newBase);
+  };
+
+  const handleNext = () => {
+    const newBase = new Date(baseDate);
+    newBase.setDate(baseDate.getDate() + 7);
+    setBaseDate(newBase);
+  };
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2 className={styles.headerTitle}>
+          Locations du {formatDateFr(viewStart)} au {formatDateFr(viewEnd)}
+        </h2>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className={styles.navButton} onClick={handlePrev}>&larr;</button>
+          <button className={styles.navButton} onClick={handleNext}>&rarr;</button>
+        </div>
+      </div>
+
+      <div className={styles.gantt}>
+        {/* Header Row */}
+        <div className={`${styles.row} ${styles.headerRow}`}>
+          <div className={styles.cellName}>Client</div>
+          <div className={styles.daysGrid}>
+            {days.map((d, i) => (
+              <div key={i} className={styles.dayHeader}>
+                {formatShortDate(d)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Booking Rows */}
+        {visibleBookings.length > 0 ? (
+          visibleBookings.map((b, i) => {
+            const bStart = parseLocalDate(b.start_date);
+            const bEnd = parseLocalDate(b.end_date);
+            
+            // Calculate grid columns
+            // Column 1 is the first day. Column 15 is the end boundary.
+            let startCol = getDaysDiff(viewStart, bStart) + 1;
+            let endCol = getDaysDiff(viewStart, bEnd) + 2; // +1 for inclusive day, +1 for grid boundary
+
+            // Clip to viewport
+            if (startCol < 1) startCol = 1;
+            if (endCol > DAYS_TO_SHOW + 1) endCol = DAYS_TO_SHOW + 1;
+
+            return (
+              <div key={`${b.id}-${i}`} className={styles.row}>
+                <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
+                  {b.first_name} {b.last_name}
+                </div>
+                <div className={styles.daysGrid}>
+                  {/* Background grid lines */}
+                  {days.map((_, i) => (
+                    <div key={i} className={styles.dayCell}></div>
+                  ))}
+                  
+                  {/* The booking bar */}
+                  <div 
+                    className={styles.barContainer}
+                    style={{ gridColumn: `${startCol} / ${endCol}` }}
+                  >
+                    <div className={styles.bar} title={`${b.quantity}x ${b.equipment_name}`}>
+                      {b.quantity}x {b.equipment_name}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className={styles.noData}>
+            Aucune location en cours sur cette période.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
