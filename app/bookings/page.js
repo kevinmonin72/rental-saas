@@ -47,11 +47,19 @@ export default function BookingsPage() {
     setMounted(true);
   }, []);
 
-  const filteredCustomersForSelect = customers.filter(c => {
+  let filteredCustomersForSelect = customers.filter(c => {
     const term = customerSearch.toLowerCase();
     const fullName = formatName(c.first_name, c.last_name).toLowerCase();
     return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
   }).slice(0, 100); // Limit to 100 to prevent DOM lag
+
+  // Ensure selected customer is always in the list even if filtered out or truncated
+  if (selectedCustomerId && !filteredCustomersForSelect.some(c => c.id === selectedCustomerId)) {
+    const sc = customers.find(c => c.id === selectedCustomerId);
+    if (sc) {
+      filteredCustomersForSelect = [sc, ...filteredCustomersForSelect];
+    }
+  }
 
   const filteredEquipmentForSelect = equipment.filter(e => {
     const term = equipmentSearch.toLowerCase();
