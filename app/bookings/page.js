@@ -93,22 +93,58 @@ export default function BookingsPage() {
             <p style={{ color: 'var(--text-light)' }}>Aucune réservation active.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {activeBookings.map(booking => (
-                <div key={booking.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--primary-color)' }}>
-                  <div>
-                    <h3 style={{ margin: '0 0 8px 0' }}>{booking.first_name} {booking.last_name}</h3>
-                    <p style={{ margin: '0 0 4px 0' }}>
-                      <strong>Matériel :</strong> {booking.equipment_name} (x{booking.quantity})
-                    </p>
-                    <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
-                      Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
-                    </p>
+              {activeBookings.map(booking => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const endDate = new Date(booking.end_date);
+                endDate.setHours(0, 0, 0, 0);
+                const isLate = endDate < today;
+
+                return (
+                  <div key={booking.id} className="card" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    borderLeft: `4px solid ${isLate ? '#ef4444' : 'var(--primary-color)'}`,
+                    backgroundColor: isLate ? '#FEF2F2' : 'var(--surface-color)'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)' }}>
+                          {booking.first_name} {booking.last_name}
+                        </h3>
+                        {isLate && <span className="badge" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}>En Retard</span>}
+                      </div>
+                      <p style={{ margin: '0 0 4px 0', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
+                        <strong>Matériel :</strong> {booking.equipment_name} (x{booking.quantity})
+                      </p>
+                      <p style={{ margin: 0, color: isLate ? '#DC2626' : 'var(--text-light)', fontSize: '14px', fontWeight: isLate ? 'bold' : 'normal' }}>
+                        Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px' }}>
+                      <input 
+                        type="checkbox" 
+                        id={`return-${booking.id}`}
+                        onChange={(e) => {
+                          if(e.target.checked) {
+                            if(confirm('Confirmer que ce matériel a bien été rendu ?')) {
+                              markBookingCompleted(booking.id);
+                            } else {
+                              e.target.checked = false;
+                            }
+                          }
+                        }}
+                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
+                      />
+                      <label htmlFor={`return-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
+                        Matériel Rendu (Terminer)
+                      </label>
+                    </div>
                   </div>
-                  <button onClick={() => markBookingCompleted(booking.id)} className="btn btn-secondary" style={{ color: 'var(--primary-color)', borderColor: 'var(--primary-color)' }}>
-                    Marquer Terminé
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

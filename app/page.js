@@ -44,6 +44,48 @@ export default function DashboardHome() {
         </div>
       </div>
 
+      {/* Alertes / Retards */}
+      {(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const lateBookings = activeBookingsList.filter(b => {
+          const endDate = new Date(b.end_date);
+          endDate.setHours(0, 0, 0, 0);
+          return endDate < today;
+        });
+
+        if (lateBookings.length > 0) {
+          return (
+            <div style={{ marginTop: '40px', marginBottom: '24px' }}>
+              <h2 style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                ⚠️ Alertes : Retours en retard
+              </h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+                {lateBookings.map(booking => (
+                  <div key={booking.id} className="card" style={{ borderLeft: '4px solid #ef4444', backgroundColor: '#FEF2F2' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#991B1B' }}>{booking.first_name} {booking.last_name}</h3>
+                        <p style={{ margin: '0 0 4px 0', color: '#991B1B' }}>
+                          <strong>Matériel :</strong> {booking.equipment_name} (x{booking.quantity})
+                        </p>
+                        <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                          Devait être rendu le {new Date(booking.end_date).toLocaleDateString('fr-FR')}
+                        </p>
+                      </div>
+                      <Link href="/bookings" className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
+                        Gérer
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Calendar View for Active Bookings */}
       <CalendarWidget bookings={activeBookingsList} />
     </div>
