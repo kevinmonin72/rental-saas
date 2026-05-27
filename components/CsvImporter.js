@@ -8,21 +8,21 @@ const SCHEMA = {
   equipment: {
     title: "Importer des Équipements",
     fields: [
-      { key: 'name', label: "Nom de l'équipement (Requis)", required: true },
-      { key: 'reference', label: "Référence / N° de série", required: false },
-      { key: 'category', label: "Catégorie", required: false },
-      { key: 'collection', label: "Collection (Shopify)", required: false },
-      { key: 'location', label: "Emplacement", required: false },
-      { key: 'quantity', label: "Quantité", required: false }
+      { key: 'name', label: "Nom de l'équipement (Requis)", required: true, aliases: ['title', 'nom', 'product', 'titre'] },
+      { key: 'reference', label: "Référence / N° de série", required: false, aliases: ['sku', 'variant sku', 'référence', 'ref', 'reference'] },
+      { key: 'category', label: "Catégorie", required: false, aliases: ['product category', 'type', 'catégorie', 'product type', 'categorie'] },
+      { key: 'collection', label: "Collection (Shopify)", required: false, aliases: ['collection', 'collections'] },
+      { key: 'location', label: "Emplacement", required: false, aliases: ['location', 'emplacement', 'stock location'] },
+      { key: 'quantity', label: "Quantité", required: false, aliases: ['variant inventory qty', 'qty', 'quantité', 'stock', 'inventory', 'quantite'] }
     ]
   },
   customers: {
     title: "Importer des Clients",
     fields: [
-      { key: 'first_name', label: "Prénom (Requis)", required: true },
-      { key: 'last_name', label: "Nom (Requis)", required: true },
-      { key: 'email', label: "Email", required: false },
-      { key: 'phone', label: "Téléphone", required: false }
+      { key: 'first_name', label: "Prénom (Requis)", required: true, aliases: ['first name', 'prénom', 'prenom', 'firstname'] },
+      { key: 'last_name', label: "Nom (Requis)", required: true, aliases: ['last name', 'nom', 'lastname'] },
+      { key: 'email', label: "Email", required: false, aliases: ['e-mail', 'courriel', 'email address'] },
+      { key: 'phone', label: "Téléphone", required: false, aliases: ['téléphone', 'tel', 'telephone', 'mobile', 'phone number'] }
     ]
   },
   bookings: {
@@ -57,12 +57,15 @@ export default function CsvImporter({ type, onClose, onImport }) {
           setCsvHeaders(results.meta.fields);
           setCsvData(results.data);
           
-          // Auto-map if headers match exactly or closely
+          // Auto-map if headers match exactly or closely using aliases
           const initialMapping = {};
           schema.fields.forEach(f => {
-            const match = results.meta.fields.find(
-              h => h.toLowerCase() === f.key.toLowerCase() || h.toLowerCase() === f.label.toLowerCase()
-            );
+            const match = results.meta.fields.find(h => {
+              const header = h.toLowerCase().trim();
+              return header === f.key.toLowerCase() || 
+                     header === f.label.toLowerCase() ||
+                     (f.aliases && f.aliases.some(alias => header === alias));
+            });
             if (match) initialMapping[f.key] = match;
           });
           setMapping(initialMapping);
