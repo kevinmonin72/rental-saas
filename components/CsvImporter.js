@@ -9,7 +9,9 @@ const SCHEMA = {
     title: "Importer des Équipements",
     fields: [
       { key: 'name', label: "Nom de l'équipement (Requis)", required: true },
+      { key: 'reference', label: "Référence / N° de série", required: false },
       { key: 'category', label: "Catégorie", required: false },
+      { key: 'location', label: "Emplacement", required: false },
       { key: 'quantity', label: "Quantité", required: false }
     ]
   },

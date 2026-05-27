@@ -108,9 +108,12 @@ export default function InventoryPage() {
                 <div key={item.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px 0' }}>{item.name}</h3>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className="badge">{item.category}</span>
                       <span className="badge" style={{ backgroundColor: '#E2E8F0', color: '#475569', border: 'none' }}>Réf: {item.reference || 'N/A'}</span>
+                      {item.location && (
+                        <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: 'none' }}>📍 {item.location}</span>
+                      )}
                     </div>
                   </div>
                   <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
