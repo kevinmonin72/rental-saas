@@ -5,6 +5,12 @@ import CsvImporterButton from '../../components/CsvImporterButton';
 import { useStore } from '../../lib/store';
 
 export default function BookingsPage() {
+  const formatName = (f, l) => {
+    const sf = (f === 'undefined' || f === 'null' || !f) ? '' : f;
+    const sl = (l === 'undefined' || l === 'null' || !l) ? '' : l;
+    return `${sf} ${sl}`.trim();
+  };
+
   const [mounted, setMounted] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
@@ -41,7 +47,7 @@ export default function BookingsPage() {
 
   const filteredCustomersForSelect = customers.filter(c => {
     const term = customerSearch.toLowerCase();
-    const fullName = `${c.first_name || ''} ${c.last_name || ''}`.trim().toLowerCase();
+    const fullName = formatName(c.first_name, c.last_name).toLowerCase();
     return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
   }).slice(0, 100); // Limit to 100 to prevent DOM lag
 
@@ -163,7 +169,7 @@ export default function BookingsPage() {
       if (!searchQuery) return true;
       const term = searchQuery.toLowerCase();
       const eqsStr = b.equipments?.map(eq => `${eq.name || ''} ${eq.reference || ''}`).join(' ') || '';
-      const searchStr = `${b.first_name || ''} ${b.last_name || ''} ${eqsStr}`.toLowerCase();
+      const searchStr = `${formatName(b.first_name, b.last_name)} ${eqsStr}`.toLowerCase();
       return searchStr.includes(term);
     }).sort((a, b) => {
       const dateA = new Date(a.end_date);
@@ -213,7 +219,7 @@ export default function BookingsPage() {
                   <option value="">-- Choisir un client --</option>
                   {filteredCustomersForSelect.map(c => (
                     <option key={c.id} value={c.id}>
-                      {`${c.first_name || ''} ${c.last_name || ''}`.trim()} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
+                      {formatName(c.first_name, c.last_name)} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
                     </option>
                   ))}
                 </select>
@@ -374,7 +380,7 @@ export default function BookingsPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                          {`${booking.first_name || ''} ${booking.last_name || ''}`.trim()}
+                          {formatName(booking.first_name, booking.last_name)}
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
                           <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
@@ -466,7 +472,7 @@ export default function BookingsPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                       <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-                        {`${booking.first_name || ''} ${booking.last_name || ''}`.trim()}
+                        {formatName(booking.first_name, booking.last_name)}
                       </h3>
                       {booking.rental_type === 'wingboost' ? (
                         <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>

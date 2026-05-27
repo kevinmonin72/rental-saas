@@ -5,6 +5,12 @@ import CsvImporterButton from '../../components/CsvImporterButton';
 import { useStore } from '../../lib/store';
 
 export default function CustomersPage() {
+  const formatName = (f, l) => {
+    const sf = (f === 'undefined' || f === 'null' || !f) ? '' : f;
+    const sl = (l === 'undefined' || l === 'null' || !l) ? '' : l;
+    return `${sf} ${sl}`.trim();
+  };
+
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('az');
@@ -17,13 +23,13 @@ export default function CustomersPage() {
 
   const filteredCustomers = customers.filter(c => {
     const term = searchQuery.toLowerCase();
-    const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+    const fullName = formatName(c.first_name, c.last_name).toLowerCase();
     return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
   });
 
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
-    const strA = (`${a.first_name || ''} ${a.last_name || ''}`).trim().toLowerCase() || (a.email || '').toLowerCase() || 'zzz';
-    const strB = (`${b.first_name || ''} ${b.last_name || ''}`).trim().toLowerCase() || (b.email || '').toLowerCase() || 'zzz';
+    const strA = formatName(a.first_name, a.last_name).toLowerCase() || (a.email || '').toLowerCase() || 'zzz';
+    const strB = formatName(b.first_name, b.last_name).toLowerCase() || (b.email || '').toLowerCase() || 'zzz';
     
     if (sortOrder === 'az') return strA.localeCompare(strB);
     return strB.localeCompare(strA);
@@ -156,7 +162,7 @@ export default function CustomersPage() {
                   />
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>
-                      {`${customer.first_name || ''} ${customer.last_name || ''}`.trim()}
+                      {formatName(customer.first_name, customer.last_name)}
                     </h3>
                     <div style={{ color: 'var(--text-light)', fontSize: '14px' }}>
                       {customer.email && <span style={{ marginRight: '16px' }}>✉️ {customer.email}</span>}
