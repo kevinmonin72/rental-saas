@@ -18,6 +18,7 @@ export default function BookingsPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [rentalTypeFilter, setRentalTypeFilter] = useState('all');
 
   const { 
     customers, 
@@ -153,6 +154,12 @@ export default function BookingsPage() {
 
   const filterAndSort = (list) => {
     return list.filter(b => {
+      // 1. Type Filter
+      if (rentalTypeFilter !== 'all' && (b.rental_type || 'ponctuel') !== rentalTypeFilter) {
+        return false;
+      }
+      
+      // 2. Text Search
       if (!searchQuery) return true;
       const term = searchQuery.toLowerCase();
       const eqsStr = b.equipments?.map(eq => `${eq.name} ${eq.reference}`).join(' ') || '';
@@ -291,6 +298,16 @@ export default function BookingsPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <select 
                 className="input" 
+                value={rentalTypeFilter}
+                onChange={(e) => setRentalTypeFilter(e.target.value)}
+                style={{ width: '150px', margin: 0 }}
+              >
+                <option value="all">Tous types</option>
+                <option value="wingboost">🚀 Wingboost</option>
+                <option value="ponctuel">🕒 Ponctuelle</option>
+              </select>
+              <select 
+                className="input" 
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
                 style={{ width: '150px', margin: 0 }}
@@ -304,7 +321,7 @@ export default function BookingsPage() {
                 placeholder="Rechercher (client, matériel, réf)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: '280px', margin: 0 }}
+                style={{ width: '250px', margin: 0 }}
               />
             </div>
           </div>
