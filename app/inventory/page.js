@@ -7,10 +7,26 @@ import { useStore } from '../../lib/store';
 export default function InventoryPage() {
   const [mounted, setMounted] = useState(false);
   const { equipment, addEquipment, deleteEquipment } = useStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortOrder, setSortOrder] = useState('az');
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const filteredEquipment = equipment
+    .filter(e => {
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      return (e.name?.toLowerCase().includes(term) || e.reference?.toLowerCase().includes(term) || e.category?.toLowerCase().includes(term));
+    })
+    .sort((a, b) => {
+      const nameA = a.name?.toLowerCase() || '';
+      const nameB = b.name?.toLowerCase() || '';
+      if (sortOrder === 'az') return nameA.localeCompare(nameB);
+      if (sortOrder === 'za') return nameB.localeCompare(nameA);
+      return 0;
+    });
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -62,12 +78,33 @@ export default function InventoryPage() {
 
         {/* List */}
         <div>
-          <h2>Inventaire Actuel</h2>
-          {equipment.length === 0 ? (
-            <p style={{ color: 'var(--text-light)' }}>Aucun équipement enregistré.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0 }}>Inventaire Actuel</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select 
+                className="input" 
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{ width: '120px', margin: 0 }}
+              >
+                <option value="az">A à Z</option>
+                <option value="za">Z à A</option>
+              </select>
+              <input
+                type="text"
+                className="input"
+                placeholder="Rechercher (nom, réf, catégorie)..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ width: '250px', margin: 0 }}
+              />
+            </div>
+          </div>
+          {filteredEquipment.length === 0 ? (
+            <p style={{ color: 'var(--text-light)' }}>Aucun équipement trouvé.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {equipment.map(item => (
+              {filteredEquipment.map(item => (
                 <div key={item.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px 0' }}>{item.name}</h3>
