@@ -4,15 +4,48 @@ import Link from 'next/link';
 import CalendarWidget from '../components/CalendarWidget';
 import ExportButton from '../components/ExportButton';
 import { useStore } from '../lib/store';
+import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 
 export default function DashboardHome() {
   const [mounted, setMounted] = useState(false);
-  const { getDashboardStats, getDetailedActiveBookings } = useStore();
+  const [localDataToMigrate, setLocalDataToMigrate] = useState(null);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const { getDashboardStats, getDetailedActiveBookings, fetchData } = useStore();
 
   useEffect(() => {
     setMounted(true);
+    try {
+      const saved = localStorage.getItem('rental-saas-storage');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.state && (parsed.state.customers?.length > 0 || parsed.state.equipment?.length > 0)) {
+          setLocalDataToMigrate(parsed.state);
+        }
+      }
+    } catch(e) {}
   }, []);
+
+  const handleMigration = async () => {
+    if (!localDataToMigrate) return;
+    setIsMigrating(true);
+    try {
+      const { equipment, customers, bookings, bookingItems } = localDataToMigrate;
+      if (equipment?.length > 0) await supabase.from('equipment').upsert(equipment.map(e => ({...e, quantity: 1})), { onConflict: 'id' });
+      if (customers?.length > 0) await supabase.from('customers').upsert(customers, { onConflict: 'id' });
+      if (bookings?.length > 0) await supabase.from('bookings').upsert(bookings.map(b => ({...b, shopify_transfer: !!b.shopify_transfer})), { onConflict: 'id' });
+      if (bookingItems?.length > 0) await supabase.from('booking_items').upsert(bookingItems, { onConflict: 'id' });
+      
+      localStorage.removeItem('rental-saas-storage');
+      setLocalDataToMigrate(null);
+      await fetchData();
+      alert("Migration réussie ! Vos données locales sont maintenant dans le Cloud.");
+    } catch(err) {
+      console.error(err);
+      alert("Erreur lors de la migration: " + err.message);
+    }
+    setIsMigrating(false);
+  };
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
@@ -21,6 +54,18 @@ export default function DashboardHome() {
 
   return (
     <div>
+      {localDataToMigrate && (
+        <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ margin: '0 0 8px 0', color: '#92400E' }}>Anciennes données locales détectées !</h3>
+            <p style={{ margin: 0, color: '#92400E', fontSize: '14px' }}>Vous avez {localDataToMigrate.customers?.length || 0} clients et {localDataToMigrate.equipment?.length || 0} équipements sauvegardés localement. Voulez-vous les envoyer vers Supabase ?</p>
+          </div>
+          <button onClick={handleMigration} disabled={isMigrating} className="btn btn-primary" style={{ backgroundColor: '#D97706', border: 'none' }}>
+            {isMigrating ? 'Migration...' : 'Migrer vers le Cloud'}
+          </button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 style={{ marginBottom: 0 }}>Tableau de bord</h1>
         <ExportButton />
