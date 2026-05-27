@@ -105,7 +105,10 @@ export default function CustomersPage() {
             <p style={{ color: 'var(--text-light)' }}>Aucun client trouvé.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {sortedCustomers.map(customer => (
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '-8px' }}>
+                Affichage de {Math.min(50, sortedCustomers.length)} sur {sortedCustomers.length} clients
+              </p>
+              {sortedCustomers.slice(0, 50).map(customer => (
                 <div key={customer.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px 0' }}>{customer.first_name} {customer.last_name}</h3>
@@ -117,6 +120,12 @@ export default function CustomersPage() {
                   <button onClick={() => deleteCustomer(customer.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
                 </div>
               ))}
+              {sortedCustomers.length > 50 && (
+                <p style={{ textAlign: 'center', color: 'var(--text-light)', marginTop: '8px' }}>
+                  + {sortedCustomers.length - 50} autres clients. <br/>
+                  <small>Utilisez la barre de recherche pour affiner les résultats.</small>
+                </p>
+              )}
             </div>
           )}
         </div>
