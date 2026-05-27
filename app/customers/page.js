@@ -21,10 +21,11 @@ export default function CustomersPage() {
   });
 
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
-    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
-    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
-    if (sortOrder === 'az') return nameA.localeCompare(nameB);
-    return nameB.localeCompare(nameA);
+    const strA = (`${a.first_name || ''} ${a.last_name || ''}`).trim().toLowerCase() || (a.email || '').toLowerCase() || 'zzz';
+    const strB = (`${b.first_name || ''} ${b.last_name || ''}`).trim().toLowerCase() || (b.email || '').toLowerCase() || 'zzz';
+    
+    if (sortOrder === 'az') return strA.localeCompare(strB);
+    return strB.localeCompare(strA);
   });
 
   const handleAdd = (e) => {
