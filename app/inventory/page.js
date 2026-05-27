@@ -61,11 +61,16 @@ export default function InventoryPage() {
             <div className="form-group">
               <label>Catégorie</label>
               <select name="category" className="input">
-                <option value="Wing">Wing</option>
-                <option value="Kite">Kite</option>
-                <option value="Board">Planche</option>
+                <option value="Ailes">Ailes</option>
+                <option value="Kites">Kites</option>
+                <option value="Planche">Planche</option>
                 <option value="Foil">Foil</option>
-                <option value="Accessory">Accessoire</option>
+                <option value="Mât avion">Mât avion</option>
+                <option value="Aile avant">Aile avant</option>
+                <option value="Stab">Stab</option>
+                <option value="Platines">Platines</option>
+                <option value="Fuselage">Fuselage</option>
+                <option value="Accessoire">Accessoire</option>
               </select>
             </div>
             <div className="form-group">
