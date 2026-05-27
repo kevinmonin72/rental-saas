@@ -46,6 +46,7 @@ export default function InventoryPage() {
               <label>Catégorie</label>
               <select name="category" className="input">
                 <option value="Wing">Wing</option>
+                <option value="Kite">Kite</option>
                 <option value="Board">Planche</option>
                 <option value="Foil">Foil</option>
                 <option value="Accessory">Accessoire</option>
