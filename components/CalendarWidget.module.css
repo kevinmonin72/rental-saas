@@ -106,11 +106,8 @@
 }
 
 .barContainer {
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
   z-index: 5;
-  padding: 0 4px;
+  padding: 8px 4px;
 }
 
 .bar {

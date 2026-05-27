@@ -117,19 +117,19 @@ export default function CalendarWidget({ bookings }) {
                 <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
                   {b.first_name} {b.last_name}
                 </div>
-                <div className={styles.daysGrid}>
+                  <div className={styles.daysGrid}>
                   {/* Background grid lines */}
                   {days.map((_, i) => (
-                    <div key={i} className={styles.dayCell}></div>
+                    <div key={i} className={styles.dayCell} style={{ gridRow: 1, gridColumn: i + 1 }}></div>
                   ))}
                   
                   {/* The booking bar */}
                   <div 
                     className={styles.barContainer}
-                    style={{ gridColumn: `${startCol} / ${endCol}` }}
+                    style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
-                    <div className={styles.bar} title={`${b.quantity}x ${b.equipment_name}`}>
-                      {b.quantity}x {b.equipment_name}
+                    <div className={styles.bar} title={`${b.quantity || b.reference || ''} ${b.equipment_name}`}>
+                      {b.reference ? `Réf: ${b.reference}` : `${b.quantity}x`} {b.equipment_name}
                     </div>
                   </div>
                 </div>
