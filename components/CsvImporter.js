@@ -43,7 +43,13 @@ export default function CsvImporter({ type, onClose, onImport }) {
   const [csvHeaders, setCsvHeaders] = useState([]);
   const [csvData, setCsvData] = useState([]);
   const [mapping, setMapping] = useState({}); // { schemaKey: csvHeaderName }
+  const [defaults, setDefaults] = useState({}); // { schemaKey: defaultValue }
   const [previewData, setPreviewData] = useState([]);
+
+  const CATEGORY_OPTIONS = [
+    "Ailes", "Kites", "Planche", "Foil", "Mât avion", 
+    "Aile avant", "Stab", "Platines", "Fuselage", "Accessoire"
+  ];
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -57,7 +63,6 @@ export default function CsvImporter({ type, onClose, onImport }) {
           setCsvHeaders(results.meta.fields);
           setCsvData(results.data);
           
-          // Auto-map if headers match exactly or closely using aliases
           const initialMapping = {};
           schema.fields.forEach(f => {
             const match = results.meta.fields.find(h => {
@@ -80,8 +85,8 @@ export default function CsvImporter({ type, onClose, onImport }) {
   const generatePreview = () => {
     // Validate required mappings
     for (const f of schema.fields) {
-      if (f.required && !mapping[f.key]) {
-        alert(`La colonne "${f.label}" est obligatoire.`);
+      if (f.required && !mapping[f.key] && !defaults[f.key]) {
+        alert(`La colonne "${f.label}" est obligatoire (choisissez une colonne CSV ou une valeur fixe).`);
         return;
       }
     }
@@ -89,8 +94,10 @@ export default function CsvImporter({ type, onClose, onImport }) {
     const mapped = csvData.map(row => {
       const newRow = {};
       schema.fields.forEach(f => {
-        if (mapping[f.key]) {
+        if (mapping[f.key] && row[mapping[f.key]]) {
           newRow[f.key] = row[mapping[f.key]];
+        } else if (defaults[f.key]) {
+          newRow[f.key] = defaults[f.key];
         } else {
           newRow[f.key] = '';
         }
@@ -131,21 +138,53 @@ export default function CsvImporter({ type, onClose, onImport }) {
 
           {step === 2 && (
             <div>
-              <p style={{ marginBottom: '24px' }}>Faites correspondre les colonnes de votre fichier aux champs attendus.</p>
+              <p style={{ marginBottom: '24px' }}>Faites correspondre les colonnes de votre fichier aux champs, <strong>ou choisissez une valeur fixe</strong> qui s'appliquera à toutes les lignes importées.</p>
+              
+              <div style={{ display: 'flex', fontWeight: 600, paddingBottom: '8px', borderBottom: '2px solid var(--border-color)', marginBottom: '8px' }}>
+                <div style={{ width: '30%' }}>Champ attendu</div>
+                <div style={{ width: '35%' }}>Colonne du CSV</div>
+                <div style={{ width: '35%', paddingLeft: '12px' }}>OU Valeur fixe</div>
+              </div>
+
               {schema.fields.map(f => (
                 <div key={f.key} className={styles.mappingRow}>
-                  <div style={{ fontWeight: 500, width: '40%' }}>{f.label}</div>
-                  <div style={{ width: '60%' }}>
+                  <div style={{ fontWeight: 500, width: '30%' }}>{f.label}</div>
+                  <div style={{ width: '35%' }}>
                     <select 
                       className="input" 
                       value={mapping[f.key] || ''}
                       onChange={(e) => setMapping({...mapping, [f.key]: e.target.value})}
+                      style={{ marginBottom: 0 }}
                     >
-                      <option value="">-- Ignorer ce champ --</option>
+                      <option value="">-- Ignorer --</option>
                       {csvHeaders.map(h => (
                         <option key={h} value={h}>{h}</option>
                       ))}
                     </select>
+                  </div>
+                  <div style={{ width: '35%', paddingLeft: '12px' }}>
+                    {f.key === 'category' ? (
+                      <select
+                        className="input"
+                        value={defaults[f.key] || ''}
+                        onChange={(e) => setDefaults({...defaults, [f.key]: e.target.value})}
+                        disabled={!!mapping[f.key]}
+                        style={{ marginBottom: 0, opacity: mapping[f.key] ? 0.5 : 1 }}
+                      >
+                        <option value="">-- Aucune --</option>
+                        {CATEGORY_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    ) : (
+                      <input 
+                        type="text" 
+                        className="input" 
+                        placeholder="Ex: 1, Paris..." 
+                        value={defaults[f.key] || ''}
+                        onChange={(e) => setDefaults({...defaults, [f.key]: e.target.value})}
+                        disabled={!!mapping[f.key]}
+                        style={{ marginBottom: 0, opacity: mapping[f.key] ? 0.5 : 1 }}
+                      />
+                    )}
                   </div>
                 </div>
               ))}
