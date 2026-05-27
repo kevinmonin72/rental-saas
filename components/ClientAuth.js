@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 
+import { useStore } from '../lib/store';
+
 const ADMIN_PASSWORD = "Theriderywingboost2K26!!";
 
 export default function ClientAuth({ children }) {
@@ -9,6 +11,8 @@ export default function ClientAuth({ children }) {
   const [mounted, setMounted] = useState(false);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  
+  const { fetchData, isLoaded } = useStore();
 
   useEffect(() => {
     setMounted(true);
@@ -17,6 +21,12 @@ export default function ClientAuth({ children }) {
       setIsAuthenticated(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoaded) {
+      fetchData();
+    }
+  }, [isAuthenticated, isLoaded, fetchData]);
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -45,6 +55,17 @@ export default function ClientAuth({ children }) {
             {error && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Se connecter</button>
           </form>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthenticated && !isLoaded) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)', flexDirection: 'column', gap: '16px' }}>
+        <img src="/logo.png" alt="Loading" style={{ maxWidth: '150px', opacity: 0.5 }} />
+        <div style={{ color: 'var(--text-light)', fontFamily: 'var(--font-display)', fontWeight: 500 }}>
+          Connexion au Cloud en cours...
         </div>
       </div>
     );

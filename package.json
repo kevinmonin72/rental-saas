@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.106.2",
     "file-saver": "^2.0.5",
     "json2csv": "^6.0.0-alpha.2",
     "jszip": "^3.10.1",
