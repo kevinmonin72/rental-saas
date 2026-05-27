@@ -13,7 +13,8 @@ export default function BookingsPage() {
     bookingItems,
     addBooking, 
     markBookingCompleted, 
-    getDetailedActiveBookings 
+    getDetailedActiveBookings,
+    toggleShopifyTransfer
   } = useStore();
 
   useEffect(() => {
@@ -149,24 +150,39 @@ export default function BookingsPage() {
                       </p>
                     </div>
                     
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px' }}>
-                      <input 
-                        type="checkbox" 
-                        id={`return-${booking.id}`}
-                        onChange={(e) => {
-                          if(e.target.checked) {
-                            if(confirm('Confirmer que ce matériel a bien été rendu ?')) {
-                              markBookingCompleted(booking.id);
-                            } else {
-                              e.target.checked = false;
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input 
+                          type="checkbox" 
+                          id={`shopify-${booking.id}`}
+                          checked={booking.shopify_transfer || false}
+                          onChange={(e) => toggleShopifyTransfer(booking.id, e.target.checked)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
+                        />
+                        <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
+                          Transfert sur Shopify effectué
+                        </label>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <input 
+                          type="checkbox" 
+                          id={`return-${booking.id}`}
+                          onChange={(e) => {
+                            if(e.target.checked) {
+                              if(confirm('Confirmer que ce matériel a bien été rendu ?')) {
+                                markBookingCompleted(booking.id);
+                              } else {
+                                e.target.checked = false;
+                              }
                             }
-                          }
-                        }}
-                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
-                      />
-                      <label htmlFor={`return-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                        Matériel Rendu (Terminer)
-                      </label>
+                          }}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
+                        />
+                        <label htmlFor={`return-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '600', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
+                          Matériel Rendu (Terminer)
+                        </label>
+                      </div>
                     </div>
                   </div>
                 );
