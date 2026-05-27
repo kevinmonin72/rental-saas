@@ -13,6 +13,11 @@ export default function BookingsPage() {
   const [selectedEquipments, setSelectedEquipments] = useState([]);
   const [currentEqSelection, setCurrentEqSelection] = useState('');
   const [rentalType, setRentalType] = useState('ponctuel');
+  const [editingBookingId, setEditingBookingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [selectedCustomerId, setSelectedCustomerId] = useState('');
 
   const { 
     customers, 
@@ -20,6 +25,9 @@ export default function BookingsPage() {
     bookings,
     bookingItems,
     addBooking, 
+    updateBooking,
+    deleteBooking,
+    bulkDeleteBookings,
     markBookingCompleted, 
     getDetailedActiveBookings,
     getDetailedPastBookings,
@@ -44,24 +52,21 @@ export default function BookingsPage() {
 
   const handleAdd = (e) => {
     e.preventDefault();
-    const formData = new FormData(e.target);
-    const startDateStr = formData.get('startDate');
-    const endDateStr = formData.get('endDate');
-    
     if (selectedEquipments.length === 0) {
       alert("Veuillez sélectionner au moins un équipement.");
       return;
     }
 
-    const sNew = new Date(startDateStr);
+    const sNew = new Date(startDate);
     sNew.setHours(0,0,0,0);
-    const eNew = new Date(endDateStr);
+    const eNew = new Date(endDate);
     eNew.setHours(23,59,59,999);
 
     // Check for overlap for all selected equipments
     const overlappingEq = selectedEquipments.find(eq => {
       return bookings.some(b => {
         if (b.status !== 'active') return false;
+        if (editingBookingId && b.id === editingBookingId) return false; // Ignore current booking if editing
         const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
         if (!bItems.some(bi => bi.equipment_id === eq.id)) return false;
         
@@ -79,16 +84,66 @@ export default function BookingsPage() {
       return;
     }
 
-    addBooking({
-      customerId: formData.get('customerId'),
-      startDate: startDateStr,
-      endDate: endDateStr,
-      equipmentIds: selectedEquipments.map(e => e.id),
-      rentalType: rentalType
-    });
+    if (editingBookingId) {
+      updateBooking(editingBookingId, {
+        customerId: selectedCustomerId,
+        startDate: startDate,
+        endDate: endDate,
+        equipmentIds: selectedEquipments.map(e => e.id),
+        rentalType: rentalType
+      });
+      setEditingBookingId(null);
+    } else {
+      addBooking({
+        customerId: selectedCustomerId,
+        startDate: startDate,
+        endDate: endDate,
+        equipmentIds: selectedEquipments.map(e => e.id),
+        rentalType: rentalType
+      });
+    }
     
     setSelectedEquipments([]);
-    e.target.reset();
+    setStartDate('');
+    setEndDate('');
+    setSelectedCustomerId('');
+  };
+
+  const handleEdit = (booking) => {
+    setEditingBookingId(booking.id);
+    setSelectedCustomerId(booking.customer_id);
+    setStartDate(booking.start_date);
+    setEndDate(booking.end_date);
+    setRentalType(booking.rental_type || 'ponctuel');
+    setSelectedEquipments(booking.equipments);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBookingId(null);
+    setSelectedEquipments([]);
+    setStartDate('');
+    setEndDate('');
+    setSelectedCustomerId('');
+  };
+
+  const handleSelectAll = (e, list) => {
+    if (e.target.checked) {
+      setSelectedIds(list.map(b => b.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = () => {
+    if (confirm(`Supprimer définitivement ${selectedIds.length} réservation(s) sélectionnée(s) ?`)) {
+      bulkDeleteBookings(selectedIds);
+      setSelectedIds([]);
+    }
   };
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
@@ -123,9 +178,14 @@ export default function BookingsPage() {
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
         
-        {/* Add Form */}
+        {/* Add/Edit Form */}
         <div className="card">
-          <h2>Nouvelle Réservation</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>{editingBookingId ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2>
+            {editingBookingId && (
+              <button type="button" onClick={handleCancelEdit} className="btn btn-secondary" style={{ fontSize: '12px' }}>Annuler</button>
+            )}
+          </div>
           {customers.length === 0 || equipment.length === 0 ? (
             <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>
               ⚠️ Vous devez d'abord ajouter au moins un client et un équipement pour créer une réservation.
@@ -142,8 +202,8 @@ export default function BookingsPage() {
                   value={customerSearch}
                   onChange={(e) => setCustomerSearch(e.target.value)}
                 />
-                <select name="customerId" className="input" required>
-                  {filteredCustomersForSelect.length === 0 && <option value="">Aucun client trouvé</option>}
+                <select name="customerId" className="input" value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} required>
+                  <option value="">-- Choisir un client --</option>
                   {filteredCustomersForSelect.map(c => (
                     <option key={c.id} value={c.id}>
                       {c.first_name} {c.last_name} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
@@ -213,13 +273,13 @@ export default function BookingsPage() {
               </div>
               <div className="form-group">
                 <label>Date de début</label>
-                <input type="date" name="startDate" className="input" required />
+                <input type="date" name="startDate" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
               </div>
               <div className="form-group">
                 <label>Date de fin</label>
-                <input type="date" name="endDate" className="input" required />
+                <input type="date" name="endDate" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
               </div>
-              <button type="submit" className="btn btn-primary">Créer</button>
+              <button type="submit" className="btn btn-primary">{editingBookingId ? 'Mettre à jour' : 'Créer'}</button>
             </form>
           )}
         </div>
@@ -249,7 +309,25 @@ export default function BookingsPage() {
             </div>
           </div>
 
-          <h3 style={{ marginTop: '24px', marginBottom: '16px', color: 'var(--text-main)' }}>En cours</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0, color: 'var(--text-main)' }}>En cours</h3>
+            {selectedIds.length > 0 && (
+              <button onClick={handleBulkDelete} className="btn btn-secondary" style={{ color: 'white', backgroundColor: '#ef4444', border: 'none', padding: '6px 12px' }}>
+                Supprimer les {selectedIds.length} sélectionnées
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 16px', marginBottom: '16px' }}>
+            <input 
+              type="checkbox" 
+              onChange={(e) => handleSelectAll(e, [...activeBookings, ...pastBookings])} 
+              checked={selectedIds.length > 0 && selectedIds.length === activeBookings.length + pastBookings.length}
+              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+            />
+            <span style={{ fontSize: '14px', fontWeight: '500' }}>Tout sélectionner (toutes les listes)</span>
+          </div>
+
           {activeBookings.length === 0 ? (
             <p style={{ color: 'var(--text-light)' }}>Aucune réservation active.</p>
           ) : (
@@ -264,12 +342,19 @@ export default function BookingsPage() {
                 return (
                   <div key={booking.id} className="card" style={{ 
                     display: 'flex', 
-                    justifyContent: 'space-between', 
                     alignItems: 'center', 
+                    gap: '16px',
                     borderLeft: `4px solid ${isLate ? '#ef4444' : 'var(--primary-color)'}`,
-                    backgroundColor: isLate ? '#FEF2F2' : 'var(--surface-color)'
+                    backgroundColor: isLate ? '#FEF2F2' : 'var(--surface-color)',
+                    padding: '16px'
                   }}>
-                    <div>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(booking.id)}
+                      onChange={() => toggleSelect(booking.id)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)' }}>
                           {booking.first_name} {booking.last_name}
@@ -296,7 +381,12 @@ export default function BookingsPage() {
                       </p>
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px', minWidth: '220px' }}>
+                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <button onClick={() => handleEdit(booking)} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px' }}>✏️ Modifier</button>
+                        <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
+                      </div>
+
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <input 
                           type="checkbox" 
@@ -306,7 +396,7 @@ export default function BookingsPage() {
                           style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
                         />
                         <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
-                          Transfert sur Shopify effectué
+                          Transfert Shopify
                         </label>
                       </div>
 
@@ -326,7 +416,7 @@ export default function BookingsPage() {
                           style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
                         />
                         <label htmlFor={`return-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '600', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                          Matériel Rendu (Terminer)
+                          Matériel Rendu
                         </label>
                       </div>
                     </div>
@@ -344,12 +434,19 @@ export default function BookingsPage() {
               {pastBookings.map(booking => (
                 <div key={booking.id} className="card" style={{ 
                   display: 'flex', 
-                  justifyContent: 'space-between', 
                   alignItems: 'center', 
+                  gap: '16px',
                   borderLeft: '4px solid #10B981', // Green for completed
-                  opacity: 0.8
+                  opacity: 0.8,
+                  padding: '16px'
                 }}>
-                  <div>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(booking.id)}
+                    onChange={() => toggleSelect(booking.id)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                       <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
                         {booking.first_name} {booking.last_name}
@@ -372,8 +469,11 @@ export default function BookingsPage() {
                       Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                     </p>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
+                    </div>
+                    <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
                   </div>
                 </div>
               ))}

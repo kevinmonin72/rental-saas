@@ -8,7 +8,8 @@ export default function CustomersPage() {
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('az');
-  const { customers, addCustomer, deleteCustomer } = useStore();
+  const [selectedIds, setSelectedIds] = useState([]);
+  const { customers, addCustomer, deleteCustomer, bulkDeleteCustomers } = useStore();
 
   useEffect(() => {
     setMounted(true);
@@ -38,6 +39,25 @@ export default function CustomersPage() {
       phone: formData.get('phone')
     });
     e.target.reset();
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(sortedCustomers.slice(0, 50).map(c => c.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = () => {
+    if (confirm(`Supprimer définitivement ${selectedIds.length} client(s) sélectionné(s) ?`)) {
+      bulkDeleteCustomers(selectedIds);
+      setSelectedIds([]);
+    }
   };
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
@@ -105,12 +125,36 @@ export default function CustomersPage() {
             <p style={{ color: 'var(--text-light)' }}>Aucun client trouvé.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '-8px' }}>
-                Affichage de {Math.min(50, sortedCustomers.length)} sur {sortedCustomers.length} clients
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+                  Affichage de {Math.min(50, sortedCustomers.length)} sur {sortedCustomers.length} clients
+                </p>
+                {selectedIds.length > 0 && (
+                  <button onClick={handleBulkDelete} className="btn btn-secondary" style={{ color: 'white', backgroundColor: '#ef4444', border: 'none', padding: '6px 12px' }}>
+                    Supprimer les {selectedIds.length} sélectionnés
+                  </button>
+                )}
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '0 16px' }}>
+                <input 
+                  type="checkbox" 
+                  onChange={handleSelectAll} 
+                  checked={selectedIds.length > 0 && selectedIds.length === Math.min(50, sortedCustomers.length)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: '14px', fontWeight: '500' }}>Tout sélectionner (sur cette page)</span>
+              </div>
+
               {sortedCustomers.slice(0, 50).map(customer => (
-                <div key={customer.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
+                <div key={customer.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={selectedIds.includes(customer.id)}
+                    onChange={() => toggleSelect(customer.id)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <div style={{ flex: 1 }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>{customer.first_name} {customer.last_name}</h3>
                     <div style={{ color: 'var(--text-light)', fontSize: '14px' }}>
                       {customer.email && <span style={{ marginRight: '16px' }}>✉️ {customer.email}</span>}
