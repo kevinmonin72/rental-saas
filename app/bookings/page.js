@@ -7,6 +7,8 @@ import { useStore } from '../../lib/store';
 export default function BookingsPage() {
   const [mounted, setMounted] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
 
   const { 
     customers, 
@@ -73,8 +75,25 @@ export default function BookingsPage() {
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
-  const activeBookings = getDetailedActiveBookings();
-  const pastBookings = getDetailedPastBookings();
+  const rawActiveBookings = getDetailedActiveBookings();
+  const rawPastBookings = getDetailedPastBookings();
+
+  const filterAndSort = (list) => {
+    return list.filter(b => {
+      if (!searchQuery) return true;
+      const term = searchQuery.toLowerCase();
+      const searchStr = `${b.first_name} ${b.last_name} ${b.equipment_name} ${b.equipment_reference}`.toLowerCase();
+      return searchStr.includes(term);
+    }).sort((a, b) => {
+      const dateA = new Date(a.end_date);
+      const dateB = new Date(b.end_date);
+      if (sortOrder === 'desc') return dateB - dateA;
+      return dateA - dateB;
+    });
+  };
+
+  const activeBookings = filterAndSort(rawActiveBookings);
+  const pastBookings = filterAndSort(rawPastBookings);
 
   return (
     <div>
@@ -136,7 +155,30 @@ export default function BookingsPage() {
 
         {/* List */}
         <div>
-          <h2>Réservations en cours</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0 }}>Réservations</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <select 
+                className="input" 
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                style={{ width: '150px', margin: 0 }}
+              >
+                <option value="desc">Récentes d'abord</option>
+                <option value="asc">Anciennes d'abord</option>
+              </select>
+              <input
+                type="text"
+                className="input"
+                placeholder="Rechercher (client, matériel, réf)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '280px', margin: 0 }}
+              />
+            </div>
+          </div>
+
+          <h3 style={{ marginTop: '24px', marginBottom: '16px', color: 'var(--text-main)' }}>En cours</h3>
           {activeBookings.length === 0 ? (
             <p style={{ color: 'var(--text-light)' }}>Aucune réservation active.</p>
           ) : (
