@@ -213,7 +213,7 @@ export default function BookingsPage() {
                   <option value="">-- Choisir un client --</option>
                   {filteredCustomersForSelect.map(c => (
                     <option key={c.id} value={c.id}>
-                      {(c.first_name || c.last_name) ? `${c.first_name || ''} ${c.last_name || ''}`.trim() : 'Client Inconnu'} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
+                      {`${c.first_name || ''} ${c.last_name || ''}`.trim()} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
                     </option>
                   ))}
                 </select>
@@ -374,7 +374,7 @@ export default function BookingsPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                          {booking.first_name || booking.last_name ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim() : 'Client Inconnu'}
+                          {`${booking.first_name || ''} ${booking.last_name || ''}`.trim()}
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
                           <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
@@ -466,7 +466,7 @@ export default function BookingsPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                       <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-                        {booking.first_name || booking.last_name ? `${booking.first_name || ''} ${booking.last_name || ''}`.trim() : 'Client Inconnu'}
+                        {`${booking.first_name || ''} ${booking.last_name || ''}`.trim()}
                       </h3>
                       {booking.rental_type === 'wingboost' ? (
                         <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>

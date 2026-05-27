@@ -156,7 +156,7 @@ export default function CustomersPage() {
                   />
                   <div style={{ flex: 1 }}>
                     <h3 style={{ margin: '0 0 8px 0' }}>
-                      {customer.first_name || customer.last_name ? `${customer.first_name || ''} ${customer.last_name || ''}`.trim() : 'Client Inconnu'}
+                      {`${customer.first_name || ''} ${customer.last_name || ''}`.trim()}
                     </h3>
                     <div style={{ color: 'var(--text-light)', fontSize: '14px' }}>
                       {customer.email && <span style={{ marginRight: '16px' }}>✉️ {customer.email}</span>}
