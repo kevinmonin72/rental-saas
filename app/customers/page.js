@@ -6,11 +6,26 @@ import { useStore } from '../../lib/store';
 
 export default function CustomersPage() {
   const [mounted, setMounted] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortOrder, setSortOrder] = useState('az');
   const { customers, addCustomer, deleteCustomer } = useStore();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const filteredCustomers = customers.filter(c => {
+    const term = searchQuery.toLowerCase();
+    const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+    return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
+  });
+
+  const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    const nameA = `${a.first_name} ${a.last_name}`.toLowerCase();
+    const nameB = `${b.first_name} ${b.last_name}`.toLowerCase();
+    if (sortOrder === 'az') return nameA.localeCompare(nameB);
+    return nameB.localeCompare(nameA);
+  });
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -61,12 +76,35 @@ export default function CustomersPage() {
 
         {/* List */}
         <div>
-          <h2>Base Clients</h2>
-          {customers.length === 0 ? (
-            <p style={{ color: 'var(--text-light)' }}>Aucun client enregistré.</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0 }}>Base Clients</h2>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+            <input 
+              type="text" 
+              placeholder="Rechercher un client..." 
+              className="input" 
+              style={{ flex: 1 }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <select 
+              className="input" 
+              value={sortOrder} 
+              onChange={(e) => setSortOrder(e.target.value)}
+              style={{ minWidth: '120px' }}
+            >
+              <option value="az">A à Z</option>
+              <option value="za">Z à A</option>
+            </select>
+          </div>
+
+          {sortedCustomers.length === 0 ? (
+            <p style={{ color: 'var(--text-light)' }}>Aucun client trouvé.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {customers.map(customer => (
+              {sortedCustomers.map(customer => (
                 <div key={customer.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px 0' }}>{customer.first_name} {customer.last_name}</h3>
