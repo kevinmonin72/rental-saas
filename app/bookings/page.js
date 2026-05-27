@@ -9,6 +9,8 @@ export default function BookingsPage() {
   const { 
     customers, 
     equipment, 
+    bookings,
+    bookingItems,
     addBooking, 
     markBookingCompleted, 
     getDetailedActiveBookings 
@@ -21,12 +23,40 @@ export default function BookingsPage() {
   const handleAdd = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
+    const equipmentId = formData.get('equipmentId');
+    const startDateStr = formData.get('startDate');
+    const endDateStr = formData.get('endDate');
+    
+    const sNew = new Date(startDateStr);
+    sNew.setHours(0,0,0,0);
+    const eNew = new Date(endDateStr);
+    eNew.setHours(23,59,59,999);
+
+    // Check for overlap
+    const isOverlapping = bookings.some(b => {
+      if (b.status !== 'active') return false;
+      const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
+      if (!bItems.some(bi => bi.equipment_id === equipmentId)) return false;
+      
+      const sExist = new Date(b.start_date);
+      sExist.setHours(0,0,0,0);
+      const eExist = new Date(b.end_date);
+      eExist.setHours(23,59,59,999);
+      
+      return (sNew <= eExist && sExist <= eNew);
+    });
+
+    if (isOverlapping) {
+      const eq = equipment.find(eq => eq.id === equipmentId);
+      alert(`Impossible : L'article (Réf: ${eq?.reference || 'N/A'}) est déjà réservé (non rendu) sur cette période !`);
+      return;
+    }
+
     addBooking({
       customerId: formData.get('customerId'),
-      startDate: formData.get('startDate'),
-      endDate: formData.get('endDate'),
-      equipmentId: formData.get('equipmentId'),
-      quantity: parseInt(formData.get('quantity'), 10) || 1
+      startDate: startDateStr,
+      endDate: endDateStr,
+      equipmentId: equipmentId
     });
     e.target.reset();
   };
@@ -65,7 +95,7 @@ export default function BookingsPage() {
                 <label>Équipement</label>
                 <select name="equipmentId" className="input" required>
                   {equipment.map(e => (
-                    <option key={e.id} value={e.id}>{e.name} (Dispo: {e.quantity})</option>
+                    <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
                   ))}
                 </select>
               </div>
@@ -76,10 +106,6 @@ export default function BookingsPage() {
               <div className="form-group">
                 <label>Date de fin</label>
                 <input type="date" name="endDate" className="input" required />
-              </div>
-              <div className="form-group">
-                <label>Quantité</label>
-                <input type="number" name="quantity" className="input" min="1" defaultValue="1" required />
               </div>
               <button type="submit" className="btn btn-primary">Créer</button>
             </form>
@@ -116,7 +142,7 @@ export default function BookingsPage() {
                         {isLate && <span className="badge" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}>En Retard</span>}
                       </div>
                       <p style={{ margin: '0 0 4px 0', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                        <strong>Matériel :</strong> {booking.equipment_name} (x{booking.quantity})
+                        <strong>Matériel :</strong> {booking.equipment_name} (Réf: {booking.equipment_reference || 'N/A'})
                       </p>
                       <p style={{ margin: 0, color: isLate ? '#DC2626' : 'var(--text-light)', fontSize: '14px', fontWeight: isLate ? 'bold' : 'normal' }}>
                         Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}

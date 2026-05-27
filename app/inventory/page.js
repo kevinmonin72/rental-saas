@@ -18,7 +18,7 @@ export default function InventoryPage() {
     addEquipment({
       name: formData.get('name'),
       category: formData.get('category'),
-      quantity: parseInt(formData.get('quantity'), 10) || 1
+      reference: formData.get('reference')
     });
     e.target.reset();
   };
@@ -52,8 +52,8 @@ export default function InventoryPage() {
               </select>
             </div>
             <div className="form-group">
-              <label>Quantité</label>
-              <input type="number" name="quantity" className="input" min="1" defaultValue="1" required />
+              <label>Référence (ex: Numéro de série)</label>
+              <input type="text" name="reference" className="input" placeholder="ex: WING-001" required />
             </div>
             <button type="submit" className="btn btn-primary">Ajouter</button>
           </form>
@@ -70,8 +70,10 @@ export default function InventoryPage() {
                 <div key={item.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h3 style={{ margin: '0 0 8px 0' }}>{item.name}</h3>
-                    <span className="badge">{item.category}</span>
-                    <span style={{ marginLeft: '16px', color: 'var(--text-light)' }}>Qté: {item.quantity}</span>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span className="badge">{item.category}</span>
+                      <span className="badge" style={{ backgroundColor: '#E2E8F0', color: '#475569', border: 'none' }}>Réf: {item.reference || 'N/A'}</span>
+                    </div>
                   </div>
                   <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
                 </div>
