@@ -16,6 +16,7 @@ export default function BookingsPage() {
     addBooking, 
     markBookingCompleted, 
     getDetailedActiveBookings,
+    getDetailedPastBookings,
     toggleShopifyTransfer
   } = useStore();
 
@@ -73,6 +74,7 @@ export default function BookingsPage() {
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
   const activeBookings = getDetailedActiveBookings();
+  const pastBookings = getDetailedPastBookings();
 
   return (
     <div>
@@ -205,7 +207,43 @@ export default function BookingsPage() {
                     </div>
                   </div>
                 );
+                      </div>
+                    </div>
+                  </div>
+                );
               })}
+            </div>
+          )}
+
+          <h2 style={{ marginTop: '40px' }}>Historique des réservations (Terminées)</h2>
+          {pastBookings.length === 0 ? (
+            <p style={{ color: 'var(--text-light)' }}>Aucun historique disponible.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {pastBookings.map(booking => (
+                <div key={booking.id} className="card" style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  borderLeft: '4px solid #10B981', // Green for completed
+                  opacity: 0.8
+                }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)' }}>
+                      {booking.first_name} {booking.last_name}
+                    </h3>
+                    <p style={{ margin: '0 0 4px 0', color: 'var(--text-main)' }}>
+                      <strong>Matériel rendu :</strong> {booking.equipment_name} (Réf: {booking.equipment_reference || 'N/A'})
+                    </p>
+                    <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
+                      Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
