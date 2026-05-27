@@ -10,6 +10,9 @@ export default function BookingsPage() {
   const [equipmentSearch, setEquipmentSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
+  const [selectedEquipments, setSelectedEquipments] = useState([]);
+  const [currentEqSelection, setCurrentEqSelection] = useState('');
+  const [rentalType, setRentalType] = useState('ponctuel');
 
   const { 
     customers, 
@@ -42,32 +45,37 @@ export default function BookingsPage() {
   const handleAdd = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const equipmentId = formData.get('equipmentId');
     const startDateStr = formData.get('startDate');
     const endDateStr = formData.get('endDate');
     
+    if (selectedEquipments.length === 0) {
+      alert("Veuillez sélectionner au moins un équipement.");
+      return;
+    }
+
     const sNew = new Date(startDateStr);
     sNew.setHours(0,0,0,0);
     const eNew = new Date(endDateStr);
     eNew.setHours(23,59,59,999);
 
-    // Check for overlap
-    const isOverlapping = bookings.some(b => {
-      if (b.status !== 'active') return false;
-      const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
-      if (!bItems.some(bi => bi.equipment_id === equipmentId)) return false;
-      
-      const sExist = new Date(b.start_date);
-      sExist.setHours(0,0,0,0);
-      const eExist = new Date(b.end_date);
-      eExist.setHours(23,59,59,999);
-      
-      return (sNew <= eExist && sExist <= eNew);
+    // Check for overlap for all selected equipments
+    const overlappingEq = selectedEquipments.find(eq => {
+      return bookings.some(b => {
+        if (b.status !== 'active') return false;
+        const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
+        if (!bItems.some(bi => bi.equipment_id === eq.id)) return false;
+        
+        const sExist = new Date(b.start_date);
+        sExist.setHours(0,0,0,0);
+        const eExist = new Date(b.end_date);
+        eExist.setHours(23,59,59,999);
+        
+        return (sNew <= eExist && sExist <= eNew);
+      });
     });
 
-    if (isOverlapping) {
-      const eq = equipment.find(eq => eq.id === equipmentId);
-      alert(`Impossible : L'article (Réf: ${eq?.reference || 'N/A'}) est déjà réservé (non rendu) sur cette période !`);
+    if (overlappingEq) {
+      alert(`Impossible : L'article (Réf: ${overlappingEq.reference || 'N/A'} - ${overlappingEq.name}) est déjà réservé sur cette période !`);
       return;
     }
 
@@ -75,8 +83,11 @@ export default function BookingsPage() {
       customerId: formData.get('customerId'),
       startDate: startDateStr,
       endDate: endDateStr,
-      equipmentId: equipmentId
+      equipmentIds: selectedEquipments.map(e => e.id),
+      rentalType: rentalType
     });
+    
+    setSelectedEquipments([]);
     e.target.reset();
   };
 
@@ -89,7 +100,8 @@ export default function BookingsPage() {
     return list.filter(b => {
       if (!searchQuery) return true;
       const term = searchQuery.toLowerCase();
-      const searchStr = `${b.first_name} ${b.last_name} ${b.equipment_name} ${b.equipment_reference}`.toLowerCase();
+      const eqsStr = b.equipments?.map(eq => `${eq.name} ${eq.reference}`).join(' ') || '';
+      const searchStr = `${b.first_name} ${b.last_name} ${eqsStr}`.toLowerCase();
       return searchStr.includes(term);
     }).sort((a, b) => {
       const dateA = new Date(a.end_date);
@@ -139,8 +151,34 @@ export default function BookingsPage() {
                   ))}
                 </select>
               </div>
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Type de Location</label>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
+                    <input type="radio" name="rentalType" value="ponctuel" checked={rentalType === 'ponctuel'} onChange={() => setRentalType('ponctuel')} />
+                    🕒 Ponctuelle
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
+                    <input type="radio" name="rentalType" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} />
+                    🚀 Wingboost
+                  </label>
+                </div>
+              </div>
+
               <div className="form-group">
-                <label>Équipement</label>
+                <label>Équipements ({selectedEquipments.length} sélectionnés)</label>
+                
+                {selectedEquipments.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', padding: '12px', backgroundColor: 'var(--surface-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    {selectedEquipments.map(eq => (
+                      <div key={eq.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px' }}>Réf: {eq.reference || 'N/A'} - {eq.name}</span>
+                        <button type="button" onClick={() => setSelectedEquipments(selectedEquipments.filter(e => e.id !== eq.id))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <input 
                   type="text" 
                   className="input" 
@@ -149,12 +187,29 @@ export default function BookingsPage() {
                   value={equipmentSearch}
                   onChange={(e) => setEquipmentSearch(e.target.value)}
                 />
-                <select name="equipmentId" className="input" required>
-                  {filteredEquipmentForSelect.length === 0 && <option value="">Aucun équipement trouvé</option>}
-                  {filteredEquipmentForSelect.map(e => (
-                    <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
-                  ))}
-                </select>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    className="input" 
+                    value={currentEqSelection} 
+                    onChange={(e) => setCurrentEqSelection(e.target.value)} 
+                    style={{ marginBottom: 0 }}
+                  >
+                    <option value="">-- Sélectionner un équipement --</option>
+                    {filteredEquipmentForSelect.filter(e => !selectedEquipments.find(se => se.id === e.id)).map(e => (
+                      <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    if (currentEqSelection) {
+                      const eq = equipment.find(e => e.id === currentEqSelection);
+                      if (eq) {
+                        setSelectedEquipments([...selectedEquipments, eq]);
+                        setCurrentEqSelection('');
+                        setEquipmentSearch('');
+                      }
+                    }
+                  }}>Ajouter</button>
+                </div>
               </div>
               <div className="form-group">
                 <label>Date de début</label>
@@ -215,15 +270,27 @@ export default function BookingsPage() {
                     backgroundColor: isLate ? '#FEF2F2' : 'var(--surface-color)'
                   }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)' }}>
                           {booking.first_name} {booking.last_name}
                         </h3>
+                        {booking.rental_type === 'wingboost' ? (
+                          <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
+                        ) : (
+                          <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
+                        )}
                         {isLate && <span className="badge" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}>En Retard</span>}
                       </div>
-                      <p style={{ margin: '0 0 4px 0', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                        <strong>Matériel :</strong> {booking.equipment_name} (Réf: {booking.equipment_reference || 'N/A'})
-                      </p>
+                      
+                      <div style={{ margin: '8px 0', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
+                        <strong>Matériel ({booking.equipments?.length}) :</strong>
+                        <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
+                          {booking.equipments?.map(eq => (
+                            <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
+                          ))}
+                        </ul>
+                      </div>
+
                       <p style={{ margin: 0, color: isLate ? '#DC2626' : 'var(--text-light)', fontSize: '14px', fontWeight: isLate ? 'bold' : 'normal' }}>
                         Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                       </p>
@@ -283,12 +350,24 @@ export default function BookingsPage() {
                   opacity: 0.8
                 }}>
                   <div>
-                    <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)' }}>
-                      {booking.first_name} {booking.last_name}
-                    </h3>
-                    <p style={{ margin: '0 0 4px 0', color: 'var(--text-main)' }}>
-                      <strong>Matériel rendu :</strong> {booking.equipment_name} (Réf: {booking.equipment_reference || 'N/A'})
-                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                      <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
+                        {booking.first_name} {booking.last_name}
+                      </h3>
+                      {booking.rental_type === 'wingboost' ? (
+                        <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
+                      ) : (
+                        <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
+                      )}
+                    </div>
+                    <div style={{ margin: '8px 0', color: 'var(--text-main)' }}>
+                      <strong>Matériel rendu ({booking.equipments?.length}) :</strong>
+                      <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
+                        {booking.equipments?.map(eq => (
+                          <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
+                        ))}
+                      </ul>
+                    </div>
                     <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
                       Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                     </p>
