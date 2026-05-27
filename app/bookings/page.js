@@ -6,6 +6,8 @@ import { useStore } from '../../lib/store';
 
 export default function BookingsPage() {
   const [mounted, setMounted] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+
   const { 
     customers, 
     equipment, 
@@ -20,6 +22,12 @@ export default function BookingsPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const filteredCustomersForSelect = customers.filter(c => {
+    const term = customerSearch.toLowerCase();
+    const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+    return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
+  }).slice(0, 100); // Limit to 100 to prevent DOM lag
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -86,9 +94,20 @@ export default function BookingsPage() {
             <form onSubmit={handleAdd}>
               <div className="form-group">
                 <label>Client</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="🔍 Filtrer par nom, prénom, email..." 
+                  style={{ marginBottom: '8px' }}
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                />
                 <select name="customerId" className="input" required>
-                  {customers.map(c => (
-                    <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                  {filteredCustomersForSelect.length === 0 && <option value="">Aucun client trouvé</option>}
+                  {filteredCustomersForSelect.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.first_name} {c.last_name} {c.email ? `- ${c.email}` : ''} {c.phone ? `- ${c.phone}` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
