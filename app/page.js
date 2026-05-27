@@ -94,7 +94,15 @@ export default function DashboardHome() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const lateBookings = activeBookingsList.filter(b => {
-          const endDate = new Date(b.end_date);
+          let endDate = new Date(b.end_date);
+          if (b.pause_start && b.pause_end) {
+            const ps = new Date(b.pause_start);
+            const pe = new Date(b.pause_end);
+            if (pe >= ps) {
+              const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+              endDate.setDate(endDate.getDate() + diffDays);
+            }
+          }
           endDate.setHours(0, 0, 0, 0);
           return endDate < today;
         });
@@ -114,9 +122,22 @@ export default function DashboardHome() {
                         <p style={{ margin: '0 0 4px 0', color: '#991B1B' }}>
                           <strong>Matériel :</strong> {(booking.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}
                         </p>
-                        <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
-                          Devait être rendu le {new Date(booking.end_date).toLocaleDateString('fr-FR')}
-                        </p>
+                        {(() => {
+                          let effectiveEnd = new Date(booking.end_date);
+                          if (booking.pause_start && booking.pause_end) {
+                            const ps = new Date(booking.pause_start);
+                            const pe = new Date(booking.pause_end);
+                            if (pe >= ps) {
+                              const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                              effectiveEnd.setDate(effectiveEnd.getDate() + diffDays);
+                            }
+                          }
+                          return (
+                            <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                              Devait être rendu le {effectiveEnd.toLocaleDateString('fr-FR')}
+                            </p>
+                          );
+                        })()}
                       </div>
                       <Link href="/bookings" className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
                         Gérer

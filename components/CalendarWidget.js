@@ -53,10 +53,27 @@ export default function CalendarWidget({ bookings }) {
     days.push(d);
   }
 
+  // Process bookings to account for pauses
+  const processedBookings = bookings.map(b => {
+    let effectiveEnd = new Date(b.end_date);
+    if (b.pause_start && b.pause_end) {
+      const ps = new Date(b.pause_start);
+      const pe = new Date(b.pause_end);
+      if (pe >= ps) {
+        const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+        effectiveEnd.setDate(effectiveEnd.getDate() + diffDays);
+      }
+    }
+    return {
+      ...b,
+      effective_end_date: effectiveEnd.toISOString().split('T')[0]
+    };
+  });
+
   // Filter bookings that overlap with the view window
-  const visibleBookings = bookings.filter(b => {
+  const visibleBookings = processedBookings.filter(b => {
     const bStart = parseLocalDate(b.start_date);
-    const bEnd = parseLocalDate(b.end_date);
+    const bEnd = parseLocalDate(b.effective_end_date);
     return bEnd >= viewStart && bStart <= viewEnd;
   });
 
@@ -101,7 +118,7 @@ export default function CalendarWidget({ bookings }) {
         {visibleBookings.length > 0 ? (
           visibleBookings.map((b, i) => {
             const bStart = parseLocalDate(b.start_date);
-            const bEnd = parseLocalDate(b.end_date);
+            const bEnd = parseLocalDate(b.effective_end_date);
             
             // Calculate grid columns
             // Column 1 is the first day. Column 15 is the end boundary.

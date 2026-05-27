@@ -23,6 +23,8 @@ export default function BookingsPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [pauseStart, setPauseStart] = useState('');
+  const [pauseEnd, setPauseEnd] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [rentalTypeFilter, setRentalTypeFilter] = useState('all');
 
@@ -80,9 +82,27 @@ export default function BookingsPage() {
         const sExist = new Date(b.start_date);
         sExist.setHours(0,0,0,0);
         const eExist = new Date(b.end_date);
+        if (b.pause_start && b.pause_end) {
+          const ps = new Date(b.pause_start);
+          const pe = new Date(b.pause_end);
+          if (pe >= ps) {
+            const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+            eExist.setDate(eExist.getDate() + diffDays);
+          }
+        }
         eExist.setHours(23,59,59,999);
         
-        return (sNew <= eExist && sExist <= eNew);
+        let localENew = new Date(eNew);
+        if (rentalType === 'wingboost' && pauseStart && pauseEnd) {
+          const nps = new Date(pauseStart);
+          const npe = new Date(pauseEnd);
+          if (npe >= nps) {
+            const diffDays = Math.ceil(Math.abs(npe - nps) / (1000 * 60 * 60 * 24));
+            localENew.setDate(localENew.getDate() + diffDays);
+          }
+        }
+        
+        return (sNew <= eExist && sExist <= localENew);
       }).length;
 
       const totalQty = parseInt(eq.quantity, 10) || 1;
@@ -100,7 +120,9 @@ export default function BookingsPage() {
         startDate: startDate,
         endDate: endDate,
         equipmentIds: selectedEquipments.map(e => e.id),
-        rentalType: rentalType
+        rentalType: rentalType,
+        pauseStart: rentalType === 'wingboost' ? pauseStart : null,
+        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
       });
       setEditingBookingId(null);
     } else {
@@ -109,13 +131,17 @@ export default function BookingsPage() {
         startDate: startDate,
         endDate: endDate,
         equipmentIds: selectedEquipments.map(e => e.id),
-        rentalType: rentalType
+        rentalType: rentalType,
+        pauseStart: rentalType === 'wingboost' ? pauseStart : null,
+        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
       });
     }
     
     setSelectedEquipments([]);
     setStartDate('');
     setEndDate('');
+    setPauseStart('');
+    setPauseEnd('');
     setSelectedCustomerId('');
   };
 
@@ -124,6 +150,8 @@ export default function BookingsPage() {
     setSelectedCustomerId(booking.customer_id);
     setStartDate(booking.start_date);
     setEndDate(booking.end_date);
+    setPauseStart(booking.pause_start || '');
+    setPauseEnd(booking.pause_end || '');
     setRentalType(booking.rental_type || 'ponctuel');
     setSelectedEquipments(booking.equipments);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -134,6 +162,8 @@ export default function BookingsPage() {
     setSelectedEquipments([]);
     setStartDate('');
     setEndDate('');
+    setPauseStart('');
+    setPauseEnd('');
     setSelectedCustomerId('');
   };
 
@@ -295,6 +325,18 @@ export default function BookingsPage() {
                 <label>Date de fin</label>
                 <input type="date" name="endDate" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
               </div>
+              {rentalType === 'wingboost' && (
+                <>
+                  <div className="form-group">
+                    <label>Début de la pause (Optionnel)</label>
+                    <input type="date" name="pauseStart" className="input" value={pauseStart} onChange={(e) => setPauseStart(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>Fin de la pause (Optionnel)</label>
+                    <input type="date" name="pauseEnd" className="input" value={pauseEnd} onChange={(e) => setPauseEnd(e.target.value)} />
+                  </div>
+                </>
+              )}
               <button type="submit" className="btn btn-primary">{editingBookingId ? 'Mettre à jour' : 'Créer'}</button>
             </form>
           )}
@@ -405,6 +447,21 @@ export default function BookingsPage() {
                       <p style={{ margin: 0, color: isLate ? '#DC2626' : 'var(--text-light)', fontSize: '14px', fontWeight: isLate ? 'bold' : 'normal' }}>
                         Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                       </p>
+                      {booking.pause_start && booking.pause_end && (() => {
+                        const ps = new Date(booking.pause_start);
+                        const pe = new Date(booking.pause_end);
+                        if (pe >= ps) {
+                          const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                          const newEnd = new Date(booking.end_date);
+                          newEnd.setDate(newEnd.getDate() + diffDays);
+                          return (
+                            <p style={{ margin: '4px 0 0 0', color: 'var(--text-light)', fontSize: '14px', fontStyle: 'italic' }}>
+                              Pause du {ps.toLocaleDateString('fr-FR')} au {pe.toLocaleDateString('fr-FR')} et nouvelle fin le {newEnd.toLocaleDateString('fr-FR')}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px', minWidth: '220px' }}>
@@ -494,6 +551,21 @@ export default function BookingsPage() {
                     <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
                       Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                     </p>
+                    {booking.pause_start && booking.pause_end && (() => {
+                      const ps = new Date(booking.pause_start);
+                      const pe = new Date(booking.pause_end);
+                      if (pe >= ps) {
+                        const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                        const newEnd = new Date(booking.end_date);
+                        newEnd.setDate(newEnd.getDate() + diffDays);
+                        return (
+                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-light)', fontSize: '14px', fontStyle: 'italic' }}>
+                            Pause du {ps.toLocaleDateString('fr-FR')} au {pe.toLocaleDateString('fr-FR')} et nouvelle fin le {newEnd.toLocaleDateString('fr-FR')}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
