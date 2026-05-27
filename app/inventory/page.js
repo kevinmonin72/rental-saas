@@ -1,10 +1,29 @@
-import { openDb } from '../../lib/db';
-import { addEquipment } from '../actions';
-import CsvImporterButton from '../../components/CsvImporterButton';
+'use client';
 
-export default async function InventoryPage() {
-  const db = await openDb();
-  const equipmentList = await db.all('SELECT * FROM equipment ORDER BY id DESC');
+import { useState, useEffect } from 'react';
+import CsvImporterButton from '../components/CsvImporterButton';
+import { useStore } from '../lib/store';
+
+export default function InventoryPage() {
+  const [mounted, setMounted] = useState(false);
+  const { equipment, addEquipment, deleteEquipment } = useStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    addEquipment({
+      name: formData.get('name'),
+      category: formData.get('category'),
+      quantity: parseInt(formData.get('quantity'), 10) || 1
+    });
+    e.target.reset();
+  };
+
+  if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
   return (
     <div>
@@ -15,67 +34,50 @@ export default async function InventoryPage() {
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
         
-        {/* Formulaire d'ajout */}
-        <div className="card" style={{ height: 'fit-content' }}>
-          <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>Ajouter un équipement</h2>
-          <form action={addEquipment} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="name" style={{ fontWeight: 500, fontSize: '14px' }}>Nom</label>
-              <input type="text" id="name" name="name" required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+        {/* Add Form */}
+        <div className="card">
+          <h2>Ajouter du matériel</h2>
+          <form onSubmit={handleAdd}>
+            <div className="form-group">
+              <label>Nom de l'équipement</label>
+              <input type="text" name="name" className="input" required />
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="category" style={{ fontWeight: 500, fontSize: '14px' }}>Catégorie</label>
-              <input type="text" id="category" name="category" placeholder="ex: Vélo, Ski..." required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+            <div className="form-group">
+              <label>Catégorie</label>
+              <select name="category" className="input">
+                <option value="Wing">Wing</option>
+                <option value="Board">Planche</option>
+                <option value="Foil">Foil</option>
+                <option value="Accessory">Accessoire</option>
+              </select>
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="quantity" style={{ fontWeight: 500, fontSize: '14px' }}>Quantité totale</label>
-              <input type="number" id="quantity" name="quantity" min="1" required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+            <div className="form-group">
+              <label>Quantité</label>
+              <input type="number" name="quantity" className="input" min="1" defaultValue="1" required />
             </div>
-
-            <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-              Ajouter
-            </button>
+            <button type="submit" className="btn btn-primary">Ajouter</button>
           </form>
         </div>
 
-        {/* Liste des équipements */}
-        <div className="card">
-          <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>Inventaire ({equipmentList.length})</h2>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>ID</th>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>Nom</th>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>Catégorie</th>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>Quantité</th>
-              </tr>
-            </thead>
-            <tbody>
-              {equipmentList.map(eq => (
-                <tr key={eq.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '12px 0', color: 'var(--text-muted)' }}>#{eq.id}</td>
-                  <td style={{ padding: '12px 0', fontWeight: 500 }}>{eq.name}</td>
-                  <td style={{ padding: '12px 0' }}>
-                    <span style={{ backgroundColor: 'var(--bg-color)', padding: '4px 8px', borderRadius: '12px', fontSize: '13px', border: '1px solid var(--border-color)' }}>
-                      {eq.category}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 0', fontWeight: 600, color: 'var(--primary-color)' }}>{eq.total_quantity}</td>
-                </tr>
+        {/* List */}
+        <div>
+          <h2>Inventaire Actuel</h2>
+          {equipment.length === 0 ? (
+            <p style={{ color: 'var(--text-light)' }}>Aucun équipement enregistré.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {equipment.map(item => (
+                <div key={item.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0' }}>{item.name}</h3>
+                    <span className="badge">{item.category}</span>
+                    <span style={{ marginLeft: '16px', color: 'var(--text-light)' }}>Qté: {item.quantity}</span>
+                  </div>
+                  <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
+                </div>
               ))}
-              {equipmentList.length === 0 && (
-                <tr>
-                  <td colSpan="4" style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Aucun équipement pour le moment.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
 
       </div>

@@ -1,10 +1,30 @@
-import { openDb } from '../../lib/db';
-import { addCustomer } from '../actions';
-import CsvImporterButton from '../../components/CsvImporterButton';
+'use client';
 
-export default async function CustomersPage() {
-  const db = await openDb();
-  const customerList = await db.all('SELECT * FROM customers ORDER BY id DESC');
+import { useState, useEffect } from 'react';
+import CsvImporterButton from '../components/CsvImporterButton';
+import { useStore } from '../lib/store';
+
+export default function CustomersPage() {
+  const [mounted, setMounted] = useState(false);
+  const { customers, addCustomer, deleteCustomer } = useStore();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    addCustomer({
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      email: formData.get('email'),
+      phone: formData.get('phone')
+    });
+    e.target.reset();
+  };
+
+  if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
   return (
     <div>
@@ -15,69 +35,51 @@ export default async function CustomersPage() {
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
         
-        {/* Formulaire d'ajout */}
-        <div className="card" style={{ height: 'fit-content' }}>
-          <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>Ajouter un client</h2>
-          <form action={addCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="firstName" style={{ fontWeight: 500, fontSize: '14px' }}>Prénom</label>
-              <input type="text" id="firstName" name="firstName" required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+        {/* Add Form */}
+        <div className="card">
+          <h2>Nouveau Client</h2>
+          <form onSubmit={handleAdd}>
+            <div className="form-group">
+              <label>Prénom</label>
+              <input type="text" name="first_name" className="input" required />
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="lastName" style={{ fontWeight: 500, fontSize: '14px' }}>Nom</label>
-              <input type="text" id="lastName" name="lastName" required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+            <div className="form-group">
+              <label>Nom</label>
+              <input type="text" name="last_name" className="input" required />
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="email" style={{ fontWeight: 500, fontSize: '14px' }}>Email</label>
-              <input type="email" id="email" name="email" required style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+            <div className="form-group">
+              <label>Email</label>
+              <input type="email" name="email" className="input" />
             </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <label htmlFor="phone" style={{ fontWeight: 500, fontSize: '14px' }}>Téléphone (optionnel)</label>
-              <input type="tel" id="phone" name="phone" style={{ padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+            <div className="form-group">
+              <label>Téléphone</label>
+              <input type="tel" name="phone" className="input" />
             </div>
-
-            <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
-              Ajouter
-            </button>
+            <button type="submit" className="btn btn-primary">Enregistrer</button>
           </form>
         </div>
 
-        {/* Liste des clients */}
-        <div className="card">
-          <h2 style={{ marginBottom: '16px', fontSize: '18px' }}>Base Clients ({customerList.length})</h2>
-          
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>ID</th>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>Nom complet</th>
-                <th style={{ padding: '12px 0', color: 'var(--text-muted)', fontWeight: 500 }}>Contact</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customerList.map(c => (
-                <tr key={c.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                  <td style={{ padding: '12px 0', color: 'var(--text-muted)' }}>#{c.id}</td>
-                  <td style={{ padding: '12px 0', fontWeight: 500 }}>{c.first_name} {c.last_name}</td>
-                  <td style={{ padding: '12px 0', color: 'var(--text-muted)', fontSize: '14px' }}>
-                    <div>{c.email}</div>
-                    {c.phone && <div>{c.phone}</div>}
-                  </td>
-                </tr>
+        {/* List */}
+        <div>
+          <h2>Base Clients</h2>
+          {customers.length === 0 ? (
+            <p style={{ color: 'var(--text-light)' }}>Aucun client enregistré.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {customers.map(customer => (
+                <div key={customer.id} className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 8px 0' }}>{customer.first_name} {customer.last_name}</h3>
+                    <div style={{ color: 'var(--text-light)', fontSize: '14px' }}>
+                      {customer.email && <span style={{ marginRight: '16px' }}>✉️ {customer.email}</span>}
+                      {customer.phone && <span>📞 {customer.phone}</span>}
+                    </div>
+                  </div>
+                  <button onClick={() => deleteCustomer(customer.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
+                </div>
               ))}
-              {customerList.length === 0 && (
-                <tr>
-                  <td colSpan="3" style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Aucun client pour le moment.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
 
       </div>

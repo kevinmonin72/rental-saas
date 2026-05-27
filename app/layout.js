@@ -8,17 +8,20 @@ export const metadata = {
 };
 
 import Sidebar from '../components/Sidebar';
+import ClientAuth from '../components/ClientAuth';
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fr">
       <body>
-        <div className="app-layout">
-          <Sidebar />
-          <main className="main-content">
-            {children}
-          </main>
-        </div>
+        <ClientAuth>
+          <div className="app-layout">
+            <Sidebar />
+            <main className="main-content">
+              {children}
+            </main>
+          </div>
+        </ClientAuth>
       </body>
     </html>
   );

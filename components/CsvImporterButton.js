@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import CsvImporter from './CsvImporter';
-import { bulkImportEquipment, bulkImportCustomers, bulkImportBookings } from '../app/actions';
+import { useStore } from '../lib/store';
 
 export default function CsvImporterButton({ type }) {
   const [isOpen, setIsOpen] = useState(false);
+  const { bulkImportEquipment, bulkImportCustomers, bulkImportBookings } = useStore();
 
-  const handleImport = async (data) => {
+  const handleImport = (data) => {
     if (type === 'equipment') {
-      await bulkImportEquipment(data);
+      bulkImportEquipment(data);
     } else if (type === 'customers') {
-      await bulkImportCustomers(data);
+      bulkImportCustomers(data);
     } else if (type === 'bookings') {
-      await bulkImportBookings(data);
+      bulkImportBookings(data);
     }
     setIsOpen(false);
   };
