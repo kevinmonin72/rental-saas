@@ -110,6 +110,9 @@ export default function InventoryPage() {
                     <h3 style={{ margin: '0 0 8px 0' }}>{item.name}</h3>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className="badge">{item.category}</span>
+                      {item.collection && (
+                        <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🛍 {item.collection}</span>
+                      )}
                       <span className="badge" style={{ backgroundColor: '#E2E8F0', color: '#475569', border: 'none' }}>Réf: {item.reference || 'N/A'}</span>
                       {item.location && (
                         <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: 'none' }}>📍 {item.location}</span>

@@ -11,6 +11,7 @@ const SCHEMA = {
       { key: 'name', label: "Nom de l'équipement (Requis)", required: true },
       { key: 'reference', label: "Référence / N° de série", required: false },
       { key: 'category', label: "Catégorie", required: false },
+      { key: 'collection', label: "Collection (Shopify)", required: false },
       { key: 'location', label: "Emplacement", required: false },
       { key: 'quantity', label: "Quantité", required: false }
     ]
