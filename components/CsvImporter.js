@@ -47,7 +47,7 @@ export default function CsvImporter({ type, onClose, onImport }) {
   const [previewData, setPreviewData] = useState([]);
 
   const CATEGORY_OPTIONS = [
-    "Ailes", "Kites", "Planche", "Foil", "Mât avion", 
+    "Ailes", "Planche", "Foil", "Mât avion", 
     "Aile avant", "Stab", "Platines", "Fuselage", "Accessoire"
   ];
 
