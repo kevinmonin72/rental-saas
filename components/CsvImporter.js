@@ -13,7 +13,7 @@ const SCHEMA = {
       { key: 'category', label: "Catégorie", required: false, aliases: ['product category', 'type', 'catégorie', 'product type', 'categorie'] },
       { key: 'collection', label: "Collection (Shopify)", required: false, aliases: ['collection', 'collections'] },
       { key: 'location', label: "Emplacement", required: false, aliases: ['location', 'emplacement', 'stock location'] },
-      { key: 'quantity', label: "Quantité", required: false, aliases: ['variant inventory qty', 'qty', 'quantité', 'stock', 'inventory', 'quantite'] }
+      { key: 'quantity', label: "Quantité", required: false, aliases: ['variant inventory qty', 'qty', 'quantité', 'stock', 'inventory', 'quantite', 'wingboost marseille'] }
     ]
   },
   customers: {
