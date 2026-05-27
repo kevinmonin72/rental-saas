@@ -7,6 +7,7 @@ import { useStore } from '../../lib/store';
 export default function BookingsPage() {
   const [mounted, setMounted] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [equipmentSearch, setEquipmentSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
 
@@ -30,6 +31,12 @@ export default function BookingsPage() {
     const term = customerSearch.toLowerCase();
     const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
     return fullName.includes(term) || (c.email && c.email.toLowerCase().includes(term)) || (c.phone && c.phone.includes(term));
+  }).slice(0, 100); // Limit to 100 to prevent DOM lag
+
+  const filteredEquipmentForSelect = equipment.filter(e => {
+    const term = equipmentSearch.toLowerCase();
+    const eqName = `${e.reference || ''} ${e.name}`.toLowerCase();
+    return eqName.includes(term);
   }).slice(0, 100); // Limit to 100 to prevent DOM lag
 
   const handleAdd = (e) => {
@@ -134,8 +141,17 @@ export default function BookingsPage() {
               </div>
               <div className="form-group">
                 <label>Équipement</label>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="🔍 Filtrer par nom ou réf..." 
+                  style={{ marginBottom: '8px' }}
+                  value={equipmentSearch}
+                  onChange={(e) => setEquipmentSearch(e.target.value)}
+                />
                 <select name="equipmentId" className="input" required>
-                  {equipment.map(e => (
+                  {filteredEquipmentForSelect.length === 0 && <option value="">Aucun équipement trouvé</option>}
+                  {filteredEquipmentForSelect.map(e => (
                     <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
                   ))}
                 </select>
