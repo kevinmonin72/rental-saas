@@ -117,15 +117,6 @@ export default function InventoryPage() {
               <input type="text" name="brand" className="input" defaultValue={editingEquipment?.brand || ''} />
             </div>
             <div className="form-group">
-              <label>État</label>
-              <select name="condition" className="input" defaultValue={editingEquipment?.condition || 'Neuf'} required>
-                <option value="Neuf">Neuf</option>
-                <option value="Très bon">Très bon</option>
-                <option value="Bon">Bon</option>
-                <option value="Usagé">Usagé</option>
-              </select>
-            </div>
-            <div className="form-group">
               <label>Quantité en stock</label>
               <input type="number" name="quantity" className="input" defaultValue={editingEquipment?.quantity || 1} min="1" required />
             </div>
