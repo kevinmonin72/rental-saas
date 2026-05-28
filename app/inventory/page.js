@@ -103,12 +103,13 @@ export default function InventoryPage() {
             </div>
             <div className="form-group">
               <label>Catégorie</label>
-              <select name="category" className="input" defaultValue={editingEquipment?.category || 'Planches'} required>
-                <option value="Planches">Planches</option>
-                <option value="Combinaisons">Combinaisons</option>
-                <option value="Harnais">Harnais</option>
-                <option value="Accessoires">Accessoires</option>
-                <option value="Autre">Autre</option>
+              <select name="category" className="input" defaultValue={editingEquipment?.category || 'Aile'} required>
+                <option value="Aile">Aile</option>
+                <option value="Planche">Planche</option>
+                <option value="Foil">Foil</option>
+                <option value="Mât">Mât</option>
+                <option value="Platine">Platine</option>
+                <option value="Accessoire">Accessoire</option>
               </select>
             </div>
             <div className="form-group">
