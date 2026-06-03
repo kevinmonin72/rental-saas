@@ -11,7 +11,7 @@ export default function DashboardHome() {
   const [mounted, setMounted] = useState(false);
   const [localDataToMigrate, setLocalDataToMigrate] = useState(null);
   const [isMigrating, setIsMigrating] = useState(false);
-  const { getDashboardStats, getDetailedActiveBookings, fetchData } = useStore();
+  const { getDashboardStats, getDetailedActiveBookings, fetchData, bookings } = useStore();
 
   useEffect(() => {
     setMounted(true);
@@ -49,8 +49,81 @@ export default function DashboardHome() {
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
+  // Group Wingboost bookings by month (last 6 months)
+  const getWingboostStatsByMonth = () => {
+    const months = {};
+    const today = new Date();
+    
+    // Generate the last 6 months keys & labels
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('fr-FR', { month: 'short' });
+      months[key] = { label, count: 0 };
+    }
+
+    // Count wingboost bookings matching month keys
+    bookings.forEach(b => {
+      if (b.rental_type === 'wingboost') {
+        const start = new Date(b.start_date);
+        const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+        if (months[key]) {
+          months[key].count++;
+        }
+      }
+    });
+
+    return Object.values(months);
+  };
+
+  // Group active bookings by expected return month (current month + 5 next months)
+  const getExpectedReturnsByMonth = () => {
+    const months = {};
+    const today = new Date();
+    
+    // Generate current + 5 next months keys & labels
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const label = d.toLocaleDateString('fr-FR', { month: 'short' });
+      months[key] = { label, count: 0 };
+    }
+
+    // Count expected returns in these months
+    bookings.forEach(b => {
+      if (b.status === 'active') {
+        let endDate = new Date(b.end_date);
+        if (b.pause_start && b.pause_end) {
+          const ps = new Date(b.pause_start);
+          const pe = new Date(b.pause_end);
+          if (pe >= ps) {
+            const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+            endDate.setDate(endDate.getDate() + diffDays);
+          }
+        }
+        
+        const key = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+        if (months[key]) {
+          months[key].count++;
+        }
+      }
+    });
+
+    return Object.values(months);
+  };
+
+  const getBarHeight = (count, max) => {
+    if (max === 0) return '0%';
+    return `${(count / max) * 100}%`;
+  };
+
   const stats = getDashboardStats();
   const activeBookingsList = getDetailedActiveBookings();
+  const wingboostStats = getWingboostStatsByMonth();
+  const maxWingboost = Math.max(...wingboostStats.map(s => s.count), 1);
+
+  const returnsStats = getExpectedReturnsByMonth();
+  const maxReturns = Math.max(...returnsStats.map(s => s.count), 1);
 
   return (
     <div>
@@ -71,12 +144,93 @@ export default function DashboardHome() {
         <ExportButton />
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 350px))', gap: '24px' }}>
-        <div className="card" style={{ maxWidth: '350px' }}>
-          <h2>Réservations Actives</h2>
-          <p style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--primary-color)' }}>{stats.activeBookings}</p>
-          <Link href="/bookings" style={{ color: 'var(--text-color)', textDecoration: 'underline' }}>Voir les détails</Link>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+        
+        {/* Réservations Actives */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', minHeight: '220px' }}>
+          <div>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Réservations Actives</h2>
+            <p style={{ fontSize: '48px', fontWeight: 'bold', color: 'var(--primary-color)', margin: '16px 0 8px 0', lineHeight: '1' }}>{stats.activeBookings}</p>
+          </div>
+          <Link href="/bookings" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            Voir les détails →
+          </Link>
         </div>
+
+        {/* Wingboost par mois (Évolution) */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Wingboost par mois (Évolution)</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
+            {wingboostStats.map((s, idx) => {
+              const heightPct = getBarHeight(s.count, maxWingboost);
+              return (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }}>
+                  {/* Bar */}
+                  <div 
+                    title={`${s.count} wingboost`}
+                    style={{
+                      width: '100%',
+                      height: heightPct,
+                      background: 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)',
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }} 
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'none';
+                    }}
+                  />
+                  
+                  {/* Label */}
+                  <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Retours prévus (Mois en cours & suiv.) */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Retours prévus (Mois en cours & suiv.)</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
+            {returnsStats.map((s, idx) => {
+              const heightPct = getBarHeight(s.count, maxReturns);
+              return (
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }}>
+                  {/* Bar */}
+                  <div 
+                    title={`${s.count} retour${s.count > 1 ? 's' : ''}`}
+                    style={{
+                      width: '100%',
+                      height: heightPct,
+                      background: 'linear-gradient(180deg, #F97316 0%, #C2410C 100%)',
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }} 
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.filter = 'brightness(1.1)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.filter = 'none';
+                    }}
+                  />
+                  
+                  {/* Label */}
+                  <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>
+                    {s.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
 
       {/* Alertes / Retards */}
