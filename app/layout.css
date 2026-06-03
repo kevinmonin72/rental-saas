@@ -56,6 +56,29 @@
   font-weight: 600;
 }
 
+.sidebar-sublink {
+  padding: 8px 12px 8px 24px;
+  border-radius: var(--border-radius-md);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 13.5px;
+  text-decoration: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+}
+
+.sidebar-sublink:hover {
+  background-color: #F3F4F6;
+  color: var(--text-main);
+}
+
+.sidebar-sublink.active {
+  background-color: #FFF7ED;
+  color: var(--primary-hover);
+  font-weight: 600;
+}
+
 .main-content {
   flex: 1;
   padding: 32px;
