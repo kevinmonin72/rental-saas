@@ -71,21 +71,11 @@ export default function DashboardHome() {
         <ExportButton />
       </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px' }}>
-        <div className="card">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 350px))', gap: '24px' }}>
+        <div className="card" style={{ maxWidth: '350px' }}>
           <h2>Réservations Actives</h2>
           <p style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--primary-color)' }}>{stats.activeBookings}</p>
           <Link href="/bookings" style={{ color: 'var(--text-color)', textDecoration: 'underline' }}>Voir les détails</Link>
-        </div>
-        <div className="card">
-          <h2>Matériel Disponible</h2>
-          <p style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--primary-color)' }}>{stats.availableEquipmentCount}</p>
-          <Link href="/inventory" style={{ color: 'var(--text-color)', textDecoration: 'underline' }}>Gérer le stock</Link>
-        </div>
-        <div className="card">
-          <h2>Total Clients</h2>
-          <p style={{ fontSize: '36px', fontWeight: 'bold', color: 'var(--primary-color)' }}>{stats.totalCustomers}</p>
-          <Link href="/customers" style={{ color: 'var(--text-color)', textDecoration: 'underline' }}>Voir les clients</Link>
         </div>
       </div>
 
