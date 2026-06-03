@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import styles from './CalendarWidget.module.css';
 
 // Helper to parse "YYYY-MM-DD" as local midnight
@@ -132,9 +133,11 @@ export default function CalendarWidget({ bookings }) {
             return (
               <div key={`${b.id}-${i}`} className={styles.row}>
                 <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
-                  {b.first_name} {b.last_name}
+                  <Link href={`/bookings?bookingId=${b.id}`} className={styles.clientLink}>
+                    {b.first_name} {b.last_name}
+                  </Link>
                 </div>
-                  <div className={styles.daysGrid}>
+                <div className={styles.daysGrid}>
                   {/* Background grid lines */}
                   {days.map((_, i) => (
                     <div key={i} className={styles.dayCell} style={{ gridRow: 1, gridColumn: i + 1 }}></div>
@@ -145,9 +148,11 @@ export default function CalendarWidget({ bookings }) {
                     className={styles.barContainer}
                     style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
-                    <div className={styles.bar} title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
-                      {b.rental_type === 'wingboost' ? '🚀 Wingboost' : '🕒 Ponctuelle'}
-                    </div>
+                    <Link href={`/bookings?bookingId=${b.id}`} style={{ display: 'block', height: '100%', textDecoration: 'none' }}>
+                      <div className={styles.bar} title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
+                        {b.rental_type === 'wingboost' ? '🚀 Wingboost' : '🕒 Ponctuelle'}
+                      </div>
+                    </Link>
                   </div>
                 </div>
               </div>

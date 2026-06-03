@@ -27,6 +27,7 @@ export default function BookingsPage() {
   const [pauseEnd, setPauseEnd] = useState('');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [rentalTypeFilter, setRentalTypeFilter] = useState('all');
+  const [highlightedBookingId, setHighlightedBookingId] = useState(null);
 
   const { 
     customers, 
@@ -151,6 +152,8 @@ export default function BookingsPage() {
     setPauseStart('');
     setPauseEnd('');
     setSelectedCustomerId('');
+    setHighlightedBookingId(null);
+    setSearchQuery('');
   };
 
   const handleEdit = (booking) => {
@@ -173,6 +176,8 @@ export default function BookingsPage() {
     setPauseStart('');
     setPauseEnd('');
     setSelectedCustomerId('');
+    setHighlightedBookingId(null);
+    setSearchQuery('');
   };
 
   const handleSelectAll = (e, list) => {
@@ -193,6 +198,32 @@ export default function BookingsPage() {
       setSelectedIds([]);
     }
   };
+
+  useEffect(() => {
+    if (mounted && bookings.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const bookingId = params.get('bookingId');
+      if (bookingId) {
+        const detailedActive = getDetailedActiveBookings();
+        const detailedPast = getDetailedPastBookings();
+        const b = detailedActive.find(x => x.id === bookingId) || detailedPast.find(x => x.id === bookingId);
+        
+        if (b) {
+          if (b.status === 'active') {
+            handleEdit(b);
+          }
+          setHighlightedBookingId(bookingId);
+          
+          const fullName = formatName(b.first_name, b.last_name);
+          setSearchQuery(fullName);
+
+          // Nettoie l'URL sans recharger la page
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
+        }
+      }
+    }
+  }, [mounted, bookings]);
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
@@ -414,15 +445,18 @@ export default function BookingsPage() {
                 const endDate = new Date(booking.end_date);
                 endDate.setHours(0, 0, 0, 0);
                 const isLate = endDate < today;
+                const isHighlighted = highlightedBookingId === booking.id;
 
                 return (
                   <div key={booking.id} className="card" style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '16px',
-                    borderLeft: `4px solid ${isLate ? '#ef4444' : 'var(--primary-color)'}`,
-                    backgroundColor: isLate ? '#FEF2F2' : 'var(--surface-color)',
-                    padding: '16px'
+                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : (isLate ? '#ef4444' : 'var(--primary-color)')}`,
+                    backgroundColor: isHighlighted ? '#FEF3C7' : (isLate ? '#FEF2F2' : 'var(--surface-color)'),
+                    padding: '16px',
+                    boxShadow: isHighlighted ? '0 0 0 2px #f59e0b' : 'none',
+                    transition: 'all 0.3s ease-in-out'
                   }}>
                     <input 
                       type="checkbox" 
@@ -522,67 +556,73 @@ export default function BookingsPage() {
             <p style={{ color: 'var(--text-light)' }}>Aucun historique disponible.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {pastBookings.map(booking => (
-                <div key={booking.id} className="card" style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '16px',
-                  borderLeft: '4px solid #10B981', // Green for completed
-                  opacity: 0.8,
-                  padding: '16px'
-                }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(booking.id)}
-                    onChange={() => toggleSelect(booking.id)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                      <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
-                        {formatName(booking.first_name, booking.last_name)}
-                      </h3>
-                      {booking.rental_type === 'wingboost' ? (
-                        <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
-                      ) : (
-                        <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
-                      )}
+              {pastBookings.map(booking => {
+                const isHighlighted = highlightedBookingId === booking.id;
+                return (
+                  <div key={booking.id} className="card" style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '16px',
+                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : '#10B981'}`, // Green for completed, Orange if highlighted
+                    opacity: isHighlighted ? 1 : 0.8,
+                    backgroundColor: isHighlighted ? '#FEF3C7' : 'var(--surface-color)',
+                    padding: '16px',
+                    boxShadow: isHighlighted ? '0 0 0 2px #f59e0b' : 'none',
+                    transition: 'all 0.3s ease-in-out'
+                  }}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.includes(booking.id)}
+                      onChange={() => toggleSelect(booking.id)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <h3 style={{ margin: 0, color: 'var(--text-main)' }}>
+                          {formatName(booking.first_name, booking.last_name)}
+                        </h3>
+                        {booking.rental_type === 'wingboost' ? (
+                          <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
+                        ) : (
+                          <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
+                        )}
+                      </div>
+                      <div style={{ margin: '8px 0', color: 'var(--text-main)' }}>
+                        <strong>Matériel rendu ({booking.equipments?.length}) :</strong>
+                        <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
+                          {booking.equipments?.map(eq => (
+                            <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
+                          ))}
+                        </ul>
+                      </div>
+                      <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
+                        Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
+                      </p>
+                      {booking.pause_start && booking.pause_end && (() => {
+                        const ps = new Date(booking.pause_start);
+                        const pe = new Date(booking.pause_end);
+                        if (pe >= ps) {
+                          const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                          const newEnd = new Date(booking.end_date);
+                          newEnd.setDate(newEnd.getDate() + diffDays);
+                          return (
+                            <p style={{ margin: '4px 0 0 0', color: 'var(--text-light)', fontSize: '14px', fontStyle: 'italic' }}>
+                              Pause du {ps.toLocaleDateString('fr-FR')} au {pe.toLocaleDateString('fr-FR')} et nouvelle fin le {newEnd.toLocaleDateString('fr-FR')}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
-                    <div style={{ margin: '8px 0', color: 'var(--text-main)' }}>
-                      <strong>Matériel rendu ({booking.equipments?.length}) :</strong>
-                      <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
-                        {booking.equipments?.map(eq => (
-                          <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
-                        ))}
-                      </ul>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
+                      </div>
+                      <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
                     </div>
-                    <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
-                      Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
-                    </p>
-                    {booking.pause_start && booking.pause_end && (() => {
-                      const ps = new Date(booking.pause_start);
-                      const pe = new Date(booking.pause_end);
-                      if (pe >= ps) {
-                        const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
-                        const newEnd = new Date(booking.end_date);
-                        newEnd.setDate(newEnd.getDate() + diffDays);
-                        return (
-                          <p style={{ margin: '4px 0 0 0', color: 'var(--text-light)', fontSize: '14px', fontStyle: 'italic' }}>
-                            Pause du {ps.toLocaleDateString('fr-FR')} au {pe.toLocaleDateString('fr-FR')} et nouvelle fin le {newEnd.toLocaleDateString('fr-FR')}
-                          </p>
-                        );
-                      }
-                      return null;
-                    })()}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
-                    </div>
-                    <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
