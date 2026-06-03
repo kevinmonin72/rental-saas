@@ -127,6 +127,43 @@ export default function DashboardHome() {
 
   return (
     <div>
+      <style dangerouslySetInnerHTML={{ __html: `
+        .chart-bar-container {
+          position: relative;
+        }
+        .chart-tooltip {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translate(-50%, -4px);
+          background-color: #1F2937;
+          color: #FFFFFF;
+          padding: 6px 10px;
+          border-radius: 6px;
+          font-size: 11px;
+          font-weight: 600;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.15s ease, transform 0.15s ease;
+          white-space: nowrap;
+          z-index: 50;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .chart-tooltip::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 4px;
+          border-style: solid;
+          border-color: #1F2937 transparent transparent transparent;
+        }
+        .chart-bar-container:hover .chart-tooltip {
+          opacity: 1;
+          transform: translate(-50%, -8px);
+        }
+      `}} />
       {localDataToMigrate && (
         <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -164,10 +201,13 @@ export default function DashboardHome() {
             {wingboostStats.map((s, idx) => {
               const heightPct = getBarHeight(s.count, maxWingboost);
               return (
-                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }}>
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
+                  {/* Tooltip showing number of people */}
+                  <div className="chart-tooltip">
+                    {s.count} {s.count > 1 ? 'personnes' : 'personne'}
+                  </div>
                   {/* Bar */}
                   <div 
-                    title={`${s.count} wingboost`}
                     style={{
                       width: '100%',
                       height: heightPct,
@@ -201,10 +241,13 @@ export default function DashboardHome() {
             {returnsStats.map((s, idx) => {
               const heightPct = getBarHeight(s.count, maxReturns);
               return (
-                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }}>
+                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
+                  {/* Tooltip showing number of people */}
+                  <div className="chart-tooltip">
+                    {s.count} {s.count > 1 ? 'personnes' : 'personne'}
+                  </div>
                   {/* Bar */}
                   <div 
-                    title={`${s.count} retour${s.count > 1 ? 's' : ''}`}
                     style={{
                       width: '100%',
                       height: heightPct,
