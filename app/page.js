@@ -343,7 +343,7 @@ export default function DashboardHome() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <h3 style={{ margin: '0 0 8px 0', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '12px', color: '#B91C1C', fontWeight: 'normal', backgroundColor: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>#{booking.id.split('-')[0].toUpperCase()}</span>
+                          <span style={{ fontSize: '12px', color: '#B91C1C', fontWeight: 'normal', backgroundColor: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>#{booking.reference || booking.id.split('-')[0].toUpperCase()}</span>
                           {booking.first_name} {booking.last_name}
                         </h3>
                         {(() => {

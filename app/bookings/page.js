@@ -639,7 +639,7 @@ export default function BookingsPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
                         <h3 style={{ margin: 0, color: isLate ? '#991B1B' : 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 'normal', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '4px' }}>#{booking.id.split('-')[0].toUpperCase()}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 'normal', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '4px' }}>#{booking.reference || booking.id.split('-')[0].toUpperCase()}</span>
                           {formatName(booking.first_name, booking.last_name)}
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
@@ -802,7 +802,7 @@ export default function BookingsPage() {
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                         <h3 style={{ margin: 0, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 'normal', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '4px' }}>#{booking.id.split('-')[0].toUpperCase()}</span>
+                          <span style={{ fontSize: '12px', color: 'var(--text-light)', fontWeight: 'normal', backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: '4px' }}>#{booking.reference || booking.id.split('-')[0].toUpperCase()}</span>
                           {formatName(booking.first_name, booking.last_name)}
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
