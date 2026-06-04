@@ -192,24 +192,33 @@ export default function InvoiceGenerator() {
     <div className="invoice-page-container">
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          body * {
-            visibility: hidden;
+          @page { margin: 0; size: auto; }
+          body { 
+            background: white; 
+            margin: 0; 
+            padding: 0; 
           }
-          #printable-invoice, #printable-invoice * {
-            visibility: visible;
+          /* Hide sidebar and form */
+          .sidebar, .no-print {
+            display: none !important;
           }
+          /* Reset layout wrappers to block and take full width */
+          .app-layout, .main-content, .invoice-page-container, .invoice-layout {
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+          }
+          /* Style the invoice exactly for A4 or auto size */
           #printable-invoice {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            padding: 0;
-            margin: 0;
             box-shadow: none !important;
             border: none !important;
-          }
-          .no-print {
-            display: none !important;
+            padding: 2cm !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
           }
         }
       `}} />
