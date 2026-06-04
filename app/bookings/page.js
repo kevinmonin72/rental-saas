@@ -436,7 +436,13 @@ export default function BookingsPage() {
                 
                 {(() => {
                   const foundBookingRef = equipmentSearch.trim().replace(/^#/, '').toUpperCase();
-                  const matchingBookingForEquipments = foundBookingRef.length > 3 ? bookings.find(b => (b.reference || '').toUpperCase() === foundBookingRef) : null;
+                  let matchingBookingForEquipments = null;
+                  if (foundBookingRef.length >= 2) {
+                    matchingBookingForEquipments = bookings.find(b => (b.reference || '').toUpperCase() === foundBookingRef);
+                    if (!matchingBookingForEquipments) {
+                      matchingBookingForEquipments = bookings.find(b => (b.reference || '').toUpperCase().includes(foundBookingRef));
+                    }
+                  }
                   
                   if (matchingBookingForEquipments) {
                     return (
