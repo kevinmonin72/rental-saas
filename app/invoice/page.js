@@ -78,6 +78,7 @@ export default function InvoiceGenerator() {
   const [searchResults, setSearchResults] = useState([]);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [paymentLink, setPaymentLink] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -224,6 +225,50 @@ export default function InvoiceGenerator() {
       setIsGeneratingLink(false);
     }
   };
+
+  const handleSendEmail = async () => {
+    const email = prompt("Veuillez saisir l'adresse email du client :", "");
+    if (!email) return;
+
+    setIsSending(true);
+    try {
+      const element = document.getElementById('printable-invoice');
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const pdfBase64 = await html2pdf().from(element).set({
+        margin: 1,
+        filename: `Facture_${invoiceData.number}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+      }).outputPdf('datauristring');
+
+      const totalAmount = calculateTotal();
+      const res = await fetch('/api/invoice/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          description: `Facture The Ridery ${invoiceData.number} - ${invoiceData.clientName}`,
+          invoiceNumber: invoiceData.number,
+          customerEmail: email,
+          pdfBase64: pdfBase64
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("L'email a été envoyé avec succès avec la facture en pièce jointe et le lien de paiement !");
+      } else {
+        alert("Erreur lors de l'envoi : " + (data.error || "Inconnue"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erreur réseau ou serveur lors de l'envoi.");
+    } finally {
+      setIsSending(false);
+    }
+  };
   return (
     <div className="invoice-page-container">
       <style dangerouslySetInnerHTML={{__html: `
@@ -276,6 +321,9 @@ export default function InvoiceGenerator() {
               <span>💳</span> {isGeneratingLink ? 'Création...' : 'Lien de paiement'}
             </button>
           )}
+          <button className="btn" style={{ backgroundColor: '#F59E0B', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} onClick={handleSendEmail} disabled={isSending}>
+            <span>✉️</span> {isSending ? 'Envoi...' : 'Envoyer au client'}
+          </button>
           <button className="btn btn-primary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px' }}>
             <span>🖨️</span> Imprimer / PDF
           </button>
