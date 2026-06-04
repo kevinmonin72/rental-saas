@@ -389,7 +389,7 @@ export default function DashboardHome() {
                           );
                         })()}
                       </div>
-                      <Link href="/bookings" className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
+                      <Link href={`/bookings?bookingId=${booking.id}`} className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
                         Gérer
                       </Link>
                     </div>
