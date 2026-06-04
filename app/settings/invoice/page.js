@@ -78,25 +78,38 @@ export default function InvoiceGenerator() {
   const handleQuickAddRef = (e) => {
     e.preventDefault();
     if (!quickRef.trim()) return;
-    const eq = GENERIC_EQUIPMENTS.find(e => e.reference.toLowerCase() === quickRef.trim().toLowerCase());
-    if (eq) {
-      setInvoiceData({
-        ...invoiceData,
-        items: [
-          ...invoiceData.items, 
-          { 
-            id: Date.now(), 
-            reference: eq.reference, 
-            description: eq.name, 
-            quantity: 1, 
-            unitPrice: getPricePerDay(eq.reference) 
-          }
-        ]
-      });
-      setQuickRef('');
-    } else {
-      alert("Référence introuvable.");
+    
+    // Exact match
+    let eq = GENERIC_EQUIPMENTS.find(e => e.reference.toLowerCase() === quickRef.trim().toLowerCase());
+    
+    // If no exact match, try partial match if only 1 result
+    if (!eq) {
+      const matches = GENERIC_EQUIPMENTS.filter(e => e.reference.toLowerCase().includes(quickRef.toLowerCase()) || e.name.toLowerCase().includes(quickRef.toLowerCase()));
+      if (matches.length === 1) eq = matches[0];
     }
+
+    if (eq) {
+      addEqToInvoice(eq);
+    } else {
+      alert("Référence introuvable ou plusieurs correspondances. Veuillez cliquer sur une suggestion.");
+    }
+  };
+
+  const addEqToInvoice = (eq) => {
+    setInvoiceData({
+      ...invoiceData,
+      items: [
+        ...invoiceData.items, 
+        { 
+          id: Date.now(), 
+          reference: eq.reference, 
+          description: eq.name, 
+          quantity: 1, 
+          unitPrice: getPricePerDay(eq.reference) 
+        }
+      ]
+    });
+    setQuickRef('');
   };
 
   const handleAddItem = () => {
@@ -147,6 +160,10 @@ export default function InvoiceGenerator() {
   const handlePrint = () => {
     window.print();
   };
+
+  const searchResults = quickRef.length > 1 
+    ? GENERIC_EQUIPMENTS.filter(e => e.reference.toLowerCase().includes(quickRef.toLowerCase()) || e.name.toLowerCase().includes(quickRef.toLowerCase())).slice(0, 8) 
+    : [];
 
   return (
     <div className="invoice-page-container">
@@ -228,14 +245,31 @@ export default function InvoiceGenerator() {
             </div>
             
             <form onSubmit={handleQuickAddRef} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Entrez une référence (ex: LOK-SURF) puis Entrée" 
-                value={quickRef}
-                onChange={e => setQuickRef(e.target.value)}
-                style={{ flex: 1, fontSize: '13px' }}
-              />
+              <div style={{ position: 'relative', flex: 1 }}>
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="Chercher un produit par référence ou nom..." 
+                  value={quickRef}
+                  onChange={e => setQuickRef(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px' }}
+                />
+                {quickRef.length > 1 && searchResults.length > 0 && (
+                  <ul style={{ position: 'absolute', top: '100%', left: 0, right: 0, backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '4px', zIndex: 10, listStyle: 'none', padding: 0, margin: 0, maxHeight: '200px', overflowY: 'auto', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                    {searchResults.map(eq => (
+                      <li 
+                        key={eq.reference} 
+                        style={{ padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid #F3F4F6', fontSize: '13px' }}
+                        onMouseDown={() => addEqToInvoice(eq)} // using onMouseDown to fire before input blur if we add blur later
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}
+                      >
+                        <strong>{eq.reference}</strong> - {eq.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <button type="submit" className="btn btn-primary" style={{ padding: '0 16px', fontSize: '13px' }}>Ajouter</button>
             </form>
             
