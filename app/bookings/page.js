@@ -276,17 +276,30 @@ export default function BookingsPage() {
 
       // 3. End Month Filter
       if (endMonthFilter) {
-        let endDate = new Date(b.end_date);
+        let baseEndDate = new Date(b.end_date);
         if (b.pause_start && b.pause_end) {
           const ps = new Date(b.pause_start);
           const pe = new Date(b.pause_end);
           if (pe >= ps) {
             const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
-            endDate.setDate(endDate.getDate() + diffDays);
+            baseEndDate.setDate(baseEndDate.getDate() + diffDays);
           }
         }
-        const key = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
-        if (key !== endMonthFilter) {
+        
+        let matches = false;
+        
+        if (b.equipments && b.equipments.length > 0) {
+          b.equipments.forEach(eq => {
+            const itemEnd = eq.customEnd ? new Date(eq.customEnd) : baseEndDate;
+            const key = `${itemEnd.getFullYear()}-${String(itemEnd.getMonth() + 1).padStart(2, '0')}`;
+            if (key === endMonthFilter) matches = true;
+          });
+        } else {
+          const key = `${baseEndDate.getFullYear()}-${String(baseEndDate.getMonth() + 1).padStart(2, '0')}`;
+          if (key === endMonthFilter) matches = true;
+        }
+
+        if (!matches) {
           return false;
         }
       }
