@@ -342,7 +342,10 @@ export default function DashboardHome() {
                   <div key={booking.id} className="card" style={{ borderLeft: '4px solid #ef4444', backgroundColor: '#FEF2F2' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <h3 style={{ margin: '0 0 8px 0', color: '#991B1B' }}>{booking.first_name} {booking.last_name}</h3>
+                        <h3 style={{ margin: '0 0 8px 0', color: '#991B1B', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '12px', color: '#B91C1C', fontWeight: 'normal', backgroundColor: '#FEE2E2', padding: '2px 6px', borderRadius: '4px' }}>#{booking.id.split('-')[0].toUpperCase()}</span>
+                          {booking.first_name} {booking.last_name}
+                        </h3>
                         {(() => {
                           let effectiveEnd = new Date(booking.end_date);
                           if (booking.pause_start && booking.pause_end) {
