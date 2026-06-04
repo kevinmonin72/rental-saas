@@ -584,9 +584,29 @@ export default function BookingsPage() {
               {activeBookings.map(booking => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const endDate = new Date(booking.end_date);
-                endDate.setHours(0, 0, 0, 0);
-                const isLate = endDate < today;
+
+                let baseEndDate = new Date(booking.end_date);
+                if (booking.pause_start && booking.pause_end) {
+                  const ps = new Date(booking.pause_start);
+                  const pe = new Date(booking.pause_end);
+                  if (pe >= ps) {
+                    const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                    baseEndDate.setDate(baseEndDate.getDate() + diffDays);
+                  }
+                }
+                baseEndDate.setHours(0, 0, 0, 0);
+
+                let isLate = baseEndDate < today;
+                if (!isLate && booking.equipments) {
+                  isLate = booking.equipments.some(eq => {
+                    if (eq.customEnd) {
+                      const eqEndDate = new Date(eq.customEnd);
+                      eqEndDate.setHours(0, 0, 0, 0);
+                      return eqEndDate < today;
+                    }
+                    return false;
+                  });
+                }
                 const isHighlighted = highlightedBookingId === booking.id;
 
                 return (
