@@ -64,7 +64,7 @@ export default function DashboardHome() {
 
     // Count wingboost bookings matching month keys
     bookings.forEach(b => {
-      if (b.rental_type === 'wingboost' && b.status === 'active') {
+      if (b.rental_type === 'wingboost') {
         const start = new Date(b.start_date);
         const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
         if (months[key]) {
@@ -89,11 +89,9 @@ export default function DashboardHome() {
       months[key] = { key, label, count: 0 };
     }
 
-    // Count expected returns in these months
+    // Count expected wingboost returns in these months
     bookings.forEach(b => {
-      if (b.status === 'active') {
-        const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
-        
+      if (b.status === 'active' && b.rental_type === 'wingboost') {
         // Base end date of the booking
         let baseEndDate = new Date(b.end_date);
         if (b.pause_start && b.pause_end) {
@@ -105,20 +103,9 @@ export default function DashboardHome() {
           }
         }
         
-        if (bItems.length > 0) {
-          bItems.forEach(item => {
-            const itemEndDate = item.end_date ? new Date(item.end_date) : baseEndDate;
-            const key = `${itemEndDate.getFullYear()}-${String(itemEndDate.getMonth() + 1).padStart(2, '0')}`;
-            if (months[key]) {
-              months[key].count++; // Count each equipment return
-            }
-          });
-        } else {
-          // If no items, just use the booking end date
-          const key = `${baseEndDate.getFullYear()}-${String(baseEndDate.getMonth() + 1).padStart(2, '0')}`;
-          if (months[key]) {
-            months[key].count++;
-          }
+        const key = `${baseEndDate.getFullYear()}-${String(baseEndDate.getMonth() + 1).padStart(2, '0')}`;
+        if (months[key]) {
+          months[key].count++; // Count 1 for the wingboost return
         }
       }
     });
@@ -255,7 +242,7 @@ export default function DashboardHome() {
 
         {/* Retours prévus (Mois en cours & suiv.) */}
         <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Retours prévus (Mois en cours & suiv.)</h2>
+          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Retours Wingboost prévus</h2>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
             {returnsStats.map((s, idx) => {
               const heightPct = getBarHeight(s.count, maxReturns);
@@ -263,11 +250,11 @@ export default function DashboardHome() {
                 <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
                   {/* Tooltip showing number of people */}
                   <div className="chart-tooltip">
-                    {s.count} {s.count > 1 ? 'personnes' : 'personne'}
+                    {s.count} {s.count > 1 ? 'retours' : 'retour'}
                   </div>
                   {/* Bar */}
                   <Link 
-                    href={`/bookings?endMonth=${s.key}`}
+                    href={`/bookings?endMonth=${s.key}&rentalType=wingboost`}
                     style={{ display: 'block', width: '100%', height: heightPct }}
                   >
                     <div 
