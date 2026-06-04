@@ -80,9 +80,8 @@ export default function CalendarWidget({ bookings }) {
     days.push(d);
   }
 
-  // Process bookings to flatten into individual equipment items with their own dates
-  const processedItems = [];
-  bookings.forEach(b => {
+  // Process bookings to account for pauses and custom equipment dates
+  const processedBookings = bookings.map(b => {
     let baseEnd = new Date(b.end_date);
     if (b.pause_start && b.pause_end) {
       const ps = new Date(b.pause_start);
@@ -93,35 +92,33 @@ export default function CalendarWidget({ bookings }) {
       }
     }
     
+    let effectiveStart = new Date(b.start_date);
+    let effectiveEnd = new Date(baseEnd);
+    
     if (b.equipments && b.equipments.length > 0) {
-      b.equipments.forEach((eq, idx) => {
-        const itemStart = eq.customStart ? new Date(eq.customStart) : new Date(b.start_date);
-        const itemEnd = eq.customEnd ? new Date(eq.customEnd) : baseEnd;
-        processedItems.push({
-          ...b,
-          unique_key: `${b.id}-${eq.id || idx}`,
-          eq_name: eq.name,
-          eq_ref: eq.reference,
-          effective_start_date: itemStart.toISOString().split('T')[0],
-          effective_end_date: itemEnd.toISOString().split('T')[0]
-        });
-      });
-    } else {
-      processedItems.push({
-        ...b,
-        unique_key: `${b.id}-no-eq`,
-        eq_name: '',
-        eq_ref: '',
-        effective_start_date: b.start_date,
-        effective_end_date: baseEnd.toISOString().split('T')[0]
+      b.equipments.forEach(eq => {
+        if (eq.customStart) {
+          const itemStart = new Date(eq.customStart);
+          if (itemStart < effectiveStart) effectiveStart = itemStart;
+        }
+        if (eq.customEnd) {
+          const itemEnd = new Date(eq.customEnd);
+          if (itemEnd > effectiveEnd) effectiveEnd = itemEnd;
+        }
       });
     }
+
+    return {
+      ...b,
+      effective_start_date: effectiveStart.toISOString().split('T')[0],
+      effective_end_date: effectiveEnd.toISOString().split('T')[0]
+    };
   });
 
-  // Filter items that overlap with the view window
-  const visibleItems = processedItems.filter(item => {
-    const bStart = parseLocalDate(item.effective_start_date);
-    const bEnd = parseLocalDate(item.effective_end_date);
+  // Filter bookings that overlap with the view window
+  const visibleBookings = processedBookings.filter(b => {
+    const bStart = parseLocalDate(b.effective_start_date);
+    const bEnd = parseLocalDate(b.effective_end_date);
     return bEnd >= viewStart && bStart <= viewEnd;
   });
 
@@ -163,10 +160,10 @@ export default function CalendarWidget({ bookings }) {
         </div>
 
         {/* Booking Rows */}
-        {visibleItems.length > 0 ? (
-          visibleItems.map((item, i) => {
-            const bStart = parseLocalDate(item.effective_start_date);
-            const bEnd = parseLocalDate(item.effective_end_date);
+        {visibleBookings.length > 0 ? (
+          visibleBookings.map((b, i) => {
+            const bStart = parseLocalDate(b.effective_start_date);
+            const bEnd = parseLocalDate(b.effective_end_date);
             
             // Calculate grid columns
             // Column 1 is the first day. Column 15 is the end boundary.
@@ -178,16 +175,11 @@ export default function CalendarWidget({ bookings }) {
             if (endCol > DAYS_TO_SHOW + 1) endCol = DAYS_TO_SHOW + 1;
 
             return (
-              <div key={item.unique_key} className={styles.row}>
+              <div key={`${b.id}-${i}`} className={styles.row}>
                 <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
-                  <Link href={`/bookings?bookingId=${item.id}`} className={styles.clientLink}>
-                    {item.first_name} {item.last_name} <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 'normal', marginLeft: '4px', whiteSpace: 'nowrap' }}>({getRemainingMonths(item.effective_end_date)})</span>
+                  <Link href={`/bookings?bookingId=${b.id}`} className={styles.clientLink}>
+                    {b.first_name} {b.last_name} <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 'normal', marginLeft: '4px', whiteSpace: 'nowrap' }}>({getRemainingMonths(b.effective_end_date)})</span>
                   </Link>
-                  {item.eq_name && (
-                    <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {item.eq_name} {item.eq_ref ? `(${item.eq_ref})` : ''}
-                    </div>
-                  )}
                 </div>
                 <div className={styles.daysGrid}>
                   {/* Background grid lines */}
@@ -200,11 +192,11 @@ export default function CalendarWidget({ bookings }) {
                     className={styles.barContainer}
                     style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
-                    <Link href={`/bookings?bookingId=${item.id}`} style={{ display: 'block', height: '100%', textDecoration: 'none' }}>
-                      <div className={styles.bar} title={`${item.eq_name} (Réf: ${item.eq_ref || 'N/A'})`}>
-                        {item.rental_type === 'wingboost' ? '🚀 Wingboost' : 
-                         item.rental_type === 'demi_matin' ? '☀️ ½j. Matin' :
-                         item.rental_type === 'demi_aprem' ? '⛅ ½j. Aprem' : '🕒 Ponctuelle'}
+                    <Link href={`/bookings?bookingId=${b.id}`} style={{ display: 'block', height: '100%', textDecoration: 'none' }}>
+                      <div className={styles.bar} title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
+                        {b.rental_type === 'wingboost' ? '🚀 Wingboost' : 
+                         b.rental_type === 'demi_matin' ? '☀️ ½j. Matin' :
+                         b.rental_type === 'demi_aprem' ? '⛅ ½j. Aprem' : '🕒 Ponctuelle'}
                       </div>
                     </Link>
                   </div>
