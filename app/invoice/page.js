@@ -232,33 +232,18 @@ export default function InvoiceGenerator() {
 
     setIsSending(true);
     try {
-      const element = document.getElementById('printable-invoice');
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const pdfBase64 = await html2pdf().from(element).set({
-        margin: 1,
-        filename: `Facture_${invoiceData.number}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-      }).outputPdf('datauristring');
-
-      const totalAmount = calculateTotal();
       const res = await fetch('/api/invoice/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount: totalAmount,
-          description: `Facture The Ridery ${invoiceData.number} - ${invoiceData.clientName}`,
-          invoiceNumber: invoiceData.number,
-          customerEmail: email,
-          pdfBase64: pdfBase64
+          invoiceData,
+          customerEmail: email
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        alert("L'email a été envoyé avec succès avec la facture en pièce jointe et le lien de paiement !");
+        alert("La facture officielle a été générée et envoyée par Stripe au client avec succès !");
       } else {
         alert("Erreur lors de l'envoi : " + (data.error || "Inconnue"));
       }

@@ -2,103 +2,90 @@ import Stripe from 'stripe';
 
 export async function POST(req) {
   try {
-    const { 
-      amount, 
-      description, 
-      customerEmail, 
-      invoiceNumber,
-      pdfBase64 
-    } = await req.json();
+    const { invoiceData, customerEmail } = await req.json();
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    const resendApiKey = process.env.RESEND_API_KEY;
     
     if (!stripeSecretKey) {
       return new Response(JSON.stringify({ error: "Clé Stripe non configurée" }), { status: 500 });
-    }
-    if (!resendApiKey) {
-      return new Response(JSON.stringify({ error: "Clé Resend non configurée" }), { status: 500 });
     }
     if (!customerEmail) {
       return new Response(JSON.stringify({ error: "L'email du client est requis" }), { status: 400 });
     }
 
-    // 1. Create Stripe Payment Link
     const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
-    const unitAmount = Math.round(amount * 100);
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: `Facture ${invoiceNumber || ''}`,
-            description: description || 'Paiement',
-          },
-          unit_amount: unitAmount,
-        },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      success_url: `${req.headers.get('origin') || 'http://localhost:3000'}/?payment=success`,
-      cancel_url: `${req.headers.get('origin') || 'http://localhost:3000'}/?payment=cancelled`,
-      customer_email: customerEmail,
+    // 1. Find or create Stripe Customer
+    let customer;
+    const existingCustomers = await stripe.customers.list({
+      email: customerEmail,
+      limit: 1
     });
 
-    const paymentLink = session.url;
-
-    // 2. Send email via Resend
-    // Strip the "data:application/pdf;filename=generated.pdf;base64," part
-    const base64Data = pdfBase64.split('base64,')[1];
-
-    const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #1F2937;">Bonjour,</h2>
-        <p style="color: #374151; font-size: 16px;">Veuillez trouver ci-joint votre facture <strong>${invoiceNumber}</strong> d'un montant de <strong>${amount.toFixed(2)} €</strong>.</p>
-        <p style="color: #374151; font-size: 16px;">Vous pouvez régler cette facture en toute sécurité en cliquant sur le bouton ci-dessous :</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${paymentLink}" style="background-color: #6366F1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-            Payer la facture (${amount.toFixed(2)} €)
-          </a>
-        </div>
-        
-        <p style="color: #6B7280; font-size: 14px;">Merci pour votre confiance.<br>L'équipe The Ridery</p>
-      </div>
-    `;
-
-    const resendResponse = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'The Ridery <factures@votredomaine.com>', // The user will need a verified domain in Resend.
-        to: customerEmail,
-        subject: `Facture ${invoiceNumber} - The Ridery`,
-        html: emailHtml,
-        attachments: [
-          {
-            filename: `Facture-${invoiceNumber}.pdf`,
-            content: base64Data
-          }
-        ]
-      })
-    });
-
-    if (!resendResponse.ok) {
-      const errorText = await resendResponse.text();
-      throw new Error(`Erreur Resend: ${errorText}`);
+    if (existingCustomers.data.length > 0) {
+      customer = existingCustomers.data[0];
+    } else {
+      customer = await stripe.customers.create({
+        email: customerEmail,
+        name: invoiceData.clientName || undefined,
+        address: invoiceData.clientAddress ? {
+          line1: invoiceData.clientAddress
+        } : undefined
+      });
     }
 
-    return new Response(JSON.stringify({ success: true, paymentLink }), {
+    // 2. Create Stripe Invoice Items
+    // Stripe invoices collect pending invoice items for a customer.
+    // If there are existing pending items, we should ideally clear them or create a new invoice draft directly,
+    // but the simplest way is to create invoice items and then create the invoice immediately.
+    for (const item of invoiceData.items) {
+      if (!item.description && !item.reference) continue; // Skip empty rows
+      
+      const unitAmount = Math.round(item.unitPrice * 100);
+      
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        currency: 'eur',
+        quantity: item.quantity,
+        unit_amount: unitAmount,
+        description: item.description || item.reference || 'Équipement',
+      });
+    }
+
+    // Add tax as a line item since managing tax rates dynamically via API requires pre-created TaxRate objects in Stripe
+    const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    const taxAmount = subtotal * (invoiceData.taxRate / 100);
+    if (taxAmount > 0) {
+      await stripe.invoiceItems.create({
+        customer: customer.id,
+        currency: 'eur',
+        quantity: 1,
+        unit_amount: Math.round(taxAmount * 100),
+        description: `TVA (${invoiceData.taxRate}%)`,
+      });
+    }
+
+    // 3. Create the Invoice
+    const invoice = await stripe.invoices.create({
+      customer: customer.id,
+      collection_method: 'send_invoice',
+      days_until_due: 30,
+      description: `Facture The Ridery - ${invoiceData.number}`,
+      // Optionally we can set custom fields or metadata
+      metadata: {
+        ridery_invoice_number: invoiceData.number
+      }
+    });
+
+    // 4. Send the Invoice
+    await stripe.invoices.sendInvoice(invoice.id);
+
+    return new Response(JSON.stringify({ success: true, invoiceId: invoice.id }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
-    console.error('Erreur API send invoice:', error);
+    console.error('Erreur Stripe Invoicing:', error);
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
 }
