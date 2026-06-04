@@ -255,7 +255,7 @@ export default function PublicBookingPage() {
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '40px', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step >= 1 ? '#F97316' : '#D1D5DB', color: 'white', fontSize: '14px', fontWeight: 'bold' }}>1</span>
-              <span style={{ fontWeight: step === 1 ? 'bold' : 'normal', color: step === 1 ? '#111827' : '#6B7280', fontSize: '14px' }}>Dates & Type</span>
+              <span style={{ fontWeight: step === 1 ? 'bold' : 'normal', color: step === 1 ? '#111827' : '#6B7280', fontSize: '14px' }}>Dates</span>
             </div>
             <div style={{ width: '40px', height: '2px', backgroundColor: step >= 2 ? '#F97316' : '#D1D5DB' }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -310,22 +310,7 @@ export default function PublicBookingPage() {
                   </div>
                 </div>
 
-                <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#374151', marginBottom: '12px' }}>Type de location</h3>
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-                  <label style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', border: `2px solid ${rentalType === 'ponctuel' ? '#F97316' : '#E5E7EB'}`, borderRadius: '12px', cursor: 'pointer', backgroundColor: rentalType === 'ponctuel' ? '#FFF7ED' : 'transparent', transition: 'all 0.2s' }}>
-                    <input type="radio" name="rentalType" value="ponctuel" checked={rentalType === 'ponctuel'} onChange={() => setRentalType('ponctuel')} style={{ display: 'none' }} />
-                    <span style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>🕒 Ponctuelle</span>
-                    <span style={{ fontSize: '12px', color: '#6B7280' }}>Pour une courte session ou durée fixe standard.</span>
-                  </label>
-
-                  <label style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '16px', border: `2px solid ${rentalType === 'wingboost' ? '#F97316' : '#E5E7EB'}`, borderRadius: '12px', cursor: 'pointer', backgroundColor: rentalType === 'wingboost' ? '#FFF7ED' : 'transparent', transition: 'all 0.2s' }}>
-                    <input type="radio" name="rentalType" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} style={{ display: 'none' }} />
-                    <span style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '4px' }}>🚀 Wingboost</span>
-                    <span style={{ fontSize: '12px', color: '#6B7280' }}>Abonnement mensuel flexible avec options de pauses gratuites.</span>
-                  </label>
-                </div>
-
-                <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s' }}>
+                <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s', marginTop: '16px' }}>
                   Rechercher le matériel disponible →
                 </button>
               </form>
@@ -501,7 +486,6 @@ export default function PublicBookingPage() {
                   <h3 style={{ fontSize: '15px', fontWeight: 700, borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '12px' }}>Détails de la réservation</h3>
                   <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div>📅 <strong>Dates :</strong> Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')}</div>
-                    <div>🚀 <strong>Formule :</strong> {rentalType === 'wingboost' ? 'Abonnement Wingboost' : 'Location ponctuelle'}</div>
                     <div>👤 <strong>Client :</strong> {firstName} {lastName} ({email})</div>
                     <div>📦 <strong>Matériel :</strong>
                       <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
@@ -557,12 +541,7 @@ export default function PublicBookingPage() {
                   )}
                 </div>
 
-                <div>
-                  <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Type</span>
-                  <strong style={{ color: '#F3F4F6', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    {rentalType === 'wingboost' ? '🚀 Wingboost (Mensuel)' : '🕒 Ponctuelle'}
-                  </strong>
-                </div>
+                {/* Type de location masqué car uniquement Ponctuel */}
 
                 <div>
                   <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel sélectionné ({selectedEquipmentIds.length})</span>
