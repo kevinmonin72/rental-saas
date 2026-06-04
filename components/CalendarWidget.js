@@ -163,7 +163,9 @@ export default function CalendarWidget({ bookings }) {
                   >
                     <Link href={`/bookings?bookingId=${b.id}`} style={{ display: 'block', height: '100%', textDecoration: 'none' }}>
                       <div className={styles.bar} title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
-                        {b.rental_type === 'wingboost' ? '🚀 Wingboost' : '🕒 Ponctuelle'}
+                        {b.rental_type === 'wingboost' ? '🚀 Wingboost' : 
+                         b.rental_type === 'demi_matin' ? '☀️ ½j. Matin' :
+                         b.rental_type === 'demi_aprem' ? '⛅ ½j. Aprem' : '🕒 Ponctuelle'}
                       </div>
                     </Link>
                   </div>

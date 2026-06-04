@@ -34,8 +34,11 @@ export default function PublicBookingPage() {
   const [bookingItems, setBookingItems] = useState([]);
 
   // Form State
+  const [durationMode, setDurationMode] = useState('days'); // 'days' | 'half_day'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [halfDayDate, setHalfDayDate] = useState('');
+  const [halfDaySlot, setHalfDaySlot] = useState('demi_matin'); // 'demi_matin' | 'demi_aprem'
   const [rentalType, setRentalType] = useState('ponctuel');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState([]);
   
@@ -111,6 +114,7 @@ export default function PublicBookingPage() {
   }, []);
 
   const getBookingDuration = () => {
+    if (durationMode === 'half_day') return 0.5;
     if (!startDate || !endDate) return 0;
     const s = new Date(startDate);
     const e = new Date(endDate);
@@ -129,18 +133,36 @@ export default function PublicBookingPage() {
         pricePerDayTotal += getPricePerDay(item.reference);
       }
     }
+    
+    // Half-day is 60% of the daily rate (0.6 multiplier)
+    if (durationMode === 'half_day') {
+      return Math.round(pricePerDayTotal * 0.6);
+    }
+    
     return pricePerDayTotal * days;
   };
 
   const handleNextStep1 = (e) => {
     e.preventDefault();
-    if (!startDate || !endDate) {
-      setError('Veuillez sélectionner les dates de début et de fin.');
-      return;
-    }
-    if (new Date(endDate) < new Date(startDate)) {
-      setError('La date de fin doit être postérieure à la date de début.');
-      return;
+    if (durationMode === 'days') {
+      if (!startDate || !endDate) {
+        setError('Veuillez sélectionner les dates de début et de fin.');
+        return;
+      }
+      if (new Date(endDate) < new Date(startDate)) {
+        setError('La date de fin doit être postérieure à la date de début.');
+        return;
+      }
+      setRentalType('ponctuel');
+    } else {
+      if (!halfDayDate) {
+        setError('Veuillez sélectionner la date de location.');
+        return;
+      }
+      // For half-day, start_date and end_date are the same
+      setStartDate(halfDayDate);
+      setEndDate(halfDayDate);
+      setRentalType(halfDaySlot);
     }
     setError('');
     setStep(2);
@@ -232,17 +254,13 @@ export default function PublicBookingPage() {
 
       // 2. Perform Payment processing simulation or real charge
       if (piData.mock) {
-        // Simulate progress loader
         await new Promise(resolve => setTimeout(resolve, 2000));
         console.log("Paiement simulé validé avec succès.");
       } else {
-        // Real Stripe payment handler (loads dynamically Stripe)
         const stripe = window.Stripe ? window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
         if (!stripe) {
           throw new Error('Erreur de chargement du module Stripe.');
         }
-
-        // We simulate payment intent verification locally here, or they could plug elements.
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
@@ -323,7 +341,7 @@ export default function PublicBookingPage() {
             <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'white', letterSpacing: '-0.5px' }}>THE RIDERY WINGBOOST</h1>
           </div>
           <span style={{ fontSize: '13px', color: '#9CA3AF', backgroundColor: '#374151', padding: '6px 12px', borderRadius: '20px', fontWeight: 500 }}>
-            Portail Réservation Client
+            Portail Client
           </span>
         </div>
       </header>
@@ -364,31 +382,74 @@ export default function PublicBookingPage() {
             {/* STEP 1: DATES */}
             {step === 1 && (
               <form onSubmit={handleNextStep1}>
-                <h2 style={{ fontSize: '22px', marginBottom: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>Sélectionnez vos dates de location</h2>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de début</label>
-                    <input 
-                      type="date" 
-                      value={startDate} 
-                      onChange={(e) => setStartDate(e.target.value)} 
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      required 
-                    />
-                  </div>
+                <h2 style={{ fontSize: '22px', marginBottom: '20px', fontWeight: 700, letterSpacing: '-0.5px' }}>Sélectionnez votre formule de location</h2>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de fin</label>
-                    <input 
-                      type="date" 
-                      value={endDate} 
-                      onChange={(e) => setEndDate(e.target.value)} 
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      required 
-                    />
-                  </div>
+                {/* Duration Mode Selector */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
+                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', border: `2px solid ${durationMode === 'days' ? '#F97316' : '#E5E7EB'}`, borderRadius: '8px', cursor: 'pointer', backgroundColor: durationMode === 'days' ? '#FFF7ED' : 'white', fontWeight: 'bold', fontSize: '14px', transition: 'all 0.2s' }}>
+                    <input type="radio" name="durationMode" value="days" checked={durationMode === 'days'} onChange={() => setDurationMode('days')} style={{ display: 'none' }} />
+                    📅 Journée(s) entière(s)
+                  </label>
+                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', border: `2px solid ${durationMode === 'half_day' ? '#F97316' : '#E5E7EB'}`, borderRadius: '8px', cursor: 'pointer', backgroundColor: durationMode === 'half_day' ? '#FFF7ED' : 'white', fontWeight: 'bold', fontSize: '14px', transition: 'all 0.2s' }}>
+                    <input type="radio" name="durationMode" value="half_day" checked={durationMode === 'half_day'} onChange={() => setDurationMode('half_day')} style={{ display: 'none' }} />
+                    ⏱️ Demi-journée (60% tarif)
+                  </label>
                 </div>
+                
+                {durationMode === 'days' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de début</label>
+                      <input 
+                        type="date" 
+                        value={startDate} 
+                        onChange={(e) => setStartDate(e.target.value)} 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                        required 
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de fin</label>
+                      <input 
+                        type="date" 
+                        value={endDate} 
+                        onChange={(e) => setEndDate(e.target.value)} 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                        required 
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '32px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de location</label>
+                      <input 
+                        type="date" 
+                        value={halfDayDate} 
+                        onChange={(e) => setHalfDayDate(e.target.value)} 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                        required 
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Créneau horaire</label>
+                      <div style={{ display: 'flex', gap: '16px' }}>
+                        <label style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px', border: `2px solid ${halfDaySlot === 'demi_matin' ? '#F97316' : '#E5E7EB'}`, borderRadius: '10px', cursor: 'pointer', backgroundColor: halfDaySlot === 'demi_matin' ? '#FFF7ED' : 'white', transition: 'all 0.2s' }}>
+                          <input type="radio" name="halfDaySlot" value="demi_matin" checked={halfDaySlot === 'demi_matin'} onChange={() => setHalfDaySlot('demi_matin')} style={{ display: 'none' }} />
+                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#111827' }}>☀️ Matin</span>
+                          <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>09h00 - 13h00</span>
+                        </label>
+                        <label style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px', border: `2px solid ${halfDaySlot === 'demi_aprem' ? '#F97316' : '#E5E7EB'}`, borderRadius: '10px', cursor: 'pointer', backgroundColor: halfDaySlot === 'demi_aprem' ? '#FFF7ED' : 'white', transition: 'all 0.2s' }}>
+                          <input type="radio" name="halfDaySlot" value="demi_aprem" checked={halfDaySlot === 'demi_aprem'} onChange={() => setHalfDaySlot('demi_aprem')} style={{ display: 'none' }} />
+                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#111827' }}>⛅ Après-midi</span>
+                          <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>14h00 - 18h00</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s', marginTop: '16px' }}>
                   Rechercher le matériel disponible →
@@ -449,7 +510,9 @@ export default function PublicBookingPage() {
                               {item.reference === 'CAT-MAST' && 'Mâts'}
                               {item.reference === 'CAT-ACC' && 'Accessoires (Harnais, Combinaison, Gilet)'}
                             </h3>
-                            <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>{pricePerDay} € / jour</span>
+                            <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
+                              {durationMode === 'half_day' ? `${Math.round(pricePerDay * 0.6)} € / demi-journée` : `${pricePerDay} € / jour`}
+                            </span>
                           </div>
                         </div>
 
@@ -627,7 +690,7 @@ export default function PublicBookingPage() {
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', maxWidth: '500px', margin: '0 auto 32px auto', textAlign: 'left' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '12px' }}>Détails de la réservation</h3>
                   <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div>📅 <strong>Dates :</strong> Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</div>
+                    <div>📅 <strong>Dates :</strong> {durationMode === 'half_day' ? `Le ${new Date(startDate).toLocaleDateString('fr-FR')} (${rentalType === 'demi_matin' ? 'Matin' : 'Après-midi'})` : `Du ${new Date(startDate).toLocaleDateString('fr-FR')} au ${new Date(endDate).toLocaleDateString('fr-FR')} (${getBookingDuration()} jours)`}</div>
                     <div>💰 <strong>Montant payé :</strong> {getBookingTotal()} € (par carte bancaire)</div>
                     <div>👤 <strong>Client :</strong> {firstName} {lastName} ({email})</div>
                     <div>📦 <strong>Matériel réservé :</strong>
@@ -656,6 +719,7 @@ export default function PublicBookingPage() {
                       setStep(1);
                       setStartDate('');
                       setEndDate('');
+                      setHalfDayDate('');
                       setSelectedEquipmentIds([]);
                       setFirstName('');
                       setLastName('');
@@ -689,12 +753,24 @@ export default function PublicBookingPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
                 <div>
                   <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Dates de location</span>
-                  {startDate && endDate ? (
-                    <strong style={{ color: '#F3F4F6' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>
+                  {durationMode === 'half_day' ? (
+                    halfDayDate ? (
+                      <strong style={{ color: '#F3F4F6' }}>
+                        Le {new Date(halfDayDate).toLocaleDateString('fr-FR')} ({halfDaySlot === 'demi_matin' ? 'Matin' : 'Aprem'})
+                      </strong>
+                    ) : (
+                      <em style={{ color: '#9CA3AF' }}>Non définies</em>
+                    )
                   ) : (
-                    <em style={{ color: '#9CA3AF' }}>Non définies</em>
+                    startDate && endDate ? (
+                      <strong style={{ color: '#F3F4F6' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>
+                    ) : (
+                      <em style={{ color: '#9CA3AF' }}>Non définies</em>
+                    )
                   )}
                 </div>
+
+                {/* Type de location masqué car uniquement Ponctuel */}
 
                 <div>
                   <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel choisi ({selectedEquipmentIds.length})</span>
@@ -719,11 +795,13 @@ export default function PublicBookingPage() {
                   )}
                 </div>
 
-                {selectedEquipmentIds.length > 0 && startDate && endDate && (
+                {selectedEquipmentIds.length > 0 && ((durationMode === 'days' && startDate && endDate) || (durationMode === 'half_day' && halfDayDate)) && (
                   <div style={{ borderTop: '1px solid #374151', paddingTop: '16px' }}>
                     <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Montant total</span>
                     <strong style={{ color: '#F97316', fontSize: '20px' }}>{getBookingTotal()} €</strong>
-                    <span style={{ color: '#9CA3AF', display: 'block', fontSize: '11px', marginTop: '2px' }}>Taxes incluses</span>
+                    <span style={{ color: '#9CA3AF', display: 'block', fontSize: '11px', marginTop: '2px' }}>
+                      Taxes incluses {durationMode === 'half_day' && '(60% du tarif jour)'}
+                    </span>
                   </div>
                 )}
 

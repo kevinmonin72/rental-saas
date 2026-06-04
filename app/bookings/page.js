@@ -569,6 +569,10 @@ export default function BookingsPage() {
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
                           <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
+                        ) : booking.rental_type === 'demi_matin' ? (
+                          <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>☀️ ½j (Matin)</span>
+                        ) : booking.rental_type === 'demi_aprem' ? (
+                          <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>⛅ ½j (Aprem)</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
                         )}
@@ -681,6 +685,10 @@ export default function BookingsPage() {
                         </h3>
                         {booking.rental_type === 'wingboost' ? (
                           <span className="badge" style={{ backgroundColor: '#DBEAFE', color: '#1E40AF', border: 'none' }}>🚀 Wingboost</span>
+                        ) : booking.rental_type === 'demi_matin' ? (
+                          <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>☀️ ½j (Matin)</span>
+                        ) : booking.rental_type === 'demi_aprem' ? (
+                          <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>⛅ ½j (Aprem)</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
                         )}
