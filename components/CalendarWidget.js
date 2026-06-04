@@ -29,12 +29,25 @@ function getRemainingMonths(endDateStr) {
   today.setHours(0, 0, 0, 0);
   const end = parseLocalDate(endDateStr);
   end.setHours(0, 0, 0, 0);
-  if (end <= today) return '0 mois';
-  const diffTime = end.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  const diffMonths = diffDays / 30.44;
-  const rounded = parseFloat(diffMonths.toFixed(1));
-  return `${String(rounded).replace('.', ',')} mois`;
+  if (end <= today) return '0 jours';
+  
+  let months = (end.getFullYear() - today.getFullYear()) * 12 + (end.getMonth() - today.getMonth());
+  let days = end.getDate() - today.getDate();
+  
+  if (days < 0) {
+    months--;
+    // Get the number of days in the previous month
+    const prevMonth = new Date(end.getFullYear(), end.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+  
+  if (months > 0 && days > 0) {
+    return `${months} mois et ${days} jour${days > 1 ? 's' : ''}`;
+  } else if (months > 0) {
+    return `${months} mois`;
+  } else {
+    return `${days} jour${days > 1 ? 's' : ''}`;
+  }
 }
 
 export default function CalendarWidget({ bookings }) {
