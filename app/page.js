@@ -342,9 +342,6 @@ export default function DashboardHome() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <h3 style={{ margin: '0 0 8px 0', color: '#991B1B' }}>{booking.first_name} {booking.last_name}</h3>
-                        <p style={{ margin: '0 0 4px 0', color: '#991B1B' }}>
-                          <strong>Matériel :</strong> {(booking.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}
-                        </p>
                         {(() => {
                           let effectiveEnd = new Date(booking.end_date);
                           if (booking.pause_start && booking.pause_end) {
@@ -355,21 +352,41 @@ export default function DashboardHome() {
                               effectiveEnd.setDate(effectiveEnd.getDate() + diffDays);
                             }
                           }
+                          effectiveEnd.setHours(0, 0, 0, 0);
                           
-                          if (effectiveEnd < today) {
-                            return (
-                              <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
-                                L'abonnement complet devait être rendu le {effectiveEnd.toLocaleDateString('fr-FR')}
-                              </p>
-                            );
-                          } else {
-                            return (
-                              <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
-                                Un (ou plusieurs) équipement est en retard !
-                              </p>
-                            );
+                          const isFullBookingLate = effectiveEnd < today;
+                          let lateEquipments = booking.equipments || [];
+                          
+                          if (!isFullBookingLate) {
+                            lateEquipments = lateEquipments.filter(eq => {
+                              if (eq.customEnd) {
+                                const eqEnd = new Date(eq.customEnd);
+                                eqEnd.setHours(0,0,0,0);
+                                return eqEnd < today;
+                              }
+                              return false;
+                            });
                           }
 
+                          return (
+                            <>
+                              <p style={{ margin: '0 0 4px 0', color: '#991B1B' }}>
+                                <strong>Matériel en retard :</strong> {lateEquipments.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`).join(', ')}
+                                {(!isFullBookingLate && booking.equipments && booking.equipments.length > lateEquipments.length) && 
+                                  <span style={{ fontSize: '12px', color: '#B91C1C', fontStyle: 'italic' }}> (+ {booking.equipments.length - lateEquipments.length} autre(s) non en retard)</span>
+                                }
+                              </p>
+                              {isFullBookingLate ? (
+                                <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                                  L'abonnement complet devait être rendu le {effectiveEnd.toLocaleDateString('fr-FR')}
+                                </p>
+                              ) : (
+                                <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                                  Un (ou plusieurs) équipement est en retard !
+                                </p>
+                              )}
+                            </>
+                          );
                         })()}
                       </div>
                       <Link href="/bookings" className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
