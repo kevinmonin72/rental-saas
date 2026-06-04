@@ -192,7 +192,10 @@ export default function InvoiceGenerator() {
     <div className="invoice-page-container">
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
-          @page { margin: 0; size: auto; }
+          @page { 
+            size: A4 portrait; 
+            margin: 1cm; 
+          }
           body { 
             background: white; 
             margin: 0; 
@@ -215,7 +218,7 @@ export default function InvoiceGenerator() {
           #printable-invoice {
             box-shadow: none !important;
             border: none !important;
-            padding: 2cm !important;
+            padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
