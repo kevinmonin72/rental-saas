@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
 import { useStore } from '../../lib/store';
 
@@ -76,7 +77,38 @@ export default function InventoryPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ marginBottom: 0 }}>Gestion de l'Inventaire</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link 
+            href="/settings" 
+            style={{ 
+              textDecoration: 'none', 
+              fontSize: '20px', 
+              color: 'var(--text-main)', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%', 
+              backgroundColor: 'white', 
+              border: '1px solid var(--border-color)', 
+              boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F9FAFB';
+              e.currentTarget.style.transform = 'translateX(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white';
+              e.currentTarget.style.transform = 'none';
+            }}
+          >
+            ←
+          </Link>
+          <h1 style={{ marginBottom: 0 }}>Gestion de l'Inventaire</h1>
+        </div>
         <CsvImporterButton type="equipment" />
       </div>
       
