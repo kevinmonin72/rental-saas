@@ -132,14 +132,35 @@ def crop_and_map():
                 card_img = img.crop((c_start, r_start, c_end, r_end))
                 
                 # Crop the thumbnail image portion:
-                # In Lokki e-commerce card grids, the product image takes up the top portion.
-                # Let's crop the top 65% of the card height, and maybe exclude a small margin.
                 card_w, card_h = card_img.size
                 
-                # On these cards, the image usually occupies the top region.
-                # Let's analyze if there's a header space to crop or if we just crop the top 62%.
-                # Let's crop from y=10 to y=int(card_h * 0.62)
-                thumb_img = card_img.crop((10, 10, card_w - 10, int(card_h * 0.62)))
+                # First, isolate the top part of the card where the image lives (e.g., top 65%)
+                top_region = card_img.crop((5, 5, card_w - 5, int(card_h * 0.65)))
+                
+                # Find the bounding box of the non-white pixels within this top region
+                top_gray = top_region.convert('L')
+                top_arr = np.array(top_gray)
+                
+                # Threshold: consider anything darker than 245 as "content"
+                content_mask = top_arr < 245
+                
+                content_rows = np.any(content_mask, axis=1)
+                content_cols = np.any(content_mask, axis=0)
+                
+                if np.any(content_rows) and np.any(content_cols):
+                    min_r, max_r = np.where(content_rows)[0][[0, -1]]
+                    min_c, max_c = np.where(content_cols)[0][[0, -1]]
+                    
+                    # Add a small padding (e.g. 5px) around the tight bounding box
+                    pad = 5
+                    min_r = max(0, min_r - pad)
+                    max_r = min(top_region.size[1], max_r + pad)
+                    min_c = max(0, min_c - pad)
+                    max_c = min(top_region.size[0], max_c + pad)
+                    
+                    thumb_img = top_region.crop((min_c, min_r, max_c, max_r))
+                else:
+                    thumb_img = top_region
                 
                 # If it's a duplicate, we can save it to the main ref as well
                 ref_clean = ref.replace("-DUPLICATE", "")
