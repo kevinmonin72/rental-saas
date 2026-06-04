@@ -51,20 +51,6 @@ export default function SettingsPage() {
           </Link>
         </div>
 
-        {/* Facturation Card */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', height: '100%' }}>
-          <div>
-            <div style={{ fontSize: '32px', marginBottom: '16px' }}>🧾</div>
-            <h2 style={{ margin: '0 0 12px 0', fontSize: '20px' }}>Générateur de Factures</h2>
-            <p style={{ color: 'var(--text-light)', fontSize: '14px', lineHeight: '1.6', margin: '0 0 24px 0' }}>
-              Créez rapidement une facture personnalisée (ponctuelle) en saisissant les informations du client et les lignes de facturation. Générez ensuite un PDF à télécharger ou imprimer.
-            </p>
-          </div>
-          <Link href="/settings/invoice" className="btn btn-primary" style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}>
-            Créer une facture
-          </Link>
-        </div>
-
       </div>
     </div>
   );

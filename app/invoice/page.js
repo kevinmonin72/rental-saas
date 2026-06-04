@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
 const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 15 },
@@ -76,6 +76,8 @@ export default function InvoiceGenerator() {
 
   const [quickRef, setQuickRef] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [paymentLink, setPaymentLink] = useState(null);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -187,7 +189,41 @@ export default function InvoiceGenerator() {
   const handlePrint = () => {
     window.print();
   };
+  const calculateTotal = () => {
+    const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
+    const taxAmount = subtotal * (invoiceData.taxRate / 100);
+    const total = subtotal + taxAmount;
+    return total;
+  };
 
+  const handleGeneratePaymentLink = async () => {
+    setIsGeneratingLink(true);
+    setPaymentLink(null);
+    try {
+      const totalAmount = calculateTotal();
+      const res = await fetch('/api/stripe/payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totalAmount,
+          description: `Facture The Ridery ${invoiceData.number} - ${invoiceData.clientName}`,
+          invoiceNumber: invoiceData.number,
+        })
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        setPaymentLink(data.url);
+      } else {
+        alert("Erreur lors de la création du lien : " + (data.error || "Inconnue"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erreur réseau ou serveur.");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
   return (
     <div className="invoice-page-container">
       <style dangerouslySetInnerHTML={{__html: `
@@ -228,12 +264,22 @@ export default function InvoiceGenerator() {
 
       <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
-          <Link href="/settings" style={{ color: 'var(--text-light)', textDecoration: 'none', fontSize: '14px', display: 'inline-block', marginBottom: '8px' }}>← Retour aux paramètres</Link>
           <h1 style={{ margin: 0 }}>Générateur de Facture</h1>
         </div>
-        <button className="btn btn-primary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px' }}>
-          <span>🖨️</span> Imprimer / PDF
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          {paymentLink ? (
+            <button className="btn" style={{ backgroundColor: '#10B981', color: 'white' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); }}>
+              📋 Copier le lien
+            </button>
+          ) : (
+            <button className="btn" style={{ backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={handleGeneratePaymentLink} disabled={isGeneratingLink}>
+              <span>💳</span> {isGeneratingLink ? 'Création...' : 'Lien de paiement'}
+            </button>
+          )}
+          <button className="btn btn-primary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px' }}>
+            <span>🖨️</span> Imprimer / PDF
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }} className="invoice-layout">
