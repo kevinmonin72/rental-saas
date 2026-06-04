@@ -194,7 +194,7 @@ export default function InvoiceGenerator() {
         @media print {
           @page { 
             size: A4 portrait; 
-            margin: 1cm; 
+            margin: 0; 
           }
           body { 
             background: white; 
@@ -218,7 +218,7 @@ export default function InvoiceGenerator() {
           #printable-invoice {
             box-shadow: none !important;
             border: none !important;
-            padding: 0 !important;
+            padding: 1cm !important;
             margin: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -399,11 +399,6 @@ export default function InvoiceGenerator() {
                 <span>{total.toFixed(2)} €</span>
               </div>
             </div>
-          </div>
-
-          <div style={{ marginTop: '80px', borderTop: '1px solid #E5E7EB', paddingTop: '24px', textAlign: 'center', color: '#9CA3AF', fontSize: '12px' }}>
-            <p style={{ margin: '0 0 4px 0' }}>Merci pour votre confiance !</p>
-            <p style={{ margin: 0 }}>Pour toute question concernant cette facture, veuillez nous contacter.</p>
           </div>
 
         </div>
