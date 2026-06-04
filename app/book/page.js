@@ -64,6 +64,17 @@ const CATEGORY_ICONS = {
   Autres: '🛶'
 };
 
+const CATEGORY_IMAGES = {
+  Kitesurf: '/images/cat_kitesurf.png',
+  Wingfoil: '/images/cat_wingfoil.png',
+  Néoprène: '/images/cat_neoprene.png',
+  Accessoires: '/images/cat_accessoires.png',
+  Protections: '/images/cat_accessoires.png',
+  'Carte Session': '/images/cat_autres.png',
+  Initiation: '/images/cat_autres.png',
+  Autres: '/images/cat_autres.png'
+};
+
 const getPricePerDay = (reference) => {
   if (reference.includes('PACK')) return 40; // Packs: 40€/jour
   if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; // Ailes/Foils: 25€/jour
@@ -679,13 +690,26 @@ export default function PublicBookingPage() {
                                   boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
                                 }}
                               >
-                                <div style={{ flex: 1, paddingRight: '16px' }}>
-                                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827' }}>
-                                    {e.name}
-                                  </h4>
-                                  <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
-                                    {durationMode === 'half_day' ? `${Math.round(pricePerDay * 0.6)} € / ½ journée` : `${pricePerDay} € / jour`}
-                                  </span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, paddingRight: '16px' }}>
+                                  <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <img 
+                                      src={CATEGORY_IMAGES[cat] || '/images/cat_autres.png'} 
+                                      alt={e.name}
+                                      style={{ 
+                                        width: '100%', 
+                                        height: '100%', 
+                                        objectFit: 'cover'
+                                      }} 
+                                    />
+                                  </div>
+                                  <div style={{ flex: 1 }}>
+                                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827' }}>
+                                      {e.name}
+                                    </h4>
+                                    <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
+                                      {durationMode === 'half_day' ? `${Math.round(pricePerDay * 0.6)} € / ½ journée` : `${pricePerDay} € / jour`}
+                                    </span>
+                                  </div>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
