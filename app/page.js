@@ -315,7 +315,19 @@ export default function DashboardHome() {
             }
           }
           endDate.setHours(0, 0, 0, 0);
-          return endDate < today;
+          
+          let isLate = endDate < today;
+          if (!isLate && b.equipments) {
+            isLate = b.equipments.some(eq => {
+              if (eq.customEnd) {
+                const eqEndDate = new Date(eq.customEnd);
+                eqEndDate.setHours(0, 0, 0, 0);
+                return eqEndDate < today;
+              }
+              return false;
+            });
+          }
+          return isLate;
         });
 
         if (lateBookings.length > 0) {
@@ -343,11 +355,21 @@ export default function DashboardHome() {
                               effectiveEnd.setDate(effectiveEnd.getDate() + diffDays);
                             }
                           }
-                          return (
-                            <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
-                              Devait être rendu le {effectiveEnd.toLocaleDateString('fr-FR')}
-                            </p>
-                          );
+                          
+                          if (effectiveEnd < today) {
+                            return (
+                              <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                                L'abonnement complet devait être rendu le {effectiveEnd.toLocaleDateString('fr-FR')}
+                              </p>
+                            );
+                          } else {
+                            return (
+                              <p style={{ margin: 0, color: '#DC2626', fontWeight: 'bold' }}>
+                                Un (ou plusieurs) équipement est en retard !
+                              </p>
+                            );
+                          }
+
                         })()}
                       </div>
                       <Link href="/bookings" className="btn btn-primary" style={{ backgroundColor: '#ef4444' }}>
