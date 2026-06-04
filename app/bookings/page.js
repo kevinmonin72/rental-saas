@@ -130,7 +130,7 @@ export default function BookingsPage() {
         customerId: selectedCustomerId,
         startDate: startDate,
         endDate: endDate,
-        equipmentIds: selectedEquipments.map(e => e.id),
+        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
         pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
@@ -141,7 +141,7 @@ export default function BookingsPage() {
         customerId: selectedCustomerId,
         startDate: startDate,
         endDate: endDate,
-        equipmentIds: selectedEquipments.map(e => e.id),
+        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
         pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
@@ -370,9 +370,35 @@ export default function BookingsPage() {
                 {selectedEquipments.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', padding: '12px', backgroundColor: 'var(--surface-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     {selectedEquipments.map(eq => (
-                      <div key={eq.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '14px' }}>Réf: {eq.reference || 'N/A'} - {eq.name}</span>
-                        <button type="button" onClick={() => setSelectedEquipments(selectedEquipments.filter(e => e.id !== eq.id))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+                      <div key={eq.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500' }}>Réf: {eq.reference || 'N/A'} - {eq.name}</span>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            {rentalType === 'wingboost' && (
+                              <button type="button" onClick={() => {
+                                setSelectedEquipments(selectedEquipments.map(e => e.id === eq.id ? { ...e, showOptions: !e.showOptions } : e));
+                              }} style={{ background: 'none', border: '1px solid #D1D5DB', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', cursor: 'pointer' }}>
+                                Options ⚙️
+                              </button>
+                            )}
+                            <button type="button" onClick={() => setSelectedEquipments(selectedEquipments.filter(e => e.id !== eq.id))} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '16px' }}>🗑️</button>
+                          </div>
+                        </div>
+                        {eq.showOptions && rentalType === 'wingboost' && (
+                          <div style={{ padding: '8px', backgroundColor: '#F3F4F6', borderRadius: '4px', display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                            <div style={{ fontSize: '12px', color: '#4B5563', marginBottom: '4px' }}>Cet équipement a-t-il une durée différente de l'abonnement principal ?</div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '12px' }}>Date de début</label>
+                                <input type="date" className="input" style={{ padding: '4px 8px', fontSize: '13px' }} value={eq.customStart || ''} onChange={(e) => setSelectedEquipments(selectedEquipments.map(item => item.id === eq.id ? { ...item, customStart: e.target.value } : item))} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <label style={{ fontSize: '12px' }}>Date de fin</label>
+                                <input type="date" className="input" style={{ padding: '4px 8px', fontSize: '13px' }} value={eq.customEnd || ''} onChange={(e) => setSelectedEquipments(selectedEquipments.map(item => item.id === eq.id ? { ...item, customEnd: e.target.value } : item))} />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
