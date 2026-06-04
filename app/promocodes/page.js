@@ -138,15 +138,12 @@ export default function PromoCodesPage() {
         </div>
 
         <div className="card" style={{ width: '360px', alignSelf: 'flex-start', position: 'sticky', top: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '20px' }}>🏷️</span>
+          <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
             <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Créer un code</h2>
           </div>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{color: '#9CA3AF'}}>🔤</span> Code Promo
-              </label>
+              <label className="form-label">Code Promo</label>
               <input 
                 type="text" 
                 className="input" 
@@ -158,9 +155,7 @@ export default function PromoCodesPage() {
             </div>
             
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{color: '#9CA3AF'}}>⚙️</span> Type de réduction
-              </label>
+              <label className="form-label">Type de réduction</label>
               <select className="input" value={discountType} onChange={e => setDiscountType(e.target.value)}>
                 <option value="percentage">Pourcentage (%)</option>
                 <option value="amount">Montant fixe (€)</option>
@@ -168,9 +163,7 @@ export default function PromoCodesPage() {
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{color: '#9CA3AF'}}>💰</span> Valeur de la réduction
-              </label>
+              <label className="form-label">Valeur de la réduction</label>
               <input 
                 type="number" 
                 step="0.01"
@@ -184,9 +177,7 @@ export default function PromoCodesPage() {
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{color: '#9CA3AF'}}>📧</span> Email ciblé <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span>
-              </label>
+              <label className="form-label">Email ciblé <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span></label>
               <input 
                 type="email" 
                 className="input" 
@@ -198,9 +189,7 @@ export default function PromoCodesPage() {
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{color: '#9CA3AF'}}>🔢</span> Nombre d'utilisations <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span>
-              </label>
+              <label className="form-label">Nombre d'utilisations <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span></label>
               <input 
                 type="number" 
                 min="1"
