@@ -224,7 +224,7 @@ export default function InvoiceGenerator() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }} className="no-print invoice-layout">
+      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }} className="invoice-layout">
         
         {/* FORMULAIRE DE CONFIGURATION */}
         <div className="card no-print" style={{ flex: 1, minWidth: '450px' }}>
