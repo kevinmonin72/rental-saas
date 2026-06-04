@@ -117,6 +117,12 @@ export default function PublicBookingPage() {
   const [cvc, setCvc] = useState('');
   const [isStripeConfigured, setIsStripeConfigured] = useState(false);
 
+  // Promo Code State
+  const [promoInput, setPromoInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [promoError, setPromoError] = useState('');
+  const [validatingPromo, setValidatingPromo] = useState(false);
+
   // Fetch all inventory and active bookings, and ensure generic items exist
   useEffect(() => {
     async function loadData() {
@@ -202,12 +208,43 @@ export default function PublicBookingPage() {
       }
     }
     
-    // Half-day is 60% of the daily rate (0.6 multiplier)
-    if (durationMode === 'half_day') {
-      return Math.round(pricePerDayTotal * 0.6);
+    let subtotal = durationMode === 'half_day' ? Math.round(pricePerDayTotal * 0.6) : pricePerDayTotal * days;
+    
+    if (appliedPromo) {
+      if (appliedPromo.discount_type === 'percentage') {
+        subtotal = subtotal * (1 - appliedPromo.discount_value / 100);
+      } else if (appliedPromo.discount_type === 'amount') {
+        subtotal = subtotal - appliedPromo.discount_value;
+      }
     }
     
-    return pricePerDayTotal * days;
+    return Math.max(0, Math.round(subtotal * 100) / 100);
+  };
+
+  const handleApplyPromo = async () => {
+    if (!promoInput.trim()) return;
+    setValidatingPromo(true);
+    setPromoError('');
+    
+    const { data, error } = await supabase
+      .from('promo_codes')
+      .select('*')
+      .eq('code', promoInput.trim().toUpperCase())
+      .maybeSingle();
+      
+    if (error || !data) {
+      setPromoError('Code promo invalide.');
+    } else if (!data.is_active) {
+      setPromoError('Ce code promo est inactif.');
+    } else if (data.max_uses && data.used_count >= data.max_uses) {
+      setPromoError("Ce code promo a atteint son nombre maximum d'utilisations.");
+    } else if (data.target_email && data.target_email.toLowerCase() !== email.trim().toLowerCase()) {
+      setPromoError("Ce code promo n'est pas valide pour cette adresse email.");
+    } else {
+      setAppliedPromo(data);
+      setPromoError('');
+    }
+    setValidatingPromo(false);
   };
 
   const handleNextStep1 = (e) => {
@@ -350,7 +387,10 @@ export default function PublicBookingPage() {
         body: JSON.stringify({
           equipmentReferences: selectedRefs,
           startDate,
-          endDate
+          endDate,
+          durationMode,
+          promoCode: appliedPromo ? appliedPromo.code : null,
+          email: email.trim().toLowerCase()
         })
       });
 
@@ -423,6 +463,11 @@ export default function PublicBookingPage() {
 
       const { error: itemsErr } = await supabase.from('booking_items').insert(items);
       if (itemsErr) throw itemsErr;
+
+      // Increment promo code usage if applied
+      if (appliedPromo) {
+        await supabase.from('promo_codes').update({ used_count: appliedPromo.used_count + 1 }).eq('id', appliedPromo.id);
+      }
 
       setStep(4);
     } catch (err) {
@@ -815,6 +860,32 @@ export default function PublicBookingPage() {
                   </div>
                 </div>
 
+                {/* Promo Code Element */}
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: 'white', marginBottom: '24px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '12px' }}>Code Promo (Optionnel)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input 
+                      type="text" 
+                      value={promoInput} 
+                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())} 
+                      placeholder="Ex: WELCOME10" 
+                      style={{ flex: 1, padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                      disabled={appliedPromo !== null}
+                    />
+                    {appliedPromo ? (
+                      <button type="button" onClick={() => setAppliedPromo(null)} style={{ padding: '0 16px', backgroundColor: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        Retirer
+                      </button>
+                    ) : (
+                      <button type="button" onClick={handleApplyPromo} disabled={validatingPromo || !promoInput.trim()} style={{ padding: '0 16px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (!promoInput.trim() || validatingPromo) ? 'not-allowed' : 'pointer' }}>
+                        {validatingPromo ? '...' : 'Appliquer'}
+                      </button>
+                    )}
+                  </div>
+                  {promoError && <p style={{ color: '#DC2626', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>{promoError}</p>}
+                  {appliedPromo && <p style={{ color: '#059669', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>Code {appliedPromo.code} appliqué avec succès !</p>}
+                </div>
+
                 {/* Stripe Checkout Mock Element */}
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -927,6 +998,8 @@ export default function PublicBookingPage() {
                       setCardNumber('');
                       setExpiry('');
                       setCvc('');
+                      setPromoInput('');
+                      setAppliedPromo(null);
                     }}
                     style={{ padding: '12px 24px', backgroundColor: '#F97316', color: 'white', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                   >

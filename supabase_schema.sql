@@ -41,3 +41,17 @@ ALTER TABLE public.equipment DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.booking_items DISABLE ROW LEVEL SECURITY;
+
+CREATE TABLE public.promo_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT UNIQUE NOT NULL,
+  discount_type TEXT NOT NULL, -- 'percentage' or 'amount'
+  discount_value NUMERIC NOT NULL,
+  target_email TEXT, -- if null, valid for everyone
+  max_uses INTEGER, -- if null, unlimited
+  used_count INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.promo_codes DISABLE ROW LEVEL SECURITY;

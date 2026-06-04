@@ -21,6 +21,9 @@ export default function Sidebar() {
         <Link href="/bookings" className={`sidebar-link ${pathname === '/bookings' ? 'active' : ''}`}>
           Réservations
         </Link>
+        <Link href="/promocodes" className={`sidebar-link ${pathname === '/promocodes' ? 'active' : ''}`}>
+          Codes Promo
+        </Link>
         <Link href="/settings" className={`sidebar-link ${isSettingsActive ? 'active' : ''}`}>
           Paramètres
         </Link>
