@@ -268,11 +268,11 @@ export default function InvoiceGenerator() {
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
           {paymentLink ? (
-            <button className="btn" style={{ backgroundColor: '#10B981', color: 'white' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); }}>
-              📋 Copier le lien
+            <button className="btn" style={{ backgroundColor: '#10B981', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); }}>
+              <span>📋</span> Copier le lien
             </button>
           ) : (
-            <button className="btn" style={{ backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }} onClick={handleGeneratePaymentLink} disabled={isGeneratingLink}>
+            <button className="btn" style={{ backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} onClick={handleGeneratePaymentLink} disabled={isGeneratingLink}>
               <span>💳</span> {isGeneratingLink ? 'Création...' : 'Lien de paiement'}
             </button>
           )}
