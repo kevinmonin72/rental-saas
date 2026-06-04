@@ -317,15 +317,25 @@ export default function PublicBookingPage() {
     return Math.max(0, totalQty - overlappingBookingsCount);
   };
 
-  const toggleEquipmentSelection = (id) => {
+  const handleAddItem = (id) => {
     const qty = getAvailableQuantity(id);
-    if (qty === 0 && !selectedEquipmentIds.includes(id)) {
+    if (qty === 0) {
       alert('Cet équipement est déjà réservé sur cette période.');
       return;
     }
-    setSelectedEquipmentIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
+    setSelectedEquipmentIds(prev => [...prev, id]);
+  };
+
+  const handleRemoveItem = (id) => {
+    setSelectedEquipmentIds(prev => {
+      const idx = prev.lastIndexOf(id);
+      if (idx !== -1) {
+        const copy = [...prev];
+        copy.splice(idx, 1);
+        return copy;
+      }
+      return prev;
+    });
   };
 
   // Card formatting helpers
@@ -454,11 +464,16 @@ export default function PublicBookingPage() {
       if (bookErr) throw bookErr;
 
       // 5. Create Booking Items for each chosen type of gear
-      const items = selectedEquipmentIds.map(eqId => ({
+      const itemCounts = {};
+      selectedEquipmentIds.forEach(id => {
+        itemCounts[id] = (itemCounts[id] || 0) + 1;
+      });
+
+      const items = Object.entries(itemCounts).map(([eqId, qty]) => ({
         id: uuidv4(),
         booking_id: bookingId,
         equipment_id: eqId,
-        quantity: 1
+        quantity: qty
       }));
 
       const { error: itemsErr } = await supabase.from('booking_items').insert(items);
@@ -712,15 +727,20 @@ export default function PublicBookingPage() {
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {catEquipments.map(e => {
-                            const isSelected = selectedEquipmentIds.includes(e.id);
+                            const qtySelected = selectedEquipmentIds.filter(id => id === e.id).length;
+                            const isSelected = qtySelected > 0;
                             const qtyAvailable = getAvailableQuantity(e.id);
-                            const isOutOfStock = qtyAvailable === 0;
+                            const isOutOfStock = qtyAvailable === 0 && !isSelected;
                             const pricePerDay = getPricePerDay(e.reference);
 
                             return (
                               <div 
                                 key={e.id}
-                                onClick={() => !isOutOfStock && toggleEquipmentSelection(e.id)}
+                                onClick={() => {
+                                  if (!isOutOfStock && !isSelected) {
+                                    handleAddItem(e.id);
+                                  }
+                                }}
                                 style={{ 
                                   display: 'flex', 
                                   alignItems: 'center', 
@@ -729,7 +749,7 @@ export default function PublicBookingPage() {
                                   borderRadius: '12px', 
                                   border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
-                                  cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                                  cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
                                   transition: 'all 0.2s ease',
                                   boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
@@ -766,22 +786,24 @@ export default function PublicBookingPage() {
                                   ) : (
                                     <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>
                                   )}
-                                  <div style={{ 
-                                    width: '20px', 
-                                    height: '20px', 
-                                    borderRadius: '50%', 
-                                    border: `2px solid ${isSelected ? '#F97316' : '#D1D5DB'}`, 
-                                    backgroundColor: isSelected ? '#F97316' : 'transparent', 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center', 
-                                    color: 'white', 
-                                    fontSize: '11px', 
-                                    fontWeight: 'bold',
-                                    transition: 'all 0.15s'
-                                  }}>
-                                    {isSelected && '✓'}
-                                  </div>
+                                  {isSelected ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', padding: '4px 8px', borderRadius: '8px', border: '1px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
+                                      <button 
+                                        type="button"
+                                        style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: '#F97316', fontWeight: 'bold' }}
+                                        onClick={(ev) => { ev.stopPropagation(); handleRemoveItem(e.id); }}
+                                      >-</button>
+                                      <span style={{ fontWeight: 'bold', color: '#F97316', minWidth: '14px', textAlign: 'center' }}>{qtySelected}</span>
+                                      <button 
+                                        type="button"
+                                        style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: qtyAvailable > 0 ? 'pointer' : 'not-allowed', fontSize: '18px', color: qtyAvailable > 0 ? '#F97316' : '#FCA5A5', fontWeight: 'bold' }}
+                                        disabled={qtyAvailable === 0}
+                                        onClick={(ev) => { ev.stopPropagation(); handleAddItem(e.id); }}
+                                      >+</button>
+                                    </div>
+                                  ) : (
+                                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />
+                                  )}
                                 </div>
                               </div>
                             );
@@ -973,10 +995,24 @@ export default function PublicBookingPage() {
                     <div>💰 <strong>Montant payé :</strong> {getBookingTotal()} € (par carte bancaire)</div>
                     <div>👤 <strong>Client :</strong> {firstName} {lastName} ({email})</div>
                     <div>📦 <strong>Matériel réservé :</strong>
-                      <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
-                        {selectedEquipmentIds.map(id => {
-                          const item = equipmentList.find(e => e.id === id);
-                          return <li key={id}>{item ? item.name : 'Équipement'}</li>;
+                      <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
+                        {Object.entries(
+                          selectedEquipmentIds.reduce((acc, id) => {
+                            acc[id] = (acc[id] || 0) + 1;
+                            return acc;
+                          }, {})
+                        ).map(([id, qty]) => {
+                          const eq = equipmentList.find(e => e.id === id);
+                          if (!eq) return null;
+                          return (
+                            <li key={id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #E5E7EB', fontSize: '14px', alignItems: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ backgroundColor: '#F3F4F6', color: '#4B5563', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>x{qty}</span>
+                                <span style={{ color: '#111827', fontWeight: 500 }}>{eq.name}</span>
+                              </div>
+                              <span style={{ color: '#4B5563' }}>{durationMode === 'half_day' ? Math.round(getPricePerDay(eq.reference) * 0.6) * qty : getPricePerDay(eq.reference) * qty} €</span>
+                            </li>
+                          );
                         })}
                       </ul>
                     </div>
@@ -1048,9 +1084,14 @@ export default function PublicBookingPage() {
                   <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel choisi ({selectedEquipmentIds.length})</span>
                   {selectedEquipmentIds.length > 0 ? (
                     <ul style={{ margin: 0, paddingLeft: '16px', color: '#F3F4F6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      {selectedEquipmentIds.map(id => {
+                      {Object.entries(
+                        selectedEquipmentIds.reduce((acc, id) => {
+                          acc[id] = (acc[id] || 0) + 1;
+                          return acc;
+                        }, {})
+                      ).map(([id, qty]) => {
                         const item = equipmentList.find(e => e.id === id);
-                        return <li key={id}>{item ? item.name : 'Équipement'}</li>;
+                        return <li key={id}>{item ? <><span style={{ color: '#F97316', fontWeight: 'bold', marginRight: '6px' }}>{qty}x</span>{item.name}</> : 'Équipement'}</li>;
                       })}
                     </ul>
                   ) : (
