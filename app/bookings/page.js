@@ -28,6 +28,8 @@ export default function BookingsPage() {
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [rentalTypeFilter, setRentalTypeFilter] = useState('all');
   const [highlightedBookingId, setHighlightedBookingId] = useState(null);
+  const [startMonthFilter, setStartMonthFilter] = useState(null);
+  const [endMonthFilter, setEndMonthFilter] = useState(null);
 
   const { 
     customers, 
@@ -154,6 +156,9 @@ export default function BookingsPage() {
     setSelectedCustomerId('');
     setHighlightedBookingId(null);
     setSearchQuery('');
+    setStartMonthFilter(null);
+    setEndMonthFilter(null);
+    setRentalTypeFilter('all');
   };
 
   const handleEdit = (booking) => {
@@ -178,6 +183,8 @@ export default function BookingsPage() {
     setSelectedCustomerId('');
     setHighlightedBookingId(null);
     setSearchQuery('');
+    setStartMonthFilter(null);
+    setEndMonthFilter(null);
   };
 
   const handleSelectAll = (e, list) => {
@@ -202,6 +209,8 @@ export default function BookingsPage() {
   useEffect(() => {
     if (mounted && bookings.length > 0) {
       const params = new URLSearchParams(window.location.search);
+      let needsUrlClean = false;
+
       const bookingId = params.get('bookingId');
       if (bookingId) {
         const detailedActive = getDetailedActiveBookings();
@@ -216,11 +225,30 @@ export default function BookingsPage() {
           
           const fullName = formatName(b.first_name, b.last_name);
           setSearchQuery(fullName);
-
-          // Nettoie l'URL sans recharger la page
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
+          needsUrlClean = true;
         }
+      }
+
+      const startMonth = params.get('startMonth');
+      if (startMonth) {
+        setStartMonthFilter(startMonth);
+        const rentalType = params.get('rentalType');
+        if (rentalType) {
+          setRentalTypeFilter(rentalType);
+        }
+        needsUrlClean = true;
+      }
+
+      const endMonth = params.get('endMonth');
+      if (endMonth) {
+        setEndMonthFilter(endMonth);
+        needsUrlClean = true;
+      }
+
+      if (needsUrlClean) {
+        // Nettoie l'URL sans recharger la page
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
       }
     }
   }, [mounted, bookings]);
@@ -236,8 +264,34 @@ export default function BookingsPage() {
       if (rentalTypeFilter !== 'all' && (b.rental_type || 'ponctuel') !== rentalTypeFilter) {
         return false;
       }
+
+      // 2. Start Month Filter
+      if (startMonthFilter) {
+        const start = new Date(b.start_date);
+        const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
+        if (key !== startMonthFilter) {
+          return false;
+        }
+      }
+
+      // 3. End Month Filter
+      if (endMonthFilter) {
+        let endDate = new Date(b.end_date);
+        if (b.pause_start && b.pause_end) {
+          const ps = new Date(b.pause_start);
+          const pe = new Date(b.pause_end);
+          if (pe >= ps) {
+            const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+            endDate.setDate(endDate.getDate() + diffDays);
+          }
+        }
+        const key = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
+        if (key !== endMonthFilter) {
+          return false;
+        }
+      }
       
-      // 2. Text Search
+      // 4. Text Search
       if (!searchQuery) return true;
       const term = searchQuery.toLowerCase();
       const eqsStr = b.equipments?.map(eq => `${eq.name || ''} ${eq.reference || ''}`).join(' ') || '';
@@ -415,6 +469,50 @@ export default function BookingsPage() {
               />
             </div>
           </div>
+
+          {(startMonthFilter || endMonthFilter) && (
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              backgroundColor: '#EFF6FF', 
+              border: '1px solid #BFDBFE', 
+              padding: '12px 16px', 
+              borderRadius: '8px', 
+              marginTop: '16px',
+              fontSize: '14px',
+              color: '#1E40AF'
+            }}>
+              <div>
+                🔍 <strong>Filtre actif :</strong>{' '}
+                {startMonthFilter && `Début de location en ${(() => {
+                  const [y, m] = startMonthFilter.split('-');
+                  return new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                })()}`}
+                {endMonthFilter && `Retour prévu en ${(() => {
+                  const [y, m] = endMonthFilter.split('-');
+                  return new Date(parseInt(y, 10), parseInt(m, 10) - 1, 1).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+                })()}`}
+              </div>
+              <button 
+                onClick={() => {
+                  setStartMonthFilter(null);
+                  setEndMonthFilter(null);
+                  setRentalTypeFilter('all');
+                }} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  color: '#1D4ED8', 
+                  fontWeight: 'bold', 
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Effacer le filtre ✕
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', marginBottom: '16px' }}>
             <h3 style={{ margin: 0, color: 'var(--text-main)' }}>En cours</h3>

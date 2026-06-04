@@ -59,7 +59,7 @@ export default function DashboardHome() {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleDateString('fr-FR', { month: 'short' });
-      months[key] = { label, count: 0 };
+      months[key] = { key, label, count: 0 };
     }
 
     // Count wingboost bookings matching month keys
@@ -86,7 +86,7 @@ export default function DashboardHome() {
       const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleDateString('fr-FR', { month: 'short' });
-      months[key] = { label, count: 0 };
+      months[key] = { key, label, count: 0 };
     }
 
     // Count expected returns in these months
@@ -207,22 +207,27 @@ export default function DashboardHome() {
                     {s.count} {s.count > 1 ? 'personnes' : 'personne'}
                   </div>
                   {/* Bar */}
-                  <div 
-                    style={{
-                      width: '100%',
-                      height: heightPct,
-                      background: 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer'
-                    }} 
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'none';
-                    }}
-                  />
+                  <Link 
+                    href={`/bookings?startMonth=${s.key}&rentalType=wingboost`}
+                    style={{ display: 'block', width: '100%', height: heightPct }}
+                  >
+                    <div 
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)',
+                        borderRadius: '4px 4px 0 0',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                      }} 
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    />
+                  </Link>
                   
                   {/* Label */}
                   <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>
@@ -247,22 +252,27 @@ export default function DashboardHome() {
                     {s.count} {s.count > 1 ? 'personnes' : 'personne'}
                   </div>
                   {/* Bar */}
-                  <div 
-                    style={{
-                      width: '100%',
-                      height: heightPct,
-                      background: 'linear-gradient(180deg, #F97316 0%, #C2410C 100%)',
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'all 0.2s ease',
-                      cursor: 'pointer'
-                    }} 
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.filter = 'brightness(1.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.filter = 'none';
-                    }}
-                  />
+                  <Link 
+                    href={`/bookings?endMonth=${s.key}`}
+                    style={{ display: 'block', width: '100%', height: heightPct }}
+                  >
+                    <div 
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(180deg, #F97316 0%, #C2410C 100%)',
+                        borderRadius: '4px 4px 0 0',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer'
+                      }} 
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.filter = 'brightness(1.1)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.filter = 'none';
+                      }}
+                    />
+                  </Link>
                   
                   {/* Label */}
                   <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>

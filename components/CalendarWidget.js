@@ -24,6 +24,19 @@ function getDaysDiff(d1, d2) {
   return Math.round(diffTime / (1000 * 3600 * 24));
 }
 
+function getRemainingMonths(endDateStr) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const end = parseLocalDate(endDateStr);
+  end.setHours(0, 0, 0, 0);
+  if (end <= today) return '0 mois';
+  const diffTime = end.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffMonths = diffDays / 30.44;
+  const rounded = parseFloat(diffMonths.toFixed(1));
+  return `${String(rounded).replace('.', ',')} mois`;
+}
+
 export default function CalendarWidget({ bookings }) {
   const [baseDate, setBaseDate] = useState(null);
 
@@ -134,7 +147,7 @@ export default function CalendarWidget({ bookings }) {
               <div key={`${b.id}-${i}`} className={styles.row}>
                 <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
                   <Link href={`/bookings?bookingId=${b.id}`} className={styles.clientLink}>
-                    {b.first_name} {b.last_name}
+                    {b.first_name} {b.last_name} <span style={{ fontSize: '11px', color: 'var(--text-light)', fontWeight: 'normal', marginLeft: '4px', whiteSpace: 'nowrap' }}>({getRemainingMonths(b.effective_end_date)})</span>
                   </Link>
                 </div>
                 <div className={styles.daysGrid}>
