@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CsvImporter from './CsvImporter';
 import { useStore } from '../lib/store';
 
@@ -8,6 +8,12 @@ export default function CsvImporterButton({ type }) {
   const [isOpen, setIsOpen] = useState(false);
   const [conflicts, setConflicts] = useState(null); // { conflicts: [...], noConflict: [...] }
   const [conflictActions, setConflictActions] = useState({}); // { index: 'add_stock' | 'create_new' | 'skip' | 'update_existing' }
+  const [lastImportDate, setLastImportDate] = useState(null);
+
+  useEffect(() => {
+    const savedDate = localStorage.getItem(`last_csv_import_${type}`);
+    if (savedDate) setLastImportDate(savedDate);
+  }, [type]);
   const { 
     bulkImportEquipment, 
     bulkImportCustomers, 
@@ -74,6 +80,9 @@ export default function CsvImporterButton({ type }) {
       } else {
         // No conflicts, import directly
         bulkImportEquipment(mergedData);
+        const now = new Date().toISOString();
+        localStorage.setItem(`last_csv_import_${type}`, now);
+        setLastImportDate(now);
         setIsOpen(false);
       }
     } else if (type === 'customers') {
@@ -176,6 +185,9 @@ export default function CsvImporterButton({ type }) {
         setIsOpen(false);
       } else {
         bulkImportCustomers(mergedData);
+        const now = new Date().toISOString();
+        localStorage.setItem(`last_csv_import_${type}`, now);
+        setLastImportDate(now);
         setIsOpen(false);
       }
     } else if (type === 'bookings') {
@@ -217,18 +229,28 @@ export default function CsvImporterButton({ type }) {
       await resolveCustomerConflicts(actions);
     }
 
+    const now = new Date().toISOString();
+    localStorage.setItem(`last_csv_import_${type}`, now);
+    setLastImportDate(now);
     setConflicts(null);
     setConflictActions({});
   };
 
   return (
     <>
-      <button 
-        className="btn btn-secondary" 
-        onClick={() => setIsOpen(true)}
-      >
-        Importer depuis CSV
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button 
+          className="btn btn-secondary" 
+          onClick={() => setIsOpen(true)}
+        >
+          Importer depuis CSV
+        </button>
+        {lastImportDate && (
+          <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
+            Dernier import : {new Date(lastImportDate).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
 
       {isOpen && (
         <CsvImporter 
