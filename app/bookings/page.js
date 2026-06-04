@@ -445,16 +445,21 @@ export default function BookingsPage() {
                 <input type="date" name="endDate" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
               </div>
               {rentalType === 'wingboost' && (
-                <>
-                  <div className="form-group">
-                    <label>Début de la pause (Optionnel)</label>
-                    <input type="date" name="pauseStart" className="input" value={pauseStart} onChange={(e) => setPauseStart(e.target.value)} />
+                <details style={{ marginBottom: '16px', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '10px', backgroundColor: '#F9FAFB' }}>
+                  <summary style={{ cursor: 'pointer', fontWeight: '500', fontSize: '14px', color: '#4B5563', outline: 'none' }}>
+                    ⏸️ Ajouter une période de pause (Optionnel)
+                  </summary>
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
+                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                      <label style={{ fontSize: '12px' }}>Début de la pause</label>
+                      <input type="date" name="pauseStart" className="input" value={pauseStart} onChange={(e) => setPauseStart(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                      <label style={{ fontSize: '12px' }}>Fin de la pause</label>
+                      <input type="date" name="pauseEnd" className="input" value={pauseEnd} onChange={(e) => setPauseEnd(e.target.value)} />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label>Fin de la pause (Optionnel)</label>
-                    <input type="date" name="pauseEnd" className="input" value={pauseEnd} onChange={(e) => setPauseEnd(e.target.value)} />
-                  </div>
-                </>
+                </details>
               )}
               <button type="submit" className="btn btn-primary">{editingBookingId ? 'Mettre à jour' : 'Créer'}</button>
             </form>
