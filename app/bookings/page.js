@@ -624,22 +624,52 @@ export default function BookingsPage() {
                       </div>
                       
                       <div style={{ margin: '8px 0', color: isLate ? '#991B1B' : 'var(--text-main)' }}>
-                        <strong>Matériel ({booking.equipments?.length}) :</strong>
-                        <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
-                          {booking.equipments?.map(eq => (
-                            <li key={eq.id}>
-                              {eq.name} (Réf: {eq.reference || 'N/A'})
-                              {(eq.customStart || eq.customEnd) && (
-                                <span style={{ marginLeft: '8px', color: '#6B7280', fontSize: '12px' }}>
-                                  [
-                                  {eq.customStart ? `Du ${new Date(eq.customStart).toLocaleDateString('fr-FR')}` : `Depuis le ${new Date(booking.start_date).toLocaleDateString('fr-FR')}`}
-                                  {eq.customEnd ? ` au ${new Date(eq.customEnd).toLocaleDateString('fr-FR')}` : ''}
-                                  ]
-                                </span>
+                        {(() => {
+                          let baseEndDate = new Date(booking.end_date);
+                          if (booking.pause_start && booking.pause_end) {
+                            const ps = new Date(booking.pause_start);
+                            const pe = new Date(booking.pause_end);
+                            if (pe >= ps) {
+                              const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+                              baseEndDate.setDate(baseEndDate.getDate() + diffDays);
+                            }
+                          }
+
+                          let displayedEquipments = booking.equipments || [];
+                          if (endMonthFilter) {
+                            displayedEquipments = displayedEquipments.filter(eq => {
+                              const itemEnd = eq.customEnd ? new Date(eq.customEnd) : baseEndDate;
+                              const key = `${itemEnd.getFullYear()}-${String(itemEnd.getMonth() + 1).padStart(2, '0')}`;
+                              return key === endMonthFilter;
+                            });
+                          }
+
+                          return (
+                            <>
+                              <strong>Matériel {endMonthFilter ? 'prévu ce mois-ci' : ''} ({displayedEquipments.length}) :</strong>
+                              <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
+                                {displayedEquipments.map(eq => (
+                                  <li key={eq.id}>
+                                    {eq.name} (Réf: {eq.reference || 'N/A'})
+                                    {(eq.customStart || eq.customEnd) && (
+                                      <span style={{ marginLeft: '8px', color: '#6B7280', fontSize: '12px' }}>
+                                        [
+                                        {eq.customStart ? `Du ${new Date(eq.customStart).toLocaleDateString('fr-FR')}` : `Depuis le ${new Date(booking.start_date).toLocaleDateString('fr-FR')}`}
+                                        {eq.customEnd ? ` au ${new Date(eq.customEnd).toLocaleDateString('fr-FR')}` : ''}
+                                        ]
+                                      </span>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                              {endMonthFilter && displayedEquipments.length < (booking.equipments?.length || 0) && (
+                                <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic' }}>
+                                  + {(booking.equipments?.length || 0) - displayedEquipments.length} autre(s) équipement(s) à d'autres dates
+                                </div>
                               )}
-                            </li>
-                          ))}
-                        </ul>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       <p style={{ margin: 0, color: isLate ? '#DC2626' : 'var(--text-light)', fontSize: '14px', fontWeight: isLate ? 'bold' : 'normal' }}>
