@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
+const GENERIC_EQUIPMENTS = [
+  { reference: 'CAT-WING', name: 'Aile de Wing / Kite (Générique)', category: 'Ailes', quantity: 9999 },
+  { reference: 'CAT-BOARD', name: 'Planche (Générique)', category: 'Planches', quantity: 9999 },
+  { reference: 'CAT-FOIL', name: 'Foil (Générique)', category: 'Foils', quantity: 9999 },
+  { reference: 'CAT-MAST', name: 'Mât (Générique)', category: 'Mâts', quantity: 9999 },
+  { reference: 'CAT-ACC', name: 'Accessoire (Générique)', category: 'Accessoires', quantity: 9999 }
+];
+
 export default function PublicBookingPage() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -21,8 +29,6 @@ export default function PublicBookingPage() {
   const [endDate, setEndDate] = useState('');
   const [rentalType, setRentalType] = useState('ponctuel');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   
   // Customer Info State
   const [firstName, setFirstName] = useState('');
@@ -30,7 +36,7 @@ export default function PublicBookingPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Fetch all inventory and active bookings to calculate real-time availability
+  // Fetch all inventory and active bookings, and ensure generic items exist
   useEffect(() => {
     async function loadData() {
       try {
@@ -44,7 +50,34 @@ export default function PublicBookingPage() {
         if (bookRes.error) throw bookRes.error;
         if (itemsRes.error) throw itemsRes.error;
 
-        setEquipmentList(eqRes.data || []);
+        let dbEquipments = eqRes.data || [];
+        const missingGenerics = [];
+
+        // Identify which generic equipment categories are missing in the DB
+        for (const item of GENERIC_EQUIPMENTS) {
+          if (!dbEquipments.some(e => e.reference === item.reference)) {
+            missingGenerics.push({
+              id: uuidv4(),
+              reference: item.reference,
+              name: item.name,
+              category: item.category,
+              quantity: item.quantity
+            });
+          }
+        }
+
+        // Insert missing generic items so the DB is self-healing
+        if (missingGenerics.length > 0) {
+          const { data: inserted, error: insertErr } = await supabase
+            .from('equipment')
+            .insert(missingGenerics)
+            .select();
+          
+          if (insertErr) throw insertErr;
+          dbEquipments = [...dbEquipments, ...(inserted || [])];
+        }
+
+        setEquipmentList(dbEquipments);
         setBookings(bookRes.data || []);
         setBookingItems(itemsRes.data || []);
       } catch (err) {
@@ -56,44 +89,6 @@ export default function PublicBookingPage() {
     }
     loadData();
   }, []);
-
-  // Helper: check quantity of equipment available for selected dates
-  const getAvailableQuantity = (eqId) => {
-    if (!startDate || !endDate) return 0;
-    const sNew = new Date(startDate);
-    sNew.setHours(0,0,0,0);
-    const eNew = new Date(endDate);
-    eNew.setHours(23,59,59,999);
-    
-    if (eNew < sNew) return 0;
-
-    const overlappingBookingsCount = bookings.filter(b => {
-      // Find if this booking contains the equipment
-      const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
-      if (!bItems.some(bi => bi.equipment_id === eqId)) return false;
-
-      const sExist = new Date(b.start_date);
-      sExist.setHours(0,0,0,0);
-      const eExist = new Date(b.end_date);
-      
-      // Calculate pause duration shifts
-      if (b.pause_start && b.pause_end) {
-        const ps = new Date(b.pause_start);
-        const pe = new Date(b.pause_end);
-        if (pe >= ps) {
-          const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
-          eExist.setDate(eExist.getDate() + diffDays);
-        }
-      }
-      eExist.setHours(23,59,59,999);
-
-      return (sNew <= eExist && sExist <= eNew);
-    }).length;
-
-    const eq = equipmentList.find(e => e.id === eqId);
-    const totalQty = eq ? (parseInt(eq.quantity, 10) || 1) : 1;
-    return Math.max(0, totalQty - overlappingBookingsCount);
-  };
 
   const handleNextStep1 = (e) => {
     e.preventDefault();
@@ -111,7 +106,7 @@ export default function PublicBookingPage() {
 
   const handleNextStep2 = () => {
     if (selectedEquipmentIds.length === 0) {
-      setError('Veuillez sélectionner au moins un équipement pour continuer.');
+      setError('Veuillez sélectionner au moins un type de matériel pour continuer.');
       return;
     }
     setError('');
@@ -119,11 +114,6 @@ export default function PublicBookingPage() {
   };
 
   const toggleEquipmentSelection = (id) => {
-    const qty = getAvailableQuantity(id);
-    if (qty === 0 && !selectedEquipmentIds.includes(id)) {
-      alert('Cet équipement est déjà réservé sur cette période.');
-      return;
-    }
     setSelectedEquipmentIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
@@ -140,14 +130,7 @@ export default function PublicBookingPage() {
     setError('');
 
     try {
-      // 1. Double check availability right before submission
-      for (const eqId of selectedEquipmentIds) {
-        if (getAvailableQuantity(eqId) <= 0) {
-          throw new Error("L'un des équipements sélectionnés vient d'être réservé sur cette période. Veuillez modifier votre choix.");
-        }
-      }
-
-      // 2. Find or create Customer
+      // Find or create Customer
       let customerId = null;
       const { data: existingCust, error: searchErr } = await supabase
         .from('customers')
@@ -159,7 +142,6 @@ export default function PublicBookingPage() {
 
       if (existingCust) {
         customerId = existingCust.id;
-        // Optionnel : Mettre à jour le téléphone s'il a changé
         if (phone) {
           await supabase.from('customers').update({ phone: phone.trim() }).eq('id', customerId);
         }
@@ -175,7 +157,7 @@ export default function PublicBookingPage() {
         if (custErr) throw custErr;
       }
 
-      // 3. Create Booking
+      // Create Booking
       const bookingId = uuidv4();
       const { error: bookErr } = await supabase.from('bookings').insert([{
         id: bookingId,
@@ -189,7 +171,7 @@ export default function PublicBookingPage() {
 
       if (bookErr) throw bookErr;
 
-      // 4. Create Booking Items
+      // Create Booking Items for each chosen type of gear
       const items = selectedEquipmentIds.map(eqId => ({
         id: uuidv4(),
         booking_id: bookingId,
@@ -200,7 +182,6 @@ export default function PublicBookingPage() {
       const { error: itemsErr } = await supabase.from('booking_items').insert(items);
       if (itemsErr) throw itemsErr;
 
-      // Success
       setStep(4);
     } catch (err) {
       console.error(err);
@@ -209,16 +190,6 @@ export default function PublicBookingPage() {
       setLoading(false);
     }
   };
-
-  // Get distinct categories for filtering
-  const categories = Array.from(new Set(equipmentList.map(e => e.category).filter(Boolean)));
-
-  // Filtered equipment list
-  const filteredEquipment = equipmentList.filter(e => {
-    const matchesSearch = `${e.name || ''} ${e.reference || ''}`.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || e.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
 
   if (fetchingData) {
     return (
@@ -281,12 +252,12 @@ export default function PublicBookingPage() {
           {/* Main Card */}
           <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px -2px rgba(0,0,0,0.05)', border: '1px solid #E5E7EB' }}>
             
-            {/* STEP 1: DATES & TYPE */}
+            {/* STEP 1: DATES */}
             {step === 1 && (
               <form onSubmit={handleNextStep1}>
                 <h2 style={{ fontSize: '22px', marginBottom: '24px', fontWeight: 700, letterSpacing: '-0.5px' }}>Sélectionnez vos dates de location</h2>
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de début</label>
                     <input 
@@ -316,84 +287,84 @@ export default function PublicBookingPage() {
               </form>
             )}
 
-            {/* STEP 2: SELECT EQUIPMENT */}
+            {/* STEP 2: SELECT EQUIPMENT TYPES */}
             {step === 2 && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                  <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Choisissez votre matériel</h2>
+                  <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Type de matériel à louer</h2>
                   <button onClick={() => setStep(1)} style={{ color: '#F97316', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>← Modifier dates</button>
                 </div>
+                
+                <p style={{ color: '#4B5563', fontSize: '14px', marginBottom: '24px' }}>
+                  Cochez le ou les types de matériel que vous souhaitez louer pour votre session :
+                </p>
 
-                {/* Filters */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                  <input 
-                    type="text" 
-                    placeholder="🔍 Rechercher un modèle..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ flex: 1, minWidth: '200px', padding: '10px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
-                  />
-                  
-                  <select 
-                    value={categoryFilter}
-                    onChange={(e) => setCategoryFilter(e.target.value)}
-                    style={{ padding: '10px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }}
-                  >
-                    <option value="all">Toutes catégories</option>
-                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                </div>
-
-                {/* Equipment Cards Grid */}
-                {filteredEquipment.length === 0 ? (
-                  <p style={{ textAlign: 'center', padding: '40px 0', color: '#6B7280' }}>Aucun matériel ne correspond à vos critères.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
-                    {filteredEquipment.map(eq => {
-                      const qtyAvailable = getAvailableQuantity(eq.id);
-                      const isSelected = selectedEquipmentIds.includes(eq.id);
-                      const isOutOfStock = qtyAvailable === 0;
-
-                      return (
-                        <div 
-                          key={eq.id} 
-                          onClick={() => !isOutOfStock && toggleEquipmentSelection(eq.id)}
-                          style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'space-between', 
-                            padding: '16px', 
-                            borderRadius: '12px', 
-                            border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
-                            backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
-                            cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                            opacity: isOutOfStock ? 0.6 : 1,
-                            transition: 'all 0.2s ease'
-                          }}
-                        >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+                  {GENERIC_EQUIPMENTS.map(item => {
+                    const dbItem = equipmentList.find(e => e.reference === item.reference);
+                    if (!dbItem) return null;
+                    
+                    const isSelected = selectedEquipmentIds.includes(dbItem.id);
+                    
+                    return (
+                      <div 
+                        key={item.reference} 
+                        onClick={() => toggleEquipmentSelection(dbItem.id)}
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'space-between', 
+                          padding: '18px 20px', 
+                          borderRadius: '12px', 
+                          border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
+                          backgroundColor: isSelected ? '#FFF7ED' : 'white',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <span style={{ fontSize: '28px' }}>
+                            {item.reference === 'CAT-WING' && '💨'}
+                            {item.reference === 'CAT-BOARD' && '🏄'}
+                            {item.reference === 'CAT-FOIL' && '🦅'}
+                            {item.reference === 'CAT-MAST' && '📏'}
+                            {item.reference === 'CAT-ACC' && '🎒'}
+                          </span>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>{eq.name}</h3>
-                              {eq.category && <span style={{ fontSize: '11px', backgroundColor: '#F3F4F6', color: '#4B5563', padding: '2px 6px', borderRadius: '4px' }}>{eq.category}</span>}
-                            </div>
-                            <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>Réf: {eq.reference || 'N/A'}</p>
-                          </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                            {isOutOfStock ? (
-                              <span style={{ fontSize: '12px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>🚫 Indisponible</span>
-                            ) : (
-                              <span style={{ fontSize: '12px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '4px 8px', borderRadius: '6px', fontWeight: 600 }}>✓ Disponible ({qtyAvailable} dispo)</span>
-                            )}
-                            <div style={{ width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${isSelected ? '#F97316' : '#D1D5DB'}`, backgroundColor: isSelected ? '#F97316' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '12px', fontWeight: 'bold' }}>
-                              {isSelected && '✓'}
-                            </div>
+                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#111827' }}>
+                              {item.reference === 'CAT-WING' && 'Ailes (Wing / Kite)'}
+                              {item.reference === 'CAT-BOARD' && 'Planches'}
+                              {item.reference === 'CAT-FOIL' && 'Foils'}
+                              {item.reference === 'CAT-MAST' && 'Mâts'}
+                              {item.reference === 'CAT-ACC' && 'Accessoires (Harnais, Combinaison, Gilet)'}
+                            </h3>
+                            <span style={{ fontSize: '12px', color: '#6B7280' }}>Disponible à la location</span>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div style={{ 
+                            width: '22px', 
+                            height: '22px', 
+                            borderRadius: '50%', 
+                            border: `2px solid ${isSelected ? '#F97316' : '#D1D5DB'}`, 
+                            backgroundColor: isSelected ? '#F97316' : 'transparent', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            color: 'white', 
+                            fontSize: '11px', 
+                            fontWeight: 'bold',
+                            transition: 'all 0.15s'
+                          }}>
+                            {isSelected && '✓'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
                 <button 
                   onClick={handleNextStep2} 
@@ -479,7 +450,7 @@ export default function PublicBookingPage() {
                 <span style={{ fontSize: '64px', display: 'block', marginBottom: '24px', animation: 'bounce 1s infinite' }}>🎉</span>
                 <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginBottom: '16px', letterSpacing: '-0.5px' }}>Félicitations !</h2>
                 <p style={{ fontSize: '16px', color: '#4B5563', maxWidth: '500px', margin: '0 auto 32px auto', lineHeight: '1.6' }}>
-                  Votre réservation a bien été enregistrée. Elle est désormais disponible et visible dans notre système pour notre équipe technique.
+                  Votre demande de location a bien été enregistrée. Notre équipe technique la prépare pour vos dates.
                 </p>
 
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', maxWidth: '500px', margin: '0 auto 32px auto', textAlign: 'left' }}>
@@ -487,11 +458,20 @@ export default function PublicBookingPage() {
                   <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div>📅 <strong>Dates :</strong> Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')}</div>
                     <div>👤 <strong>Client :</strong> {firstName} {lastName} ({email})</div>
-                    <div>📦 <strong>Matériel :</strong>
+                    <div>📦 <strong>Types de matériel :</strong>
                       <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
                         {selectedEquipmentIds.map(id => {
                           const item = equipmentList.find(e => e.id === id);
-                          return <li key={id}>{item ? item.name : 'Équipement'}</li>;
+                          let displayName = 'Équipement';
+                          if (item) {
+                            if (item.reference === 'CAT-WING') displayName = 'Ailes (Wing / Kite)';
+                            else if (item.reference === 'CAT-BOARD') displayName = 'Planches';
+                            else if (item.reference === 'CAT-FOIL') displayName = 'Foils';
+                            else if (item.reference === 'CAT-MAST') displayName = 'Mâts';
+                            else if (item.reference === 'CAT-ACC') displayName = 'Accessoires';
+                            else displayName = item.name;
+                          }
+                          return <li key={id}>{displayName}</li>;
                         })}
                       </ul>
                     </div>
@@ -544,12 +524,21 @@ export default function PublicBookingPage() {
                 {/* Type de location masqué car uniquement Ponctuel */}
 
                 <div>
-                  <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel sélectionné ({selectedEquipmentIds.length})</span>
+                  <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel choisi ({selectedEquipmentIds.length})</span>
                   {selectedEquipmentIds.length > 0 ? (
                     <ul style={{ margin: 0, paddingLeft: '16px', color: '#F3F4F6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {selectedEquipmentIds.map(id => {
                         const item = equipmentList.find(e => e.id === id);
-                        return <li key={id}>{item ? item.name : 'Équipement'}</li>;
+                        let displayName = 'Équipement';
+                        if (item) {
+                          if (item.reference === 'CAT-WING') displayName = 'Ailes (Wing / Kite)';
+                          else if (item.reference === 'CAT-BOARD') displayName = 'Planches';
+                          else if (item.reference === 'CAT-FOIL') displayName = 'Foils';
+                          else if (item.reference === 'CAT-MAST') displayName = 'Mâts';
+                          else if (item.reference === 'CAT-ACC') displayName = 'Accessoires';
+                          else displayName = item.name;
+                        }
+                        return <li key={id}>{displayName}</li>;
                       })}
                     </ul>
                   ) : (
