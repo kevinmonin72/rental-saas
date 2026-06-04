@@ -304,7 +304,7 @@ export default function InvoiceGenerator() {
               style={{ backgroundColor: '#8B5CF6', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} 
               onClick={() => setShowSendOptions(!showSendOptions)}
             >
-              <span>✉️</span> Envoyer au client {showSendOptions ? '▲' : '▼'}
+              <span>💳</span> Envoyer au client {showSendOptions ? '▲' : '▼'}
             </button>
             
             {showSendOptions && (
