@@ -175,13 +175,14 @@ export default function InvoiceGenerator() {
     });
   };
 
-  const calculateSubtotal = () => {
+  const calculateTotalTTC = () => {
     return invoiceData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   };
 
-  const subtotal = calculateSubtotal();
-  const tax = subtotal * (invoiceData.taxRate / 100);
-  const total = subtotal + tax;
+  const total = calculateTotalTTC();
+  const taxMultiplier = invoiceData.taxRate / 100;
+  const subtotal = total / (1 + taxMultiplier);
+  const tax = total - subtotal;
 
   const handlePrint = () => {
     window.print();
@@ -312,7 +313,7 @@ export default function InvoiceGenerator() {
                 </div>
                 <input type="text" className="input" placeholder="Description" style={{ flex: 3 }} value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} />
                 <input type="number" className="input" placeholder="Qté" style={{ flex: 1, minWidth: '60px' }} value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
-                <input type="number" className="input" placeholder="Prix Unit." style={{ flex: 1, minWidth: '80px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
+                <input type="number" className="input" placeholder="Prix Unit. TTC" style={{ flex: 1, minWidth: '100px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
                 <button type="button" onClick={() => handleRemoveItem(item.id)} style={{ padding: '10px', color: '#EF4444', fontSize: '16px' }}>×</button>
               </div>
             ))}
@@ -356,14 +357,18 @@ export default function InvoiceGenerator() {
               </tr>
             </thead>
             <tbody>
-              {invoiceData.items.map(item => (
-                <tr key={item.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                  <td style={{ padding: '16px 0', fontSize: '15px' }}>{item.description}</td>
-                  <td style={{ padding: '16px 0', textAlign: 'center', fontSize: '15px' }}>{item.quantity}</td>
-                  <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '15px' }}>{item.unitPrice.toFixed(2)} €</td>
-                  <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '15px', fontWeight: 500 }}>{(item.quantity * item.unitPrice).toFixed(2)} €</td>
-                </tr>
-              ))}
+              {invoiceData.items.map(item => {
+                const prixHT = item.unitPrice / (1 + (invoiceData.taxRate / 100));
+                const totalHTItem = item.quantity * prixHT;
+                return (
+                  <tr key={item.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                    <td style={{ padding: '16px 0', fontSize: '15px' }}>{item.description}</td>
+                    <td style={{ padding: '16px 0', textAlign: 'center', fontSize: '15px' }}>{item.quantity}</td>
+                    <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '15px' }}>{prixHT.toFixed(2)} €</td>
+                    <td style={{ padding: '16px 0', textAlign: 'right', fontSize: '15px', fontWeight: 500 }}>{totalHTItem.toFixed(2)} €</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
