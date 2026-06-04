@@ -137,14 +137,19 @@ export default function PromoCodesPage() {
           )}
         </div>
 
-        <div className="card" style={{ width: '350px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Créer un code</h2>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div className="form-group">
-              <label className="form-label">Code Promo</label>
+        <div className="card" style={{ width: '360px', alignSelf: 'flex-start', position: 'sticky', top: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '20px' }}>🏷️</span>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Créer un code</h2>
+          </div>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{color: '#9CA3AF'}}>🔤</span> Code Promo
+              </label>
               <input 
                 type="text" 
-                className="form-input" 
+                className="input" 
                 placeholder="Ex: WELCOME10" 
                 value={code} 
                 onChange={e => setCode(e.target.value.toUpperCase())}
@@ -152,21 +157,25 @@ export default function PromoCodesPage() {
               />
             </div>
             
-            <div className="form-group">
-              <label className="form-label">Type de réduction</label>
-              <select className="form-input" value={discountType} onChange={e => setDiscountType(e.target.value)}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{color: '#9CA3AF'}}>⚙️</span> Type de réduction
+              </label>
+              <select className="input" value={discountType} onChange={e => setDiscountType(e.target.value)}>
                 <option value="percentage">Pourcentage (%)</option>
                 <option value="amount">Montant fixe (€)</option>
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Valeur de la réduction</label>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{color: '#9CA3AF'}}>💰</span> Valeur de la réduction
+              </label>
               <input 
                 type="number" 
                 step="0.01"
                 min="0"
-                className="form-input" 
+                className="input" 
                 placeholder={discountType === 'percentage' ? "Ex: 10" : "Ex: 15.50"} 
                 value={discountValue} 
                 onChange={e => setDiscountValue(e.target.value)}
@@ -174,24 +183,28 @@ export default function PromoCodesPage() {
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Email ciblé (Optionnel)</label>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{color: '#9CA3AF'}}>📧</span> Email ciblé <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span>
+              </label>
               <input 
                 type="email" 
-                className="form-input" 
+                className="input" 
                 placeholder="Si vide, valable pour tous" 
                 value={targetEmail} 
                 onChange={e => setTargetEmail(e.target.value)}
               />
-              <span style={{fontSize:'12px', color:'#6b7280'}}>Ce code ne fonctionnera que pour cet email.</span>
+              <span style={{fontSize:'12px', color:'#6b7280', marginTop: '6px'}}>Ce code ne fonctionnera que pour cet email.</span>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Nombre max d'utilisations (Optionnel)</label>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{color: '#9CA3AF'}}>🔢</span> Nombre d'utilisations <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span>
+              </label>
               <input 
                 type="number" 
                 min="1"
-                className="form-input" 
+                className="input" 
                 placeholder="Ex: 50" 
                 value={maxUses} 
                 onChange={e => setMaxUses(e.target.value)}
