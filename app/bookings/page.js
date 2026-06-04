@@ -627,7 +627,17 @@ export default function BookingsPage() {
                         <strong>Matériel ({booking.equipments?.length}) :</strong>
                         <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
                           {booking.equipments?.map(eq => (
-                            <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
+                            <li key={eq.id}>
+                              {eq.name} (Réf: {eq.reference || 'N/A'})
+                              {(eq.customStart || eq.customEnd) && (
+                                <span style={{ marginLeft: '8px', color: '#6B7280', fontSize: '12px' }}>
+                                  [
+                                  {eq.customStart ? `Du ${new Date(eq.customStart).toLocaleDateString('fr-FR')}` : `Depuis le ${new Date(booking.start_date).toLocaleDateString('fr-FR')}`}
+                                  {eq.customEnd ? ` au ${new Date(eq.customEnd).toLocaleDateString('fr-FR')}` : ''}
+                                  ]
+                                </span>
+                              )}
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -741,7 +751,17 @@ export default function BookingsPage() {
                         <strong>Matériel rendu ({booking.equipments?.length}) :</strong>
                         <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
                           {booking.equipments?.map(eq => (
-                            <li key={eq.id}>{eq.name} (Réf: {eq.reference || 'N/A'})</li>
+                            <li key={eq.id}>
+                              {eq.name} (Réf: {eq.reference || 'N/A'})
+                              {(eq.customStart || eq.customEnd) && (
+                                <span style={{ marginLeft: '8px', color: '#6B7280', fontSize: '12px' }}>
+                                  [
+                                  {eq.customStart ? `Du ${new Date(eq.customStart).toLocaleDateString('fr-FR')}` : `Depuis le ${new Date(booking.start_date).toLocaleDateString('fr-FR')}`}
+                                  {eq.customEnd ? ` au ${new Date(eq.customEnd).toLocaleDateString('fr-FR')}` : ''}
+                                  ]
+                                </span>
+                              )}
+                            </li>
                           ))}
                         </ul>
                       </div>
