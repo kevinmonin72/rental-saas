@@ -3,16 +3,72 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+const GENERIC_EQUIPMENTS = [
+  { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 15 },
+  { reference: 'LOK-PACK-KITE', name: 'Pack Kitesurf - à personnaliser ✨', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-AILE-BARRE', name: 'Aile + Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-PACK-2AILES-BARRE', name: 'Pack 2 Ailes + Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-BOARD-TWINTIP', name: 'Planche Twintip', category: 'Kitesurf', quantity: 19 },
+  { reference: 'LOK-WING-AILE', name: 'Aile de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-HARNAIS-CULOTTE', name: 'Harnais culotte', category: 'Accessoires', quantity: 50 },
+  { reference: 'LOK-AILE-SANSBARRE', name: 'Deuxième aile (sans barre)', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-NEOPRENE-COMBINAISON', name: 'Combinaison', category: 'Néoprène', quantity: 60 },
+  { reference: 'LOK-PACK-WING-GONFLABLE', name: 'Pack Wing gonflable', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-NEOPRENE-CAGOULE', name: 'Cagoule', category: 'Néoprène', quantity: 50 },
+  { reference: 'LOK-PACK-WING-RIGIDE', name: 'Pack Wing rigide', category: 'Wingfoil', quantity: 45 },
+  { reference: 'LOK-PACK-WING-DEBUTANT', name: 'Pack Wing débutant', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-WING-FOIL', name: 'Foil de Wing', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-WING-BOARD', name: 'Planche de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-WING-2AILE', name: 'Deuxième Aile de Wing', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-CAGOULE-OPT', name: 'Cagoule opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-CHAUSSONS-OPT', name: 'Chaussons opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-GANTS-OPT', name: 'Gants opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-HARNAIS-CEINTURE', name: 'Harnais ceinture', category: 'Accessoires', quantity: 50 },
+  { reference: 'LOK-NEOPRENE-VESTE', name: 'Veste néoprène', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-NEOPRENE-CHAUSSONS', name: 'Chaussons', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-COMBINAISON-OPT', name: 'Combinaison opt.', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-BOARDBAG', name: 'Boardbag', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-NEOPRENE-GANTS', name: 'Gants', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-HARNAIS-CEINTURE-OPT', name: 'Harnais ceinture opt.', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-PROT-CASQUE', name: 'Casque', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-VESTENEOPRENE-OPT', name: 'Veste Néoprène opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-PROT-GILET', name: 'Gilet', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-CASQUE-OPT', name: 'Casque opt.', category: 'Protections', quantity: 25 },
+  { reference: 'LOK-GILET-OPT', name: 'Gilet opt.', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-HARNAIS-CULOTTE-OPT', name: 'Harnais Culotte opt.', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-3AILE-SANSBARRE', name: 'Troisième aile (sans barre)', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-2AILE-SANSBARRE-CS', name: 'Deuxième aile (sans barre) - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-3AILE-SANSBARRE-CS', name: 'Troisième aile (sans barre) - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-TWINTIP-OPT-CS', name: 'Planche Twintip opt. - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-2WING-AILE-CS', name: 'Deuxième Aile de Wing - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-INITIATION-FOIL-TRACTE', name: 'Initiation foil tracté', category: 'Initiation', quantity: 4 },
+  { reference: 'LOK-BARRE', name: 'Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-KITEFOIL', name: 'Kitefoil', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-STRAPLESS', name: 'Strapless', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-TWINTIP-OPT', name: 'Planche Twintip Opt.', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-BOARD-FOIL-WING', name: 'Planche + Foil de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-PADDLE', name: 'Paddle', category: 'Autres', quantity: 25 },
+  { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 50 }
+];
+
+const getPricePerDay = (reference) => {
+  if (reference.includes('PACK')) return 40; 
+  if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; 
+  if (reference.includes('BOARD') || reference.includes('TWINTIP')) return 20; 
+  if (reference.includes('NEOPRENE') || reference.includes('COMBINAISON')) return 10; 
+  return 10; 
+};
+
 export default function InvoiceGenerator() {
   const [invoiceData, setInvoiceData] = useState({
     number: `FA-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-001`,
     date: new Date().toISOString().split('T')[0],
-    companyName: 'Votre Entreprise',
-    companyAddress: '123 Rue de la Plage\n75000 Paris\nFrance',
-    clientName: 'Nom du Client',
-    clientAddress: '456 Avenue des Vagues\n33000 Bordeaux',
+    companyName: 'THE RIDERY',
+    companyAddress: '14 B RUE JADIN\n75017 PARIS',
+    clientName: '',
+    clientAddress: '',
     items: [
-      { id: 1, description: 'Location Pack Kitesurf (7 jours)', quantity: 1, unitPrice: 150 }
+      { id: 1, reference: '', description: '', quantity: 1, unitPrice: 0 }
     ],
     taxRate: 20
   });
@@ -20,7 +76,7 @@ export default function InvoiceGenerator() {
   const handleAddItem = () => {
     setInvoiceData({
       ...invoiceData,
-      items: [...invoiceData.items, { id: Date.now(), description: '', quantity: 1, unitPrice: 0 }]
+      items: [...invoiceData.items, { id: Date.now(), reference: '', description: '', quantity: 1, unitPrice: 0 }]
     });
   };
 
@@ -32,9 +88,25 @@ export default function InvoiceGenerator() {
   };
 
   const handleItemChange = (id, field, value) => {
+    let newItems = invoiceData.items.map(item => {
+      if (item.id === id) {
+        let updated = { ...item, [field]: value };
+        // Si on change la référence via le select, on auto-remplit la description et le prix
+        if (field === 'reference' && value) {
+          const eq = GENERIC_EQUIPMENTS.find(e => e.reference === value);
+          if (eq) {
+            updated.description = eq.name;
+            updated.unitPrice = getPricePerDay(eq.reference);
+          }
+        }
+        return updated;
+      }
+      return item;
+    });
+
     setInvoiceData({
       ...invoiceData,
-      items: invoiceData.items.map(item => item.id === id ? { ...item, [field]: value } : item)
+      items: newItems
     });
   };
 
@@ -89,7 +161,7 @@ export default function InvoiceGenerator() {
       <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }} className="no-print invoice-layout">
         
         {/* FORMULAIRE DE CONFIGURATION */}
-        <div className="card no-print" style={{ flex: 1, minWidth: '350px' }}>
+        <div className="card no-print" style={{ flex: 1, minWidth: '450px' }}>
           <h2 style={{ fontSize: '18px', marginBottom: '24px' }}>Détails de la facture</h2>
           
           <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
@@ -129,11 +201,24 @@ export default function InvoiceGenerator() {
               <button type="button" onClick={handleAddItem} style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 'bold' }}>+ Ajouter</button>
             </div>
             
-            {invoiceData.items.map((item, index) => (
-              <div key={item.id} style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'flex-start' }}>
+            {invoiceData.items.map((item) => (
+              <div key={item.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', alignItems: 'flex-start', paddingBottom: '16px', borderBottom: '1px solid #E5E7EB' }}>
+                <div style={{ width: '100%', marginBottom: '4px' }}>
+                  <select 
+                    className="input" 
+                    value={item.reference} 
+                    onChange={e => handleItemChange(item.id, 'reference', e.target.value)}
+                    style={{ fontSize: '13px' }}
+                  >
+                    <option value="">-- Choisir un produit catalogue (Optionnel) --</option>
+                    {GENERIC_EQUIPMENTS.map(eq => (
+                      <option key={eq.reference} value={eq.reference}>{eq.reference} - {eq.name}</option>
+                    ))}
+                  </select>
+                </div>
                 <input type="text" className="input" placeholder="Description" style={{ flex: 3 }} value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} />
                 <input type="number" className="input" placeholder="Qté" style={{ flex: 1, minWidth: '60px' }} value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
-                <input type="number" className="input" placeholder="Prix Unitaire" style={{ flex: 1, minWidth: '80px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
+                <input type="number" className="input" placeholder="Prix Unit." style={{ flex: 1, minWidth: '80px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
                 <button type="button" onClick={() => handleRemoveItem(item.id)} style={{ padding: '10px', color: '#EF4444', fontSize: '16px' }}>×</button>
               </div>
             ))}
@@ -163,8 +248,8 @@ export default function InvoiceGenerator() {
 
           <div style={{ marginBottom: '48px', padding: '24px', backgroundColor: '#F9FAFB', borderRadius: '8px', display: 'inline-block', minWidth: '300px' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>Facturé à</h3>
-            <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111827' }}>{invoiceData.clientName}</h2>
-            <p style={{ margin: 0, fontSize: '14px', color: '#4B5563', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{invoiceData.clientAddress}</p>
+            <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111827' }}>{invoiceData.clientName || 'Nom du client'}</h2>
+            <p style={{ margin: 0, fontSize: '14px', color: '#4B5563', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{invoiceData.clientAddress || 'Adresse du client'}</p>
           </div>
 
           <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '48px' }}>
@@ -212,7 +297,6 @@ export default function InvoiceGenerator() {
 
         </div>
       </div>
-      
       <style dangerouslySetInnerHTML={{__html: `
         @media (max-width: 1100px) {
           .invoice-layout {
