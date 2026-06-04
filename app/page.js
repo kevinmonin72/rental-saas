@@ -64,7 +64,7 @@ export default function DashboardHome() {
 
     // Count wingboost bookings matching month keys
     bookings.forEach(b => {
-      if (b.rental_type === 'wingboost') {
+      if (b.rental_type === 'wingboost' && b.status === 'active') {
         const start = new Date(b.start_date);
         const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
         if (months[key]) {
