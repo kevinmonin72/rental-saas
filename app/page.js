@@ -11,7 +11,7 @@ export default function DashboardHome() {
   const [mounted, setMounted] = useState(false);
   const [localDataToMigrate, setLocalDataToMigrate] = useState(null);
   const [isMigrating, setIsMigrating] = useState(false);
-  const { getDashboardStats, getDetailedActiveBookings, fetchData, bookings } = useStore();
+  const { getDashboardStats, getDetailedActiveBookings, fetchData, bookings, bookingItems } = useStore();
 
   useEffect(() => {
     setMounted(true);
@@ -92,19 +92,33 @@ export default function DashboardHome() {
     // Count expected returns in these months
     bookings.forEach(b => {
       if (b.status === 'active') {
-        let endDate = new Date(b.end_date);
+        const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
+        
+        // Base end date of the booking
+        let baseEndDate = new Date(b.end_date);
         if (b.pause_start && b.pause_end) {
           const ps = new Date(b.pause_start);
           const pe = new Date(b.pause_end);
           if (pe >= ps) {
             const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
-            endDate.setDate(endDate.getDate() + diffDays);
+            baseEndDate.setDate(baseEndDate.getDate() + diffDays);
           }
         }
         
-        const key = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}`;
-        if (months[key]) {
-          months[key].count++;
+        if (bItems.length > 0) {
+          bItems.forEach(item => {
+            const itemEndDate = item.end_date ? new Date(item.end_date) : baseEndDate;
+            const key = `${itemEndDate.getFullYear()}-${String(itemEndDate.getMonth() + 1).padStart(2, '0')}`;
+            if (months[key]) {
+              months[key].count++; // Count each equipment return
+            }
+          });
+        } else {
+          // If no items, just use the booking end date
+          const key = `${baseEndDate.getFullYear()}-${String(baseEndDate.getMonth() + 1).padStart(2, '0')}`;
+          if (months[key]) {
+            months[key].count++;
+          }
         }
       }
     });
