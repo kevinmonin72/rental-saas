@@ -319,6 +319,7 @@ export default function DashboardHome() {
           let isLate = endDate < today;
           if (!isLate && b.equipments) {
             isLate = b.equipments.some(eq => {
+              if (eq.is_returned) return false;
               if (eq.customEnd) {
                 const eqEndDate = new Date(eq.customEnd);
                 eqEndDate.setHours(0, 0, 0, 0);
@@ -359,6 +360,7 @@ export default function DashboardHome() {
                           
                           if (!isFullBookingLate) {
                             lateEquipments = lateEquipments.filter(eq => {
+                              if (eq.is_returned) return false;
                               if (eq.customEnd) {
                                 const eqEnd = new Date(eq.customEnd);
                                 eqEnd.setHours(0,0,0,0);

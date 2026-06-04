@@ -130,7 +130,7 @@ export default function BookingsPage() {
         customerId: selectedCustomerId,
         startDate: startDate,
         endDate: endDate,
-        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null })),
+        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null, is_returned: e.is_returned || false })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
         pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
@@ -141,7 +141,7 @@ export default function BookingsPage() {
         customerId: selectedCustomerId,
         startDate: startDate,
         endDate: endDate,
-        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null })),
+        equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null, is_returned: e.is_returned || false })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
         pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
@@ -384,9 +384,17 @@ export default function BookingsPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px', padding: '12px', backgroundColor: 'var(--surface-color)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                     {selectedEquipments.map(eq => (
                       <div key={eq.id} style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '8px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '14px', fontWeight: '500' }}>Réf: {eq.reference || 'N/A'} - {eq.name}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500', textDecoration: eq.is_returned ? 'line-through' : 'none', color: eq.is_returned ? '#9CA3AF' : 'inherit' }}>
+                            Réf: {eq.reference || 'N/A'} - {eq.name}
+                            {eq.is_returned && <span style={{ marginLeft: '8px', color: '#10B981', fontSize: '12px', fontWeight: 'bold' }}>✅ Rendu</span>}
+                          </span>
                           <div style={{ display: 'flex', gap: '8px' }}>
+                            <button type="button" onClick={() => {
+                              setSelectedEquipments(selectedEquipments.map(e => e.id === eq.id ? { ...e, is_returned: !e.is_returned } : e));
+                            }} style={{ background: eq.is_returned ? '#F3F4F6' : '#10B981', color: eq.is_returned ? '#374151' : 'white', border: 'none', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}>
+                              {eq.is_returned ? 'Annuler retour' : '✅ Rendu'}
+                            </button>
                             {rentalType === 'wingboost' && (
                               <button type="button" onClick={() => {
                                 setSelectedEquipments(selectedEquipments.map(e => e.id === eq.id ? { ...e, showOptions: !e.showOptions } : e));
@@ -597,8 +605,10 @@ export default function BookingsPage() {
                 baseEndDate.setHours(0, 0, 0, 0);
 
                 let isLate = baseEndDate < today;
+                // If baseEndDate is past, but all items are returned, it shouldn't be late? Wait, if they are all returned, the booking should probably be marked complete. We will leave baseEndDate logic, but for equipments we check is_returned.
                 if (!isLate && booking.equipments) {
                   isLate = booking.equipments.some(eq => {
+                    if (eq.is_returned) return false;
                     if (eq.customEnd) {
                       const eqEndDate = new Date(eq.customEnd);
                       eqEndDate.setHours(0, 0, 0, 0);
@@ -668,19 +678,25 @@ export default function BookingsPage() {
                             <>
                               <strong>Matériel {endMonthFilter ? 'prévu ce mois-ci' : ''} ({displayedEquipments.length}) :</strong>
                               <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '14px' }}>
-                                {displayedEquipments.map(eq => (
-                                  <li key={eq.id}>
-                                    {eq.name} (Réf: {eq.reference || 'N/A'})
-                                    {(eq.customStart || eq.customEnd) && (
-                                      <span style={{ marginLeft: '8px', color: '#6B7280', fontSize: '12px' }}>
-                                        [
-                                        {eq.customStart ? `Du ${new Date(eq.customStart).toLocaleDateString('fr-FR')}` : `Depuis le ${new Date(booking.start_date).toLocaleDateString('fr-FR')}`}
-                                        {eq.customEnd ? ` au ${new Date(eq.customEnd).toLocaleDateString('fr-FR')}` : ''}
-                                        ]
-                                      </span>
-                                    )}
-                                  </li>
-                                ))}
+                                {displayedEquipments.map(eq => {
+                                  let eqLate = false;
+                                  if (!eq.is_returned && eq.customEnd) {
+                                    const eqEnd = new Date(eq.customEnd);
+                                    eqEnd.setHours(0,0,0,0);
+                                    if (eqEnd < today) eqLate = true;
+                                  }
+                                  return (
+                                    <li key={eq.id} style={{ 
+                                      color: (eq.is_returned) ? '#9CA3AF' : (eqLate ? '#ef4444' : 'inherit'),
+                                      textDecoration: eq.is_returned ? 'line-through' : 'none'
+                                    }}>
+                                      {eq.name} (Réf: {eq.reference || 'N/A'})
+                                      {eq.is_returned && <span style={{ marginLeft: '8px', color: '#10B981', fontSize: '11px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' }}>✅ Rendu</span>}
+                                      {eqLate && !eq.is_returned && <span style={{ marginLeft: '8px', fontSize: '11px', color: '#ef4444' }}>(En retard)</span>}
+                                      {eq.customEnd && !eq.is_returned && <span style={{ marginLeft: '4px', fontSize: '11px', color: '#6B7280' }}>(jusqu'au {new Date(eq.customEnd).toLocaleDateString('fr-FR')})</span>}
+                                    </li>
+                                  );
+                                })}
                               </ul>
                               {endMonthFilter && displayedEquipments.length < (booking.equipments?.length || 0) && (
                                 <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic' }}>
