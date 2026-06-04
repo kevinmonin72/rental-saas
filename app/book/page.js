@@ -6,20 +6,70 @@ import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 const GENERIC_EQUIPMENTS = [
-  { reference: 'CAT-WING', name: 'Aile de Wing / Kite (Générique)', category: 'Ailes', quantity: 9999 },
-  { reference: 'CAT-BOARD', name: 'Planche (Générique)', category: 'Planches', quantity: 9999 },
-  { reference: 'CAT-FOIL', name: 'Foil (Générique)', category: 'Foils', quantity: 9999 },
-  { reference: 'CAT-MAST', name: 'Mât (Générique)', category: 'Mâts', quantity: 9999 },
-  { reference: 'CAT-ACC', name: 'Accessoire (Générique)', category: 'Accessoires', quantity: 9999 }
+  { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 15 },
+  { reference: 'LOK-PACK-KITE', name: 'Pack Kitesurf - à personnaliser ✨', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-AILE-BARRE', name: 'Aile + Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-PACK-2AILES-BARRE', name: 'Pack 2 Ailes + Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-BOARD-TWINTIP', name: 'Planche Twintip', category: 'Kitesurf', quantity: 19 },
+  { reference: 'LOK-WING-AILE', name: 'Aile de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-HARNAIS-CULOTTE', name: 'Harnais culotte', category: 'Accessoires', quantity: 50 },
+  { reference: 'LOK-AILE-SANSBARRE', name: 'Deuxième aile (sans barre)', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-NEOPRENE-COMBINAISON', name: 'Combinaison', category: 'Néoprène', quantity: 60 },
+  { reference: 'LOK-PACK-WING-GONFLABLE', name: 'Pack Wing gonflable', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-NEOPRENE-CAGOULE', name: 'Cagoule', category: 'Néoprène', quantity: 50 },
+  { reference: 'LOK-PACK-WING-RIGIDE', name: 'Pack Wing rigide', category: 'Wingfoil', quantity: 45 },
+  { reference: 'LOK-PACK-WING-DEBUTANT', name: 'Pack Wing débutant', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-WING-FOIL', name: 'Foil de Wing', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-WING-BOARD', name: 'Planche de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-WING-2AILE', name: 'Deuxième Aile de Wing', category: 'Wingfoil', quantity: 25 },
+  { reference: 'LOK-CAGOULE-OPT', name: 'Cagoule opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-CHAUSSONS-OPT', name: 'Chaussons opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-GANTS-OPT', name: 'Gants opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-HARNAIS-CEINTURE', name: 'Harnais ceinture', category: 'Accessoires', quantity: 50 },
+  { reference: 'LOK-NEOPRENE-VESTE', name: 'Veste néoprène', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-NEOPRENE-CHAUSSONS', name: 'Chaussons', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-COMBINAISON-OPT', name: 'Combinaison opt.', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-BOARDBAG', name: 'Boardbag', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-NEOPRENE-GANTS', name: 'Gants', category: 'Néoprène', quantity: 25 },
+  { reference: 'LOK-HARNAIS-CEINTURE-OPT', name: 'Harnais ceinture opt.', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-PROT-CASQUE', name: 'Casque', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-VESTENEOPRENE-OPT', name: 'Veste Néoprène opt.', category: 'Néoprène', quantity: 15 },
+  { reference: 'LOK-PROT-GILET', name: 'Gilet', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-CASQUE-OPT', name: 'Casque opt.', category: 'Protections', quantity: 25 },
+  { reference: 'LOK-GILET-OPT', name: 'Gilet opt.', category: 'Protections', quantity: 50 },
+  { reference: 'LOK-HARNAIS-CULOTTE-OPT', name: 'Harnais Culotte opt.', category: 'Accessoires', quantity: 25 },
+  { reference: 'LOK-3AILE-SANSBARRE', name: 'Troisième aile (sans barre)', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-2AILE-SANSBARRE-CS', name: 'Deuxième aile (sans barre) - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-3AILE-SANSBARRE-CS', name: 'Troisième aile (sans barre) - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-TWINTIP-OPT-CS', name: 'Planche Twintip opt. - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-2WING-AILE-CS', name: 'Deuxième Aile de Wing - carte session', category: 'Carte Session', quantity: 15 },
+  { reference: 'LOK-INITIATION-FOIL-TRACTE', name: 'Initiation foil tracté', category: 'Initiation', quantity: 4 },
+  { reference: 'LOK-BARRE', name: 'Barre', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-KITEFOIL', name: 'Kitefoil', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-STRAPLESS', name: 'Strapless', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-TWINTIP-OPT', name: 'Planche Twintip Opt.', category: 'Kitesurf', quantity: 20 },
+  { reference: 'LOK-BOARD-FOIL-WING', name: 'Planche + Foil de Wing', category: 'Wingfoil', quantity: 49 },
+  { reference: 'LOK-PADDLE', name: 'Paddle', category: 'Autres', quantity: 25 },
+  { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 50 }
 ];
 
+const CATEGORY_ICONS = {
+  Kitesurf: '💨',
+  Wingfoil: '🏄',
+  Néoprène: '🌊',
+  Accessoires: '🎒',
+  Protections: '🛡️',
+  'Carte Session': '🎟️',
+  Initiation: '✨',
+  Autres: '🛶'
+};
+
 const getPricePerDay = (reference) => {
-  if (reference === 'CAT-WING') return 30; // 30€/jour
-  if (reference === 'CAT-BOARD') return 25; // 25€/jour
-  if (reference === 'CAT-FOIL') return 20; // 20€/jour
-  if (reference === 'CAT-MAST') return 10; // 10€/jour
-  if (reference === 'CAT-ACC') return 5; // 5€/jour
-  return 15;
+  if (reference.includes('PACK')) return 40; // Packs: 40€/jour
+  if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; // Ailes/Foils: 25€/jour
+  if (reference.includes('BOARD') || reference.includes('TWINTIP')) return 20; // Planches: 20€/jour
+  if (reference.includes('NEOPRENE') || reference.includes('COMBINAISON')) return 10; // Néoprène: 10€/jour
+  return 10; // Reste (accessoires, gilets, etc.): 10€/jour
 };
 
 export default function PublicBookingPage() {
@@ -41,6 +91,8 @@ export default function PublicBookingPage() {
   const [halfDaySlot, setHalfDaySlot] = useState('demi_matin'); // 'demi_matin' | 'demi_aprem'
   const [rentalType, setRentalType] = useState('ponctuel');
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('All');
   
   // Customer Info State
   const [firstName, setFirstName] = useState('');
@@ -73,7 +125,8 @@ export default function PublicBookingPage() {
 
         // Identify which generic equipment categories are missing in the DB
         for (const item of GENERIC_EQUIPMENTS) {
-          if (!dbEquipments.some(e => e.reference === item.reference)) {
+          const match = dbEquipments.find(e => e.reference === item.reference);
+          if (!match) {
             missingGenerics.push({
               id: uuidv4(),
               reference: item.reference,
@@ -81,6 +134,10 @@ export default function PublicBookingPage() {
               category: item.category,
               quantity: item.quantity
             });
+          } else if (match.quantity !== item.quantity) {
+            // Update quantity if it differs to match Lokki stock changes
+            await supabase.from('equipment').update({ quantity: item.quantity }).eq('id', match.id);
+            match.quantity = item.quantity;
           }
         }
 
@@ -159,7 +216,6 @@ export default function PublicBookingPage() {
         setError('Veuillez sélectionner la date de location.');
         return;
       }
-      // For half-day, start_date and end_date are the same
       setStartDate(halfDayDate);
       setEndDate(halfDayDate);
       setRentalType(halfDaySlot);
@@ -177,7 +233,48 @@ export default function PublicBookingPage() {
     setStep(3);
   };
 
+  // Helper: check quantity of equipment available for selected dates
+  const getAvailableQuantity = (eqId) => {
+    if (!startDate || !endDate) return 0;
+    const sNew = new Date(startDate);
+    sNew.setHours(0,0,0,0);
+    const eNew = new Date(endDate);
+    eNew.setHours(23,59,59,999);
+    
+    if (eNew < sNew) return 0;
+
+    const overlappingBookingsCount = bookings.filter(b => {
+      const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
+      if (!bItems.some(bi => bi.equipment_id === eqId)) return false;
+
+      const sExist = new Date(b.start_date);
+      sExist.setHours(0,0,0,0);
+      const eExist = new Date(b.end_date);
+      
+      if (b.pause_start && b.pause_end) {
+        const ps = new Date(b.pause_start);
+        const pe = new Date(b.pause_end);
+        if (pe >= ps) {
+          const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
+          eExist.setDate(eExist.getDate() + diffDays);
+        }
+      }
+      eExist.setHours(23,59,59,999);
+
+      return (sNew <= eExist && sExist <= eNew);
+    }).length;
+
+    const eq = equipmentList.find(e => e.id === eqId);
+    const totalQty = eq ? (parseInt(eq.quantity, 10) || 1) : 1;
+    return Math.max(0, totalQty - overlappingBookingsCount);
+  };
+
   const toggleEquipmentSelection = (id) => {
+    const qty = getAvailableQuantity(id);
+    if (qty === 0 && !selectedEquipmentIds.includes(id)) {
+      alert('Cet équipement est déjà réservé sur cette période.');
+      return;
+    }
     setSelectedEquipmentIds(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
     );
@@ -325,6 +422,18 @@ export default function PublicBookingPage() {
     }
   };
 
+  if (fetchingData) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#F3F4F6', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ width: '40px', height: '40px', border: '4px solid #E5E7EB', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+        <span style={{ fontFamily: 'sans-serif', color: '#4B5563', fontWeight: 500 }}>Chargement du catalogue...</span>
+        <style dangerouslySetInnerHTML={{ __html: `
+          @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        `}} />
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#F3F4F6', fontFamily: 'Inter, -apple-system, sans-serif' }}>
       
@@ -460,79 +569,151 @@ export default function PublicBookingPage() {
             {/* STEP 2: SELECT EQUIPMENT TYPES */}
             {step === 2 && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                  <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Type de matériel à louer</h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Choisissez votre matériel</h2>
                   <button onClick={() => setStep(1)} style={{ color: '#F97316', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>← Modifier dates</button>
                 </div>
-                
-                <p style={{ color: '#4B5563', fontSize: '14px', marginBottom: '24px' }}>
-                  Cochez le ou les types de matériel que vous souhaitez louer pour votre session :
-                </p>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
-                  {GENERIC_EQUIPMENTS.map(item => {
-                    const dbItem = equipmentList.find(e => e.reference === item.reference);
-                    if (!dbItem) return null;
+                {/* Filters */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <input 
+                    type="text" 
+                    placeholder="🔍 Rechercher un modèle..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ flex: 1, minWidth: '200px', padding: '10px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+
+                {/* Category Navigation Tabs */}
+                <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px', scrollbarWidth: 'none' }} className="no-scrollbar">
+                  <button 
+                    onClick={() => setActiveCategory('All')}
+                    style={{ 
+                      padding: '8px 16px', 
+                      backgroundColor: activeCategory === 'All' ? '#F97316' : 'white', 
+                      color: activeCategory === 'All' ? 'white' : '#4B5563', 
+                      borderRadius: '20px', 
+                      fontSize: '13px', 
+                      fontWeight: 600, 
+                      border: '1px solid #D1D5DB',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📂 Tous ({equipmentList.length})
+                  </button>
+                  {Object.keys(CATEGORY_ICONS).map(cat => {
+                    const count = equipmentList.filter(e => {
+                      const gen = GENERIC_EQUIPMENTS.find(g => g.reference === e.reference);
+                      return gen && gen.category === cat;
+                    }).length;
                     
-                    const isSelected = selectedEquipmentIds.includes(dbItem.id);
-                    const pricePerDay = getPricePerDay(item.reference);
-                    
+                    if (count === 0) return null;
+
                     return (
-                      <div 
-                        key={item.reference} 
-                        onClick={() => toggleEquipmentSelection(dbItem.id)}
+                      <button 
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
                         style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between', 
-                          padding: '18px 20px', 
-                          borderRadius: '12px', 
-                          border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
-                          backgroundColor: isSelected ? '#FFF7ED' : 'white',
+                          padding: '8px 16px', 
+                          backgroundColor: activeCategory === cat ? '#F97316' : 'white', 
+                          color: activeCategory === cat ? 'white' : '#4B5563', 
+                          borderRadius: '20px', 
+                          fontSize: '13px', 
+                          fontWeight: 600, 
+                          border: '1px solid #D1D5DB',
                           cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.2s'
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <span style={{ fontSize: '28px' }}>
-                            {item.reference === 'CAT-WING' && '💨'}
-                            {item.reference === 'CAT-BOARD' && '🏄'}
-                            {item.reference === 'CAT-FOIL' && '🦅'}
-                            {item.reference === 'CAT-MAST' && '📏'}
-                            {item.reference === 'CAT-ACC' && '🎒'}
-                          </span>
-                          <div>
-                            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#111827' }}>
-                              {item.reference === 'CAT-WING' && 'Ailes (Wing / Kite)'}
-                              {item.reference === 'CAT-BOARD' && 'Planches'}
-                              {item.reference === 'CAT-FOIL' && 'Foils'}
-                              {item.reference === 'CAT-MAST' && 'Mâts'}
-                              {item.reference === 'CAT-ACC' && 'Accessoires (Harnais, Combinaison, Gilet)'}
-                            </h3>
-                            <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
-                              {durationMode === 'half_day' ? `${Math.round(pricePerDay * 0.6)} € / demi-journée` : `${pricePerDay} € / jour`}
-                            </span>
-                          </div>
-                        </div>
+                        {CATEGORY_ICONS[cat]} {cat} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                          <div style={{ 
-                            width: '22px', 
-                            height: '22px', 
-                            borderRadius: '50%', 
-                            border: `2px solid ${isSelected ? '#F97316' : '#D1D5DB'}`, 
-                            backgroundColor: isSelected ? '#F97316' : 'transparent', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center', 
-                            color: 'white', 
-                            fontSize: '11px', 
-                            fontWeight: 'bold',
-                            transition: 'all 0.15s'
-                          }}>
-                            {isSelected && '✓'}
-                          </div>
+                {/* Grouped Equipment Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginBottom: '32px' }}>
+                  {Object.keys(CATEGORY_ICONS).map(cat => {
+                    if (activeCategory !== 'All' && activeCategory !== cat) return null;
+
+                    const catEquipments = equipmentList.filter(e => {
+                      const gen = GENERIC_EQUIPMENTS.find(g => g.reference === e.reference);
+                      return gen && gen.category === cat && 
+                             (searchQuery === '' || e.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                    });
+
+                    if (catEquipments.length === 0) return null;
+
+                    return (
+                      <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
+                          <span>{CATEGORY_ICONS[cat]}</span> {cat}
+                        </h3>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          {catEquipments.map(e => {
+                            const isSelected = selectedEquipmentIds.includes(e.id);
+                            const qtyAvailable = getAvailableQuantity(e.id);
+                            const isOutOfStock = qtyAvailable === 0;
+                            const pricePerDay = getPricePerDay(e.reference);
+
+                            return (
+                              <div 
+                                key={e.id}
+                                onClick={() => !isOutOfStock && toggleEquipmentSelection(e.id)}
+                                style={{ 
+                                  display: 'flex', 
+                                  alignItems: 'center', 
+                                  justifyContent: 'space-between', 
+                                  padding: '16px 20px', 
+                                  borderRadius: '12px', 
+                                  border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
+                                  backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
+                                  cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                                  opacity: isOutOfStock ? 0.6 : 1,
+                                  transition: 'all 0.2s ease',
+                                  boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
+                                }}
+                              >
+                                <div style={{ flex: 1, paddingRight: '16px' }}>
+                                  <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827' }}>
+                                    {e.name}
+                                  </h4>
+                                  <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
+                                    {durationMode === 'half_day' ? `${Math.round(pricePerDay * 0.6)} € / ½ journée` : `${pricePerDay} € / jour`}
+                                  </span>
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                  {isOutOfStock ? (
+                                    <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>
+                                  ) : (
+                                    <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>
+                                  )}
+                                  <div style={{ 
+                                    width: '20px', 
+                                    height: '20px', 
+                                    borderRadius: '50%', 
+                                    border: `2px solid ${isSelected ? '#F97316' : '#D1D5DB'}`, 
+                                    backgroundColor: isSelected ? '#F97316' : 'transparent', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    color: 'white', 
+                                    fontSize: '11px', 
+                                    fontWeight: 'bold',
+                                    transition: 'all 0.15s'
+                                  }}>
+                                    {isSelected && '✓'}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     );
@@ -608,7 +789,7 @@ export default function PublicBookingPage() {
                 </div>
 
                 {/* Stripe Checkout Mock Element */}
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', marginBottom: '32px' }}>
+                <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       💳 Paiement sécurisé par <strong>stripe</strong>
@@ -697,16 +878,7 @@ export default function PublicBookingPage() {
                       <ul style={{ paddingLeft: '20px', marginTop: '4px' }}>
                         {selectedEquipmentIds.map(id => {
                           const item = equipmentList.find(e => e.id === id);
-                          let displayName = 'Équipement';
-                          if (item) {
-                            if (item.reference === 'CAT-WING') displayName = 'Ailes (Wing / Kite)';
-                            else if (item.reference === 'CAT-BOARD') displayName = 'Planches';
-                            else if (item.reference === 'CAT-FOIL') displayName = 'Foils';
-                            else if (item.reference === 'CAT-MAST') displayName = 'Mâts';
-                            else if (item.reference === 'CAT-ACC') displayName = 'Accessoires';
-                            else displayName = item.name;
-                          }
-                          return <li key={id}>{displayName}</li>;
+                          return <li key={id}>{item ? item.name : 'Équipement'}</li>;
                         })}
                       </ul>
                     </div>
@@ -778,16 +950,7 @@ export default function PublicBookingPage() {
                     <ul style={{ margin: 0, paddingLeft: '16px', color: '#F3F4F6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {selectedEquipmentIds.map(id => {
                         const item = equipmentList.find(e => e.id === id);
-                        let displayName = 'Équipement';
-                        if (item) {
-                          if (item.reference === 'CAT-WING') displayName = 'Ailes (Wing / Kite)';
-                          else if (item.reference === 'CAT-BOARD') displayName = 'Planches';
-                          else if (item.reference === 'CAT-FOIL') displayName = 'Foils';
-                          else if (item.reference === 'CAT-MAST') displayName = 'Mâts';
-                          else if (item.reference === 'CAT-ACC') displayName = 'Accessoires';
-                          else displayName = item.name;
-                        }
-                        return <li key={id}>{displayName}</li>;
+                        return <li key={id}>{item ? item.name : 'Équipement'}</li>;
                       })}
                     </ul>
                   ) : (

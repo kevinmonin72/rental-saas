@@ -2,12 +2,11 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
 const getPricePerDay = (reference) => {
-  if (reference === 'CAT-WING') return 30; // 30€/day
-  if (reference === 'CAT-BOARD') return 25; // 25€/day
-  if (reference === 'CAT-FOIL') return 20; // 20€/day
-  if (reference === 'CAT-MAST') return 10; // 10€/day
-  if (reference === 'CAT-ACC') return 5; // 5€/day
-  return 15;
+  if (reference.includes('PACK')) return 40; // Packs: 40€/jour
+  if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; // Ailes/Foils: 25€/jour
+  if (reference.includes('BOARD') || reference.includes('TWINTIP')) return 20; // Planches: 20€/jour
+  if (reference.includes('NEOPRENE') || reference.includes('COMBINAISON')) return 10; // Néoprène: 10€/jour
+  return 10; // Reste (accessoires, gilets, etc.): 10€/jour
 };
 
 export async function POST(req) {
@@ -29,7 +28,15 @@ export async function POST(req) {
     for (const ref of equipmentReferences) {
       pricePerDayTotal += getPricePerDay(ref);
     }
-    const amountInCents = pricePerDayTotal * days * 100; // in cents for Stripe
+    
+    // Half-day is 60% of the daily rate (0.6 multiplier)
+    const isHalfDay = days === 0.5;
+    let amountInCents = 0;
+    if (isHalfDay) {
+      amountInCents = Math.round(pricePerDayTotal * 0.6) * 100;
+    } else {
+      amountInCents = pricePerDayTotal * days * 100;
+    }
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -39,12 +46,12 @@ export async function POST(req) {
         mock: true,
         clientSecret: 'mock_secret_intent_' + Math.random().toString(36).substring(2),
         amount: amountInCents / 100,
-        days: days
+        days: isHalfDay ? 0.5 : days
       });
     }
 
     const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16' // Standard stable version
+      apiVersion: '2023-10-16'
     });
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -60,7 +67,7 @@ export async function POST(req) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       amount: amountInCents / 100,
-      days: days
+      days: isHalfDay ? 0.5 : days
     });
 
   } catch (error) {
