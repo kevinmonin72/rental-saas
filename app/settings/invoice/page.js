@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { supabase } from '../../../lib/supabase';
 
 const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 15 },
@@ -74,42 +75,60 @@ export default function InvoiceGenerator() {
   });
 
   const [quickRef, setQuickRef] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
 
-  const handleQuickAddRef = (e) => {
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(async () => {
+      if (quickRef.length > 1) {
+        const { data } = await supabase
+          .from('equipment')
+          .select('*')
+          .or(`reference.ilike.%${quickRef}%,name.ilike.%${quickRef}%`)
+          .limit(10);
+        if (data) {
+          setSearchResults(data);
+        }
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [quickRef]);
+
+  const handleQuickAddRef = async (e) => {
     e.preventDefault();
     if (!quickRef.trim()) return;
     
-    // Exact match
-    let eq = GENERIC_EQUIPMENTS.find(e => e.reference.toLowerCase() === quickRef.trim().toLowerCase());
-    
-    // If no exact match, try partial match if only 1 result
-    if (!eq) {
-      const matches = GENERIC_EQUIPMENTS.filter(e => e.reference.toLowerCase().includes(quickRef.toLowerCase()) || e.name.toLowerCase().includes(quickRef.toLowerCase()));
-      if (matches.length === 1) eq = matches[0];
-    }
-
-    if (eq) {
-      addEqToInvoice(eq);
+    const { data } = await supabase
+      .from('equipment')
+      .select('*')
+      .or(`reference.eq.${quickRef.trim()}`)
+      .limit(1);
+      
+    if (data && data.length === 1) {
+      addEqToInvoice(data[0]);
     } else {
-      alert("Référence introuvable ou plusieurs correspondances. Veuillez cliquer sur une suggestion.");
+      alert("Référence exacte introuvable ou plusieurs correspondances. Veuillez cliquer sur une suggestion.");
     }
   };
 
   const addEqToInvoice = (eq) => {
-    setInvoiceData({
-      ...invoiceData,
+    setInvoiceData(prev => ({
+      ...prev,
       items: [
-        ...invoiceData.items, 
+        ...prev.items, 
         { 
           id: Date.now(), 
-          reference: eq.reference, 
-          description: eq.name, 
+          reference: eq.reference || '', 
+          description: eq.name || '', 
           quantity: 1, 
-          unitPrice: getPricePerDay(eq.reference) 
+          unitPrice: getPricePerDay(eq.reference || '') 
         }
       ]
-    });
+    }));
     setQuickRef('');
+    setSearchResults([]);
   };
 
   const handleAddItem = () => {
@@ -160,10 +179,6 @@ export default function InvoiceGenerator() {
   const handlePrint = () => {
     window.print();
   };
-
-  const searchResults = quickRef.length > 1 
-    ? GENERIC_EQUIPMENTS.filter(e => e.reference.toLowerCase().includes(quickRef.toLowerCase()) || e.name.toLowerCase().includes(quickRef.toLowerCase())).slice(0, 8) 
-    : [];
 
   return (
     <div className="invoice-page-container">
