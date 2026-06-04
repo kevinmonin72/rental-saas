@@ -693,8 +693,11 @@ export default function PublicBookingPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, paddingRight: '16px' }}>
                                   <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <img 
-                                      src={CATEGORY_IMAGES[cat] || '/images/cat_autres.png'} 
+                                      src={`/images/products/${e.reference}.png`} 
                                       alt={e.name}
+                                      onError={(evt) => {
+                                        evt.target.src = CATEGORY_IMAGES[cat] || '/images/cat_autres.png';
+                                      }}
                                       style={{ 
                                         width: '100%', 
                                         height: '100%', 
