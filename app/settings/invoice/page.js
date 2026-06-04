@@ -83,7 +83,7 @@ export default function InvoiceGenerator() {
         const { data } = await supabase
           .from('equipment')
           .select('*')
-          .or(`reference.ilike.%${quickRef}%,name.ilike.%${quickRef}%`)
+          .or(`reference.ilike.*${quickRef}*,name.ilike.*${quickRef}*`)
           .limit(10);
         if (data) {
           setSearchResults(data);
@@ -103,13 +103,20 @@ export default function InvoiceGenerator() {
     const { data } = await supabase
       .from('equipment')
       .select('*')
-      .or(`reference.eq.${quickRef.trim()}`)
-      .limit(1);
+      .or(`reference.ilike.*${quickRef.trim()}*,name.ilike.*${quickRef.trim()}*`)
+      .limit(10);
       
     if (data && data.length === 1) {
       addEqToInvoice(data[0]);
+    } else if (data && data.length > 1) {
+      const exactMatch = data.find(e => e.reference && e.reference.replace(/^'/, '').toLowerCase() === quickRef.trim().toLowerCase());
+      if (exactMatch) {
+        addEqToInvoice(exactMatch);
+      } else {
+        alert("Plusieurs correspondances. Veuillez cliquer sur une suggestion dans la liste déroulante.");
+      }
     } else {
-      alert("Référence exacte introuvable ou plusieurs correspondances. Veuillez cliquer sur une suggestion.");
+      alert("Référence introuvable.");
     }
   };
 
@@ -120,7 +127,7 @@ export default function InvoiceGenerator() {
         ...prev.items, 
         { 
           id: Date.now(), 
-          reference: eq.reference || '', 
+          reference: eq.reference ? eq.reference.replace(/^'/, '') : '', 
           description: eq.name || '', 
           quantity: 1, 
           unitPrice: getPricePerDay(eq.reference || '') 
