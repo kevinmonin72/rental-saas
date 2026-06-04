@@ -73,6 +73,32 @@ export default function InvoiceGenerator() {
     taxRate: 20
   });
 
+  const [quickRef, setQuickRef] = useState('');
+
+  const handleQuickAddRef = (e) => {
+    e.preventDefault();
+    if (!quickRef.trim()) return;
+    const eq = GENERIC_EQUIPMENTS.find(e => e.reference.toLowerCase() === quickRef.trim().toLowerCase());
+    if (eq) {
+      setInvoiceData({
+        ...invoiceData,
+        items: [
+          ...invoiceData.items, 
+          { 
+            id: Date.now(), 
+            reference: eq.reference, 
+            description: eq.name, 
+            quantity: 1, 
+            unitPrice: getPricePerDay(eq.reference) 
+          }
+        ]
+      });
+      setQuickRef('');
+    } else {
+      alert("Référence introuvable.");
+    }
+  };
+
   const handleAddItem = () => {
     setInvoiceData({
       ...invoiceData,
@@ -198,8 +224,20 @@ export default function InvoiceGenerator() {
           <div style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <h3 style={{ fontSize: '14px', color: 'var(--text-muted)', textTransform: 'uppercase', margin: 0 }}>Lignes de facturation</h3>
-              <button type="button" onClick={handleAddItem} style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 'bold' }}>+ Ajouter</button>
+              <button type="button" onClick={handleAddItem} style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 'bold', background: 'transparent', border: 'none', cursor: 'pointer' }}>+ Ligne vide</button>
             </div>
+            
+            <form onSubmit={handleQuickAddRef} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <input 
+                type="text" 
+                className="input" 
+                placeholder="Entrez une référence (ex: LOK-SURF) puis Entrée" 
+                value={quickRef}
+                onChange={e => setQuickRef(e.target.value)}
+                style={{ flex: 1, fontSize: '13px' }}
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0 16px', fontSize: '13px' }}>Ajouter</button>
+            </form>
             
             {invoiceData.items.map((item) => (
               <div key={item.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', alignItems: 'flex-start', paddingBottom: '16px', borderBottom: '1px solid #E5E7EB' }}>
