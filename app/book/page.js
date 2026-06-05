@@ -96,6 +96,7 @@ export default function PublicBookingPage() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [authMode, setAuthMode] = useState('guest'); // 'guest', 'create_account', 'login'
   const [password, setPassword] = useState('');
 
@@ -497,8 +498,11 @@ export default function PublicBookingPage() {
 
       if (existingCust) {
         customerId = existingCust.id;
-        if (phone) {
-          await supabase.from('customers').update({ phone: phone.trim() }).eq('id', customerId);
+        let updateData = {};
+        if (phone) updateData.phone = phone.trim();
+        if (address) updateData.address = address.trim();
+        if (Object.keys(updateData).length > 0) {
+          await supabase.from('customers').update(updateData).eq('id', customerId);
         }
       } else {
         customerId = uuidv4();
@@ -507,7 +511,8 @@ export default function PublicBookingPage() {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           email: email.trim().toLowerCase(),
-          phone: phone.trim() || null
+          phone: phone.trim() || null,
+          address: address.trim() || null
         }]);
         if (custErr) throw custErr;
       }
@@ -957,6 +962,18 @@ export default function PublicBookingPage() {
                         style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
                       />
                     </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Postale / Facturation</label>
+                    <input 
+                      type="text" 
+                      value={address} 
+                      onChange={(e) => setAddress(e.target.value)} 
+                      placeholder="123 rue de la Plage, 75000 Paris" 
+                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                      required 
+                    />
                   </div>
 
                   {authMode === 'create_account' && (
