@@ -565,6 +565,7 @@ export default function BookingsPage() {
             </form>
           )}
         </div>
+        )}
 
         {/* List */}
         {activeTab === 'list' && (
