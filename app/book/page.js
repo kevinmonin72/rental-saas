@@ -552,6 +552,29 @@ export default function PublicBookingPage() {
         await supabase.from('promo_codes').update({ used_count: appliedPromo.used_count + 1 }).eq('id', appliedPromo.id);
       }
 
+      // 6. Envoi de l'email de notification au marketing
+      try {
+        const sDate = new Date(startDate);
+        const eDate = new Date(endDate);
+        const datesStr = `Du ${sDate.toLocaleDateString('fr-FR')} au ${eDate.toLocaleDateString('fr-FR')}`;
+        
+        await fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: email.trim(),
+            phone: phone.trim(),
+            address: address.trim(),
+            equipmentCount: items.length,
+            dates: datesStr
+          })
+        });
+      } catch (notifyErr) {
+        console.error("Erreur d'envoi de la notification:", notifyErr);
+      }
+
       setStep(4);
     } catch (err) {
       console.error(err);
