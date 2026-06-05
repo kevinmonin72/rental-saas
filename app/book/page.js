@@ -780,7 +780,7 @@ export default function PublicBookingPage() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, paddingRight: '16px' }}>
                                   <div style={{ width: '90px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <img 
-                                      src={`/images/products/${e.reference}.png`} 
+                                      src={`/images/products/${e.reference}.png?v=2`} 
                                       alt={e.name}
                                       onError={(evt) => {
                                         evt.target.style.display = 'none';
