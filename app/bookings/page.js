@@ -177,7 +177,7 @@ export default function BookingsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = (targetTab = 'list') => {
     setEditingBookingId(null);
     setSelectedEquipments([]);
     setStartDate('');
@@ -189,7 +189,7 @@ export default function BookingsPage() {
     setSearchQuery('');
     setStartMonthFilter(null);
     setEndMonthFilter(null);
-    setActiveTab('list');
+    setActiveTab(targetTab);
   };
 
   const handleSelectAll = (e, list) => {
@@ -335,7 +335,7 @@ export default function BookingsPage() {
 
       <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
         <button 
-          onClick={() => { setActiveTab('new'); handleCancelEdit(); }} 
+          onClick={() => handleCancelEdit('new')} 
           className={`btn ${activeTab === 'new' && !editingBookingId ? 'btn-primary' : 'btn-secondary'}`}
           style={{ padding: '8px 16px', fontSize: '15px' }}
         >
