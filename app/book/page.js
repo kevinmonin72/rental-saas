@@ -575,7 +575,7 @@ export default function PublicBookingPage() {
       )}
 
       {/* Header */}
-      <header style={{ backgroundColor: '#1F2937', color: 'white', padding: '16px 24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+      <header className="glass-header" style={{ color: 'white', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '24px' }}>🚀</span>
@@ -618,7 +618,7 @@ export default function PublicBookingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: step === 4 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
           
           {/* Main Card */}
-          <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '16px', boxShadow: '0 4px 12px -2px rgba(0,0,0,0.05)', border: '1px solid #E5E7EB' }}>
+          <div className="premium-card" style={{ padding: '32px' }}>
             
             {/* STEP 1: DATES */}
             {step === 1 && (
@@ -683,7 +683,7 @@ export default function PublicBookingPage() {
                   </div>
                 </div>
 
-                <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s', marginTop: '16px' }}>
+                <button type="submit" className="premium-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', fontSize: '16px', marginTop: '16px', cursor: 'pointer' }}>
                   Rechercher le matériel disponible →
                 </button>
               </form>
@@ -787,6 +787,7 @@ export default function PublicBookingPage() {
 
                             return (
                               <div 
+                                className="equipment-card"
                                 key={e.id}
                                 onClick={() => {
                                   if (!isOutOfStock && !isSelected) {
@@ -798,13 +799,10 @@ export default function PublicBookingPage() {
                                   alignItems: 'center', 
                                   justifyContent: 'space-between', 
                                   padding: '16px 20px', 
-                                  borderRadius: '12px', 
-                                  border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
+                                  border: `2px solid ${isSelected ? '#F97316' : 'transparent'}`, 
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
                                   cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
-                                  transition: 'all 0.2s ease',
-                                  boxShadow: isSelected ? '0 4px 6px -1px rgba(249, 115, 22, 0.05)' : 'none'
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, paddingRight: '16px' }}>
