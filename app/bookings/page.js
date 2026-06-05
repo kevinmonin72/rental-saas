@@ -366,10 +366,22 @@ export default function BookingsPage() {
               </div>
               <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label>Type de Location</label>
-                <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
                     <input type="radio" name="rentalType" value="ponctuel" checked={rentalType === 'ponctuel'} onChange={() => setRentalType('ponctuel')} />
                     🕒 Ponctuelle
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
+                    <input type="radio" name="rentalType" value="journee" checked={rentalType === 'journee'} onChange={() => setRentalType('journee')} />
+                    🌞 1 Journée
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
+                    <input type="radio" name="rentalType" value="demi_matin" checked={rentalType === 'demi_matin'} onChange={() => setRentalType('demi_matin')} />
+                    ☀️ ½j (Matin)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
+                    <input type="radio" name="rentalType" value="demi_aprem" checked={rentalType === 'demi_aprem'} onChange={() => setRentalType('demi_aprem')} />
+                    ⛅ ½j (Aprem)
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
                     <input type="radio" name="rentalType" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} />
@@ -503,6 +515,9 @@ export default function BookingsPage() {
                 <option value="all">Tous types</option>
                 <option value="wingboost">🚀 Wingboost</option>
                 <option value="ponctuel">🕒 Ponctuelle</option>
+                <option value="journee">🌞 1 Journée</option>
+                <option value="demi_matin">☀️ ½j (Matin)</option>
+                <option value="demi_aprem">⛅ ½j (Aprem)</option>
               </select>
               <select 
                 className="input" 
@@ -650,6 +665,8 @@ export default function BookingsPage() {
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>☀️ ½j (Matin)</span>
                         ) : booking.rental_type === 'demi_aprem' ? (
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>⛅ ½j (Aprem)</span>
+                        ) : booking.rental_type === 'journee' ? (
+                          <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>🌞 1 Journée</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
                         )}
