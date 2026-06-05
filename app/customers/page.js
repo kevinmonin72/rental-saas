@@ -27,6 +27,7 @@ export default function CustomersPage() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
 
   const { customers, addCustomer, updateCustomer, deleteCustomer, bulkDeleteCustomers } = useStore();
 
@@ -44,7 +45,8 @@ export default function CustomersPage() {
     const fullName = formatName(c.first_name, c.last_name).toLowerCase();
     return fullName.includes(term) || 
            (c.email && c.email.toLowerCase().includes(term)) || 
-           (c.phone && c.phone.includes(term));
+           (c.phone && c.phone.includes(term)) ||
+           (c.address && c.address.toLowerCase().includes(term));
   });
 
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
@@ -68,7 +70,8 @@ export default function CustomersPage() {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       email: email.trim() || null,
-      phone: phone.trim() || null
+      phone: phone.trim() || null,
+      address: address.trim() || null
     };
 
     if (editingCustomer) {
@@ -83,6 +86,7 @@ export default function CustomersPage() {
     setLastName('');
     setEmail('');
     setPhone('');
+    setAddress('');
   };
 
   const handleEdit = (customer) => {
@@ -91,6 +95,7 @@ export default function CustomersPage() {
     setLastName(customer.last_name || '');
     setEmail(customer.email || '');
     setPhone(customer.phone || '');
+    setAddress(customer.address || '');
   };
 
   const handleCancelEdit = () => {
@@ -99,6 +104,7 @@ export default function CustomersPage() {
     setLastName('');
     setEmail('');
     setPhone('');
+    setAddress('');
   };
 
   const handleSelectAll = (e) => {
@@ -216,6 +222,16 @@ export default function CustomersPage() {
                 className="input" 
               />
             </div>
+            <div className="form-group">
+              <label>Adresse Postale</label>
+              <input 
+                type="text" 
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="input" 
+                placeholder="123 rue de la mer, 75000 Paris"
+              />
+            </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
               {editingCustomer ? 'Mettre à jour' : 'Enregistrer'}
             </button>
@@ -310,6 +326,11 @@ export default function CustomersPage() {
                       {customer.phone && (
                         <span>
                           📞 <a href={`tel:${customer.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>{customer.phone}</a>
+                        </span>
+                      )}
+                      {customer.address && (
+                        <span>
+                          📍 {customer.address}
                         </span>
                       )}
                     </div>
