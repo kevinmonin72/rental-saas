@@ -428,8 +428,8 @@ export default function BookingsPage() {
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder="🔍 Filtrer par nom ou réf d'équipement (ou taper une réf de réservation ex: #RW0001)" 
-                  style={{ marginBottom: '8px' }}
+                  placeholder="👉 Tapez RW ou #RW0001 pour importer une ancienne réservation" 
+                  style={{ marginBottom: '8px', border: '2px solid #3B82F6' }}
                   value={equipmentSearch}
                   onChange={(e) => setEquipmentSearch(e.target.value)}
                 />
@@ -444,6 +444,14 @@ export default function BookingsPage() {
                     }
                   }
                   
+                  if (equipmentSearch.length >= 2 && !matchingBookingForEquipments) {
+                    return (
+                      <div style={{ backgroundColor: '#FEF2F2', padding: '8px', borderRadius: '6px', marginBottom: '8px', fontSize: '12px', color: '#991B1B' }}>
+                        Aucune réservation trouvée contenant "{foundBookingRef}". (Total résas en mémoire : {bookings.length}, 1ère réf: {bookings[0]?.reference || 'N/A'})
+                      </div>
+                    );
+                  }
+
                   if (matchingBookingForEquipments) {
                     return (
                       <div style={{ backgroundColor: '#DBEAFE', border: '1px solid #BFDBFE', padding: '8px 12px', borderRadius: '6px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
