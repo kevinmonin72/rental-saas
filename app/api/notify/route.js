@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req) {
   try {
+    const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_for_build');
     const data = await req.json();
     const { firstName, lastName, email, phone, address, equipmentCount, dates } = data;
 
