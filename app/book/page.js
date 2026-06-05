@@ -325,10 +325,6 @@ export default function PublicBookingPage() {
       setError('Veuillez sélectionner la date de début.');
       return;
     }
-    if (rentalType === 'wingboost' && !endDate) {
-      setError('Veuillez sélectionner la date de fin.');
-      return;
-    }
     if (endDate && new Date(endDate) < new Date(startDate)) {
       setError('La date de fin doit être postérieure ou égale à la date de début.');
       return;
@@ -629,18 +625,6 @@ export default function PublicBookingPage() {
               <form onSubmit={handleNextStep1}>
                 <h2 style={{ fontSize: '22px', marginBottom: '20px', fontWeight: 700, letterSpacing: '-0.5px' }}>Sélectionnez votre formule de location</h2>
 
-                {/* Duration Mode Selector */}
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
-                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', border: `2px solid ${rentalType !== 'wingboost' ? '#F97316' : '#E5E7EB'}`, borderRadius: '8px', cursor: 'pointer', backgroundColor: rentalType !== 'wingboost' ? '#FFF7ED' : 'white', fontWeight: 'bold', fontSize: '14px', transition: 'all 0.2s' }}>
-                    <input type="radio" name="rentalGroup" value="ponctuel" checked={rentalType !== 'wingboost'} onChange={() => { setRentalType('1_jour'); if (startDate) setEndDate(startDate); }} style={{ display: 'none' }} />
-                    🕒 Ponctuelle
-                  </label>
-                  <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '14px', border: `2px solid ${rentalType === 'wingboost' ? '#F97316' : '#E5E7EB'}`, borderRadius: '8px', cursor: 'pointer', backgroundColor: rentalType === 'wingboost' ? '#FFF7ED' : 'white', fontWeight: 'bold', fontSize: '14px', transition: 'all 0.2s' }}>
-                    <input type="radio" name="rentalGroup" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} style={{ display: 'none' }} />
-                    🚀 Wingboost
-                  </label>
-                </div>
-                
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de début</label>
@@ -650,7 +634,7 @@ export default function PublicBookingPage() {
                       onChange={(e) => {
                         const val = e.target.value;
                         setStartDate(val);
-                        if (rentalType !== 'wingboost' && val) {
+                        if (val) {
                           if (rentalType === 'demi_matin' || rentalType === 'demi_aprem' || rentalType === '1_jour' || rentalType === 'ponctuel' || rentalType === 'journee') {
                             setEndDate(val);
                           } else if (rentalType && rentalType.endsWith('_jours')) {
@@ -666,52 +650,37 @@ export default function PublicBookingPage() {
                     />
                   </div>
 
-                  {rentalType !== 'wingboost' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Durée</label>
-                      <select 
-                        className="input" 
-                        value={rentalType === 'ponctuel' || rentalType === 'journee' ? '1_jour' : rentalType}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setRentalType(val);
-                          if (val === 'demi_matin' || val === 'demi_aprem' || val === '1_jour') {
-                            if (startDate) setEndDate(startDate);
-                          } else if (val.endsWith('_jours')) {
-                            const days = parseInt(val.split('_')[0]);
-                            if (startDate) {
-                              const start = new Date(startDate);
-                              start.setDate(start.getDate() + days - 1);
-                              setEndDate(start.toISOString().split('T')[0]);
-                            }
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Durée</label>
+                    <select 
+                      className="input" 
+                      value={rentalType === 'ponctuel' || rentalType === 'journee' ? '1_jour' : rentalType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRentalType(val);
+                        if (val === 'demi_matin' || val === 'demi_aprem' || val === '1_jour') {
+                          if (startDate) setEndDate(startDate);
+                        } else if (val.endsWith('_jours')) {
+                          const days = parseInt(val.split('_')[0]);
+                          if (startDate) {
+                            const start = new Date(startDate);
+                            start.setDate(start.getDate() + days - 1);
+                            setEndDate(start.toISOString().split('T')[0]);
                           }
-                        }}
-                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none', backgroundColor: 'white' }}
-                        required
-                      >
-                        <option value="demi_matin">☀️ ½j (Matin)</option>
-                        <option value="demi_aprem">⛅ ½j (Aprem)</option>
-                        <option value="1_jour">1 Jour</option>
-                        {[...Array(30)].map((_, i) => {
-                          const days = i + 2;
-                          return <option key={days} value={`${days}_jours`}>{days} Jours</option>;
-                        })}
-                      </select>
-                    </div>
-                  )}
-
-                  {rentalType === 'wingboost' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Date de fin</label>
-                      <input 
-                        type="date" 
-                        value={endDate} 
-                        onChange={(e) => setEndDate(e.target.value)} 
-                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                        required 
-                      />
-                    </div>
-                  )}
+                        }
+                      }}
+                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none', backgroundColor: 'white' }}
+                      required
+                    >
+                      <option value="demi_matin">☀️ ½j (Matin)</option>
+                      <option value="demi_aprem">⛅ ½j (Aprem)</option>
+                      <option value="1_jour">1 Jour</option>
+                      {[...Array(30)].map((_, i) => {
+                        const days = i + 2;
+                        return <option key={days} value={`${days}_jours`}>{days} Jours</option>;
+                      })}
+                    </select>
+                  </div>
                 </div>
 
                 <button type="submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s', marginTop: '16px' }}>
