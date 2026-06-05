@@ -4,11 +4,13 @@ import { useState, useEffect } from 'react';
 
 import { useStore } from '../lib/store';
 
+const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "Theriderywingboost2K26!!";
 
 export default function ClientAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   
@@ -30,12 +32,12 @@ export default function ClientAuth({ children }) {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
+    if (adminId === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       localStorage.setItem('auth_token', 'authenticated');
       setIsAuthenticated(true);
       setError('');
     } else {
-      setError('Mot de passe incorrect');
+      setError('Identifiant ou mot de passe incorrect');
     }
   };
 
@@ -48,7 +50,11 @@ export default function ClientAuth({ children }) {
           <img src="/logo.png" alt="THE RIDERY WINGBOOST" style={{ maxWidth: '200px', marginBottom: '32px' }} />
           <h1 style={{ fontSize: '24px', marginBottom: '24px', fontFamily: 'var(--font-display)' }}>Accès sécurisé</h1>
           <form onSubmit={handleLogin}>
-            <div className="form-group" style={{ textAlign: 'left' }}>
+            <div className="form-group" style={{ textAlign: 'left', marginBottom: '16px' }}>
+              <label>Identifiant</label>
+              <input type="text" value={adminId} onChange={(e) => setAdminId(e.target.value)} className="input" placeholder="admin" required />
+            </div>
+            <div className="form-group" style={{ textAlign: 'left', marginBottom: '24px' }}>
               <label>Mot de passe</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" placeholder="••••••••••••" required />
             </div>
