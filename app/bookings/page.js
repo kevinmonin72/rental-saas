@@ -493,12 +493,27 @@ export default function BookingsPage() {
               </div>
               <div className="form-group">
                 <label>Date de début</label>
-                <input type="date" name="startDate" className="input" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+                <input type="date" name="startDate" className="input" value={startDate} onChange={(e) => {
+                  const val = e.target.value;
+                  setStartDate(val);
+                  if (rentalType !== 'wingboost' && val) {
+                    if (rentalType === 'demi_matin' || rentalType === 'demi_aprem' || rentalType === '1_jour' || rentalType === 'journee' || rentalType === 'ponctuel') {
+                      setEndDate(val);
+                    } else if (rentalType && rentalType.endsWith('_jours')) {
+                      const days = parseInt(rentalType.split('_')[0]);
+                      const start = new Date(val);
+                      start.setDate(start.getDate() + days - 1);
+                      setEndDate(start.toISOString().split('T')[0]);
+                    }
+                  }
+                }} required />
               </div>
-              <div className="form-group">
-                <label>Date de fin</label>
-                <input type="date" name="endDate" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
-              </div>
+              {rentalType === 'wingboost' && (
+                <div className="form-group">
+                  <label>Date de fin</label>
+                  <input type="date" name="endDate" className="input" value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                </div>
+              )}
               {rentalType === 'wingboost' && (
                 <details style={{ marginBottom: '16px', border: '1px solid #D1D5DB', borderRadius: '6px', padding: '10px', backgroundColor: '#F9FAFB' }}>
                   <summary style={{ cursor: 'pointer', fontWeight: '500', fontSize: '14px', color: '#4B5563', outline: 'none' }}>
