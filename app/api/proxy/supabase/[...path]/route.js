@@ -19,27 +19,31 @@ async function handleProxy(req, { params }) {
   // 2. Build target URL
   const path = params.path.join('/');
   const url = new URL(req.url);
-  const targetUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/${path}${url.search}`;
+  const targetUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/${path}${url.search}`;
 
   // 3. Forward request with Service Role Key to bypass RLS
-  const headers = new Headers(req.headers);
-  headers.set('apikey', process.env.SUPABASE_SERVICE_ROLE_KEY);
-  headers.set('Authorization', `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`);
-  // Important to remove host so fetch computes it from targetUrl
-  headers.delete('host');
-  // Remove origin to prevent CORS conflicts from Supabase API
-  headers.delete('origin');
-  headers.delete('referer');
+  const proxyHeaders = new Headers();
+  proxyHeaders.set('apikey', process.env.SUPABASE_SERVICE_ROLE_KEY);
+  proxyHeaders.set('Authorization', `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+  
+  if (req.headers.has('Content-Type')) proxyHeaders.set('Content-Type', req.headers.get('Content-Type'));
+  if (req.headers.has('Accept')) proxyHeaders.set('Accept', req.headers.get('Accept'));
+  if (req.headers.has('Prefer')) proxyHeaders.set('Prefer', req.headers.get('Prefer'));
 
   const options = {
     method: req.method,
-    headers,
+    headers: proxyHeaders,
     body: req.method !== 'GET' && req.method !== 'HEAD' ? await req.text() : undefined,
     cache: 'no-store'
   };
 
+  console.log('Proxy target:', targetUrl);
+  console.log('Proxy options:', { method: options.method, headers: Array.from(options.headers.entries()) });
+
   const response = await fetch(targetUrl, options);
+  console.log('Proxy response status:', response.status);
   const data = await response.text();
+  console.log('Proxy response data length:', data.length);
 
   return new NextResponse(data, {
     status: response.status,
