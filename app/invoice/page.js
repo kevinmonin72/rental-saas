@@ -482,32 +482,10 @@ export default function InvoiceGenerator() {
             <button 
               className="btn" 
               style={{ backgroundColor: '#8B5CF6', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} 
-              onClick={() => setShowSendOptions(!showSendOptions)}
+              onClick={() => setIsSendModalOpen(true)}
             >
-              <span>💳</span> Envoyer au client {showSendOptions ? '▲' : '▼'}
+              <span>💳</span> Envoyer au client
             </button>
-            
-            {showSendOptions && (
-              <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '8px', zIndex: 50, width: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button className="btn" style={{ width: '100%', backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { setShowSendOptions(false); setIsSendModalOpen(true); }} disabled={isSending}>
-                  <span>✉️</span> Envoyer une facture
-                </button>
-                
-                {paymentLink ? (
-                  <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); setShowSendOptions(false); }}>
-                    <span>📋</span> Lien copié !
-                  </button>
-                ) : (
-                  <button className="btn" style={{ width: '100%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { setShowSendOptions(false); handleGeneratePaymentLink(); }} disabled={isGeneratingLink}>
-                    <span>💳</span> {isGeneratingLink ? 'Création...' : 'Envoyer un lien de paiement'}
-                  </button>
-                )}
-                
-                <button className="btn" style={{ width: '100%', backgroundColor: '#F59E0B', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { setShowSendOptions(false); handleSendEmail(); }} disabled={isSending}>
-                  <span>🚀</span> Les 2 (Facture + Lien)
-                </button>
-              </div>
-            )}
           </div>
           <button className="btn btn-primary" onClick={handlePrint} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px' }}>
             <span>🖨️</span> Imprimer / PDF
@@ -689,9 +667,13 @@ export default function InvoiceGenerator() {
       {/* EMAIL SEND MODAL */}
       {isSendModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '12px', width: '400px', maxWidth: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#111827' }}>Envoyer la facture</h2>
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5563' }}>Vérifiez l'adresse email avant l'envoi de la facture générée via Stripe.</p>
+          <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '12px', width: '500px', maxWidth: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0, fontSize: '20px', color: '#111827' }}>💳 Envoyer au client</h2>
+              <button onClick={() => setIsSendModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6B7280' }}>✕</button>
+            </div>
+            
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5563' }}>Vérifiez l'adresse email et choisissez le mode d'envoi via Stripe.</p>
             
             <div className="form-group" style={{ marginBottom: '24px' }}>
               <label className="form-label">Email du destinataire</label>
@@ -704,26 +686,40 @@ export default function InvoiceGenerator() {
                 style={{ width: '100%' }}
               />
             </div>
-            
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button 
-                className="btn" 
-                onClick={() => setIsSendModalOpen(false)} 
-                style={{ padding: '10px 16px', backgroundColor: 'white', border: '1px solid #D1D5DB', borderRadius: '6px', cursor: 'pointer', color: '#374151', fontWeight: '500' }}
-                disabled={isSending}
-              >
-                Annuler
-              </button>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button 
                 className="btn" 
                 onClick={async () => {
                   await handleSendEmail();
                   setIsSendModalOpen(false);
                 }} 
-                style={{ padding: '10px 16px', backgroundColor: '#6366F1', border: 'none', borderRadius: '6px', cursor: 'pointer', color: 'white', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{ padding: '12px', backgroundColor: '#6366F1', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                 disabled={isSending}
               >
-                {isSending ? 'Envoi en cours...' : 'Confirmer l\'envoi'}
+                <span>✉️</span> {isSending ? 'Envoi en cours...' : 'Envoyer la facture par email'}
+              </button>
+
+              {paymentLink ? (
+                  <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); }}>
+                    <span>📋</span> Lien copié ! ({paymentLink.substring(0, 30)}...)
+                  </button>
+                ) : (
+                  <button className="btn" style={{ width: '100%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => handleGeneratePaymentLink()} disabled={isGeneratingLink}>
+                    <span>💳</span> {isGeneratingLink ? 'Création...' : 'Créer un lien de paiement (sans email)'}
+                  </button>
+                )}
+
+              <button 
+                className="btn" 
+                onClick={async () => {
+                  await handleSendEmail();
+                  setIsSendModalOpen(false);
+                }} 
+                style={{ padding: '12px', backgroundColor: '#F59E0B', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                disabled={isSending}
+              >
+                <span>🚀</span> Les 2 (Facture + Lien par email)
               </button>
             </div>
           </div>
