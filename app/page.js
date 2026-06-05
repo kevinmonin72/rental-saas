@@ -292,7 +292,12 @@ export default function DashboardHome() {
       {(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const lateBookings = activeBookingsList.filter(b => {
+        
+        const filteredForAlerts = activeTab === 'wingboost' ? activeBookingsList.filter(b => b.rental_type === 'wingboost') :
+                                  activeTab === 'ponctuel' ? activeBookingsList.filter(b => b.rental_type !== 'wingboost') :
+                                  activeBookingsList;
+
+        const lateBookings = filteredForAlerts.filter(b => {
           let endDate = new Date(b.end_date);
           if (b.pause_start && b.pause_end) {
             const ps = new Date(b.pause_start);
@@ -396,7 +401,11 @@ export default function DashboardHome() {
       })()}
 
       {/* Calendar View for Active Bookings */}
-      <CalendarWidget bookings={activeBookingsList} />
+      <CalendarWidget bookings={
+        activeTab === 'wingboost' ? activeBookingsList.filter(b => b.rental_type === 'wingboost') :
+        activeTab === 'ponctuel' ? activeBookingsList.filter(b => b.rental_type !== 'wingboost') :
+        activeBookingsList
+      } />
     </div>
   );
 }
