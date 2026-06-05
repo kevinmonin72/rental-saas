@@ -592,7 +592,7 @@ export default function PublicBookingPage() {
         <div style={{ display: 'grid', gridTemplateColumns: step === 4 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
           
           {/* Main Card */}
-          <div className="premium-card" style={{ padding: '32px' }}>
+          <div className="card" style={{ padding: '32px' }}>
             
             {/* STEP 1: DATES */}
             {step === 1 && (
@@ -643,7 +643,7 @@ export default function PublicBookingPage() {
                           }
                         }
                       }}
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none', backgroundColor: 'white' }}
+                      style={{ padding: '12px 14px', width: '100%' }}
                       required
                     >
                       <option value="demi_matin">️ ½j (Matin)</option>
@@ -846,7 +846,8 @@ export default function PublicBookingPage() {
                 <button 
                   onClick={handleNextStep2} 
                   disabled={selectedEquipmentIds.length === 0}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: selectedEquipmentIds.length === 0 ? '#9CA3AF' : '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: selectedEquipmentIds.length === 0 ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}
+                  className="btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', fontSize: '16px', backgroundColor: selectedEquipmentIds.length === 0 ? '#9CA3AF' : 'var(--primary-color)', cursor: selectedEquipmentIds.length === 0 ? 'not-allowed' : 'pointer' }}
                 >
                   Continuer vers le paiement →
                 </button>
@@ -997,7 +998,8 @@ export default function PublicBookingPage() {
                 <button 
                   type="submit" 
                   disabled={loading}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '14px', fontSize: '16px' }}
                 >
                   {loading ? 'Transaction en cours...' : `Payer & Valider (${getBookingTotal()} €) `}
                 </button>
@@ -1012,7 +1014,7 @@ export default function PublicBookingPage() {
                   Votre paiement a bien été validé et votre réservation de matériel est enregistrée.
                 </p>
 
-                <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', maxWidth: '500px', margin: '0 auto 32px auto', textAlign: 'left' }}>
+                <div className="card" style={{ padding: '24px', maxWidth: '500px', margin: '0 auto 32px auto', textAlign: 'left', backgroundColor: '#F9FAFB' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '12px' }}>Détails de la réservation</h3>
                   <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div> <strong>Dates :</strong> {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? `Le ${new Date(startDate).toLocaleDateString('fr-FR')} (${rentalType === 'demi_matin' ? 'Matin' : 'Après-midi'})` : `Du ${new Date(startDate).toLocaleDateString('fr-FR')} au ${new Date(endDate).toLocaleDateString('fr-FR')} (${getBookingDuration()} jours)`}</div>
@@ -1059,7 +1061,8 @@ export default function PublicBookingPage() {
                       setPromoInput('');
                       setAppliedPromo(null);
                     }}
-                    style={{ padding: '12px 24px', backgroundColor: '#F97316', color: 'white', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                    className="btn-primary"
+                    style={{ padding: '12px 24px' }}
                   >
                     Nouvelle réservation
                   </button>
@@ -1076,7 +1079,7 @@ export default function PublicBookingPage() {
 
           {/* Sidebar / Reservation Summary */}
           {step < 4 && (
-            <div style={{ backgroundColor: '#1F2937', color: 'white', padding: '28px', borderRadius: '16px', height: 'fit-content', boxShadow: '0 4px 12px -2px rgba(0,0,0,0.1)' }}>
+            <div className="card" style={{ backgroundColor: 'var(--secondary-color)', color: 'white', position: 'sticky', top: '100px', height: 'fit-content', border: 'none' }}>
               <h3 style={{ color: 'white', borderBottom: '1px solid #374151', paddingBottom: '12px', marginBottom: '20px', fontSize: '18px', fontWeight: 700 }}>Votre Réservation</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
