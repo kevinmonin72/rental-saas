@@ -791,7 +791,9 @@ export default function PublicBookingPage() {
                                       width: '100%', 
                                       height: '100%', 
                                       objectFit: 'contain',
-                                      padding: '0'
+                                      padding: '0',
+                                      transform: 'scale(1.15)',
+                                      transition: 'transform 0.2s ease'
                                     }} 
                                   />
                                   <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
