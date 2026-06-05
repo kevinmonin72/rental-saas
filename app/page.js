@@ -204,7 +204,7 @@ export default function DashboardHome() {
           onClick={() => setActiveTab('ponctuel')} 
           className={`btn ${activeTab === 'ponctuel' ? 'btn-primary' : 'btn-secondary'}`}
         >
-          🕒 Résas Ponctuelles
+          🕒 Résa Ponctuelles
         </button>
       </div>
       
