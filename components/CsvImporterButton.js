@@ -236,6 +236,20 @@ export default function CsvImporterButton({ type }) {
     setConflictActions({});
   };
 
+    const getFallbackDate = () => {
+      if (type === 'equipment' && equipment && equipment.length > 0) {
+        const latest = Math.max(...equipment.map(e => new Date(e.created_at || 0).getTime()));
+        return new Date(latest).toISOString();
+      }
+      if (type === 'customers' && customers && customers.length > 0) {
+        const latest = Math.max(...customers.map(c => new Date(c.created_at || 0).getTime()));
+        return new Date(latest).toISOString();
+      }
+      return null;
+    };
+
+    const displayDate = lastImportDate || getFallbackDate();
+
   return (
     <>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -245,11 +259,9 @@ export default function CsvImporterButton({ type }) {
         >
           Importer depuis CSV
         </button>
-        {lastImportDate && (
-          <span style={{ fontSize: '12px', color: 'var(--text-light)' }}>
-            Dernier import : {new Date(lastImportDate).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
+        <span style={{ fontSize: '12px', color: 'var(--text-light)', fontStyle: 'italic' }}>
+          Dernière maj : {displayDate ? new Date(displayDate).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Inconnue"}
+        </span>
       </div>
 
       {isOpen && (
