@@ -79,6 +79,8 @@ export default function InvoiceGenerator() {
   const [searchResults, setSearchResults] = useState([]);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [paymentLink, setPaymentLink] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showSendOptions, setShowSendOptions] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
@@ -165,7 +167,21 @@ export default function InvoiceGenerator() {
     }
   };
 
-    
+  // Helper pour calculer le prix à partir des grilles
+  const getCalculatedPrice = (ref, days) => {
+    let finalPrice = 0;
+    if (PRICING_GRIDS[ref]) {
+      const grid = PRICING_GRIDS[ref];
+      let gridDays = days;
+      if (gridDays > 31) gridDays = 31;
+      finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
+    } else {
+      const perDay = getPricePerDay(ref);
+      finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
+    }
+    return finalPrice;
+  };
+
   const PRICING_GRIDS = {
     'LOK-BOARDBAG-OPT': { 0.5: 12.5, 1: 18.75, 2: 31.22, 3: 34.98, 4: 38.73, 5: 42.48, 6: 44.98, 7: 44.99, 8: 44.99, 9: 44.98, 10: 49.98, 11: 49.98, 12: 49.98, 13: 49.98, 14: 49.99, 15: 54.98, 16: 59.97, 17: 64.96, 18: 69.95, 19: 74.94, 20: 79.93, 21: 61.23, 22: 61.23, 23: 61.23, 24: 61.23, 25: 61.23, 26: 61.23, 27: 61.23, 28: 61.23, 29: 64.98, 30: 64.98, 31: 64.98 },
     'LOK-PACK-KITE': { 0.5: 92.5, 1: 98.75, 2: 167.33, 3: 229.84, 4: 254.87, 5: 267.39, 6: 279.9, 7: 292.41, 8: 306.17, 9: 318.6, 10: 336.11, 11: 348.62, 12: 348.63, 13: 348.64, 14: 354.89, 15: 354.9, 16: 354.91, 17: 354.92, 18: 354.93, 19: 354.94, 20: 354.95, 21: 361.15, 22: 361.12, 23: 361.12, 24: 361.12, 25: 361.12, 26: 361.12, 27: 361.12, 28: 373.64, 29: 373.64, 30: 373.62, 31: 373.62 },
@@ -260,31 +276,21 @@ export default function InvoiceGenerator() {
                 reference: 'WINGBOOST',
                 description: `Wingboost\nMatériel inclus :\n${equipments.map(e => '- ' + e.name).join('\n')}`,
                 quantity: 1,
+                duration: days,
                 unitPrice: 0
               }];
             } else {
               newItems = equipments.map((itemEq, idx) => {
                 const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
-                let finalPrice = 0;
+                let finalPrice = getCalculatedPrice(ref, days);
                 let descriptionSuffix = ` (${durationDisplay})`;
                 
-                if (days === 0.5 && HALF_DAY_PRICES[ref] !== undefined) {
-                  finalPrice = HALF_DAY_PRICES[ref];
-                } else if (PRICING_GRIDS[ref]) {
-                  const grid = PRICING_GRIDS[ref];
-                  let gridDays = days;
-                  if (gridDays > 31) gridDays = 31;
-                  finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
-                } else {
-                  const perDay = getPricePerDay(ref);
-                  finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
-                }
-
                 return {
                   id: Date.now() + idx,
                   reference: ref,
                   description: (itemEq.name || 'Équipement importé') + descriptionSuffix,
                   quantity: 1,
+                  duration: days,
                   unitPrice: finalPrice
                 };
               });
@@ -308,6 +314,7 @@ export default function InvoiceGenerator() {
               reference: 'WINGBOOST',
               description: 'Abonnement Wingboost',
               quantity: 1,
+              duration: 1,
               unitPrice: 0
             }]
           };
@@ -324,7 +331,8 @@ export default function InvoiceGenerator() {
             reference: eq.reference ? eq.reference.replace(/^'/, '') : '', 
             description: eq.name || '', 
             quantity: 1, 
-            unitPrice: getPricePerDay(eq.reference || '') 
+            duration: 1,
+            unitPrice: getCalculatedPrice(eq.reference ? eq.reference.replace(/^'/, '') : '', 1) 
           }
         ]
       }));
@@ -358,7 +366,7 @@ export default function InvoiceGenerator() {
   const handleAddItem = () => {
     setInvoiceData({
       ...invoiceData,
-      items: [...invoiceData.items, { id: Date.now(), reference: '', description: '', quantity: 1, unitPrice: 0 }]
+      items: [...invoiceData.items, { id: Date.now(), reference: '', description: '', quantity: 1, duration: 1, unitPrice: 0 }]
     });
   };
 
@@ -373,14 +381,18 @@ export default function InvoiceGenerator() {
     let newItems = invoiceData.items.map(item => {
       if (item.id === id) {
         let updated = { ...item, [field]: value };
-        // Si on change la référence via le select, on auto-remplit la description et le prix
+        
         if (field === 'reference' && value) {
           const eq = GENERIC_EQUIPMENTS.find(e => e.reference === value);
           if (eq) {
             updated.description = eq.name;
-            updated.unitPrice = getPricePerDay(eq.reference);
+            const dur = updated.duration || 1;
+            updated.unitPrice = getCalculatedPrice(eq.reference, dur);
           }
+        } else if (field === 'duration' && updated.reference) {
+          updated.unitPrice = getCalculatedPrice(updated.reference, value);
         }
+        
         return updated;
       }
       return item;
@@ -622,6 +634,17 @@ export default function InvoiceGenerator() {
                   </select>
                 </div>
                 <textarea className="input" placeholder="Description" rows={2} style={{ flex: 3, minWidth: '200px', resize: 'vertical' }} value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} />
+                <select 
+                  className="input" 
+                  style={{ flex: 1, minWidth: '100px' }} 
+                  value={item.duration || 1} 
+                  onChange={e => handleItemChange(item.id, 'duration', parseFloat(e.target.value))}
+                >
+                  <option value={0.5}>½ Jour</option>
+                  {[...Array(31)].map((_, i) => (
+                    <option key={i+1} value={i+1}>{i+1} Jour{i+1 > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
                 <input type="number" className="input" placeholder="Qté" style={{ flex: 1, minWidth: '60px' }} value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                 <input type="number" className="input" placeholder="Prix Unit. TTC" style={{ flex: 1, minWidth: '100px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
                 <button type="button" onClick={() => handleRemoveItem(item.id)} style={{ padding: '10px', color: '#EF4444', fontSize: '16px' }}>×</button>
