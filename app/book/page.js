@@ -241,6 +241,23 @@ export default function PublicBookingPage() {
   'LOK-AILE-BARRE': { 0.5: 70, 1: 73.75, 2: 123.62, 3: 173.63, 4: 198.65, 5: 211.16, 6: 223.67, 7: 243.69, 8: 243.69, 9: 256.13, 10: 261.14, 11: 273.65, 12: 273.65, 13: 273.66, 14: 279.92, 15: 279.92, 16: 279.92, 17: 279.92, 18: 279.92, 19: 279.92, 20: 279.92, 21: 279.92, 22: 279.92, 23: 279.92, 24: 279.92, 25: 279.92, 26: 279.92, 27: 279.92, 28: 279.92, 29: 279.92, 30: 279.92, 31: 279.92 },
 };
 
+  const getItemPrice = (reference, days, rentalType) => {
+    if (PRICING_GRIDS[reference]) {
+      const grid = PRICING_GRIDS[reference];
+      let gridDays = days;
+      if (gridDays > 31) gridDays = 31;
+      
+      if (rentalType === 'demi_matin' || rentalType === 'demi_aprem') {
+        return grid[0.5];
+      } else {
+        return grid[Math.floor(gridDays)] || grid[31];
+      }
+    } else {
+      const pricePerDay = getPricePerDay(reference);
+      return (rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
+    }
+  };
+
   const getBookingTotal = () => {
     const days = getBookingDuration();
     if (days === 0 || selectedEquipmentIds.length === 0) return 0;
@@ -250,20 +267,7 @@ export default function PublicBookingPage() {
     for (const eqId of selectedEquipmentIds) {
       const item = equipmentList.find(e => e.id === eqId);
       if (item) {
-        if (PRICING_GRIDS[item.reference]) {
-          const grid = PRICING_GRIDS[item.reference];
-          let gridDays = days;
-          if (gridDays > 31) gridDays = 31;
-          
-          if (rentalType === 'demi_matin' || rentalType === 'demi_aprem') {
-            subtotal += grid[0.5];
-          } else {
-            subtotal += grid[Math.floor(gridDays)] || grid[31];
-          }
-        } else {
-          const pricePerDay = getPricePerDay(item.reference);
-          subtotal += (rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
-        }
+        subtotal += getItemPrice(item.reference, days, rentalType);
       }
     }
     
@@ -810,7 +814,7 @@ export default function PublicBookingPage() {
                                       {e.name}
                                     </h4>
                                     <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
-                                      {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? `${Math.round(pricePerDay * 0.6)} € / ½ journée` : `${pricePerDay} € / jour`}
+                                      {getItemPrice(e.reference, getBookingDuration(), rentalType)} € pour {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? '½ journée' : `${getBookingDuration()} jour(s)`}
                                     </span>
                                   </div>
                                 </div>
@@ -1045,7 +1049,7 @@ export default function PublicBookingPage() {
                                 <span style={{ backgroundColor: '#F3F4F6', color: '#4B5563', padding: '2px 6px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold' }}>x{qty}</span>
                                 <span style={{ color: '#111827', fontWeight: 500 }}>{eq.name}</span>
                               </div>
-                              <span style={{ color: '#4B5563' }}>{(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? Math.round(getPricePerDay(eq.reference) * 0.6) * qty : getPricePerDay(eq.reference) * qty} €</span>
+                              <span style={{ color: '#4B5563' }}>{getItemPrice(eq.reference, getBookingDuration(), rentalType) * qty} €</span>
                             </li>
                           );
                         })}
