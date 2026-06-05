@@ -637,17 +637,6 @@ export default function InvoiceGenerator() {
                   </select>
                 </div>
                 <textarea className="input" placeholder="Description" rows={2} style={{ flex: 3, minWidth: '200px', resize: 'vertical' }} value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} />
-                <select 
-                  className="input" 
-                  style={{ flex: 1, minWidth: '100px' }} 
-                  value={item.duration || 1} 
-                  onChange={e => handleItemChange(item.id, 'duration', parseFloat(e.target.value))}
-                >
-                  <option value={0.5}>½ Jour</option>
-                  {[...Array(31)].map((_, i) => (
-                    <option key={i+1} value={i+1}>{i+1} Jour{i+1 > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
                 <input type="number" className="input" placeholder="Qté" style={{ flex: 1, minWidth: '60px' }} value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseFloat(e.target.value) || 0)} />
                 <input type="number" className="input" placeholder="Prix Unit. TTC" style={{ flex: 1, minWidth: '100px' }} value={item.unitPrice} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} />
                 <button type="button" onClick={() => handleRemoveItem(item.id)} style={{ padding: '10px', color: '#EF4444', fontSize: '16px' }}>×</button>
