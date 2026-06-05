@@ -428,56 +428,12 @@ export default function BookingsPage() {
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder="👉 Tapez RW ou #RW0001 pour importer une ancienne réservation" 
-                  style={{ marginBottom: '8px', border: '2px solid #3B82F6' }}
+                  placeholder="🔍 Filtrer par nom ou réf d'équipement..." 
+                  style={{ marginBottom: '8px' }}
                   value={equipmentSearch}
                   onChange={(e) => setEquipmentSearch(e.target.value)}
                 />
                 
-                {(() => {
-                  const foundBookingRef = equipmentSearch.trim().replace(/^#/, '').toUpperCase();
-                  let matchingBookingForEquipments = null;
-                  if (foundBookingRef.length >= 2) {
-                    matchingBookingForEquipments = bookings.find(b => (b.reference || '').toUpperCase() === foundBookingRef);
-                    if (!matchingBookingForEquipments) {
-                      matchingBookingForEquipments = bookings.find(b => (b.reference || '').toUpperCase().includes(foundBookingRef));
-                    }
-                  }
-                  
-                  if (equipmentSearch.length >= 2 && !matchingBookingForEquipments) {
-                    return (
-                      <div style={{ backgroundColor: '#FEF2F2', padding: '8px', borderRadius: '6px', marginBottom: '8px', fontSize: '12px', color: '#991B1B' }}>
-                        Aucune réservation trouvée contenant "{foundBookingRef}". (Total résas en mémoire : {bookings.length}, 1ère réf: {bookings[0]?.reference || 'N/A'})
-                      </div>
-                    );
-                  }
-
-                  if (matchingBookingForEquipments) {
-                    return (
-                      <div style={{ backgroundColor: '#DBEAFE', border: '1px solid #BFDBFE', padding: '8px 12px', borderRadius: '6px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', color: '#1E40AF' }}>
-                          Réservation <strong>#{matchingBookingForEquipments.reference}</strong> trouvée.
-                        </span>
-                        <button type="button" className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '12px' }} onClick={() => {
-                          const bItems = bookingItems.filter(bi => bi.booking_id === matchingBookingForEquipments.id);
-                          const eqsToAdd = [];
-                          bItems.forEach(bi => {
-                            const eq = equipment.find(e => e.id === bi.equipment_id);
-                            if (eq && !selectedEquipments.some(se => se.id === eq.id)) {
-                              eqsToAdd.push(eq);
-                            }
-                          });
-                          setSelectedEquipments([...selectedEquipments, ...eqsToAdd]);
-                          setEquipmentSearch('');
-                        }}>
-                          Ajouter tout le matériel ({bookingItems.filter(bi => bi.booking_id === matchingBookingForEquipments.id).length})
-                        </button>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <select 
                     className="input" 
