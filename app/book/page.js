@@ -554,7 +554,7 @@ export default function PublicBookingPage() {
       <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.png" alt="The Ridery Logo" style={{ height: '32px', objectFit: 'contain' }} />
+            <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain' }} />
           </div>
           <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
             Portail Client
