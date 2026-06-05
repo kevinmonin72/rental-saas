@@ -1,21 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-// 1. Remove Emojis from app/book/page.js
-const pagePath = path.join(__dirname, 'app', 'book', 'page.js');
-let pageContent = fs.readFileSync(pagePath, 'utf8');
-
-// Regex to match emojis
-const emojiRegex = /[\u{1F300}-\u{1F5FF}\u{1F900}-\u{1F9FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{1F191}-\u{1F251}\u{1F004}\u{1F0CF}\u{1F170}-\u{1F171}\u{1F17E}-\u{1F17F}\u{1F18E}\u{3030}\u{2B50}\u{2B55}\u{2934}-\u{2935}\u{2B05}-\u{2B07}\u{2B1B}-\u{2B1C}\u{3297}\u{3299}\u{303D}\u{00A9}\u{00AE}\u{2122}\u{23F3}\u{24C2}\u{23E9}-\u{23EF}\u{25B6}\u{23F8}-\u{23FA}]/gu;
-
-pageContent = pageContent.replace(emojiRegex, '');
-// Clean up any stray spaces left behind before/after emojis (optional, but good)
-pageContent = pageContent.replace(/\s+\)/g, ')').replace(/\s+\]/g, ']');
-
-fs.writeFileSync(pagePath, pageContent, 'utf8');
-console.log('Emojis removed from app/book/page.js');
-
-// 2. Generate public/crop_images.html
 const publicImagesPath = path.join(__dirname, 'public', 'images');
 const productsPath = path.join(publicImagesPath, 'products');
 
@@ -38,30 +23,151 @@ const htmlContent = `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Outil de recadrage des images</title>
+    <title>Éditeur de Recadrage d'Images</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <style>
-        body { font-family: sans-serif; background: #f3f4f6; padding: 20px; }
+        body { font-family: sans-serif; background: #f3f4f6; padding: 20px; margin: 0; }
         .gallery { display: flex; flex-wrap: wrap; gap: 20px; }
-        .card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 200px; display: flex; flex-direction: column; align-items: center; }
-        .img-container { width: 150px; height: 150px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #fafafa; margin-bottom: 10px; overflow: hidden; }
-        img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .name { font-size: 12px; color: #333; text-align: center; word-break: break-all; }
+        .card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 200px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; }
+        .card:hover { transform: scale(1.05); border: 2px solid #F97316; }
+        .img-container { width: 150px; height: 150px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #fafafa; margin-bottom: 10px; overflow: hidden; pointer-events: none; }
+        .img-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .name { font-size: 12px; color: #333; text-align: center; word-break: break-all; pointer-events: none; }
+        
+        /* Modal styles */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; }
+        #modal.active { display: flex; }
+        .editor-container { width: 80%; max-width: 800px; height: 60vh; background: #fff; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; }
+        .cropper-wrapper { flex: 1; min-height: 0; display: flex; justify-content: center; background: #eee; overflow: hidden; }
+        #image-to-crop { max-width: 100%; max-height: 100%; display: block; }
+        .controls { display: flex; justify-content: space-between; margin-top: 20px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background: #9CA3AF; color: white; }
+        .btn-save { background: #F97316; color: white; }
+        .loading { display: none; color: white; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Toutes les images (${allImages.length})</h1>
-    <p>Vous pouvez visualiser toutes les images ci-dessous. Modifiez-les dans le dossier <code>public/images</code>.</p>
+    <h1>Outil de Recadrage (${allImages.length} images)</h1>
+    <p>Cliquez sur une image pour l'ouvrir dans l'éditeur, la rogner, puis l'enregistrer directement en local.</p>
+    
     <div class="gallery">
         ${allImages.map(img => `
-        <div class="card">
+        <div class="card" onclick="openEditor('${img}')">
             <div class="img-container">
-                <img src="${img}" alt="${img}">
+                <img src="${img}" alt="thumbnail">
             </div>
             <div class="name">${img}</div>
         </div>`).join('')}
     </div>
+
+    <!-- Modal for Editor -->
+    <div id="modal">
+        <div class="editor-container">
+            <h3 id="editor-title" style="margin-top: 0;"></h3>
+            <div class="cropper-wrapper">
+                <img id="image-to-crop" src="" alt="To crop">
+            </div>
+            <div class="controls">
+                <button class="btn btn-cancel" onclick="closeEditor()">Annuler</button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" style="background:#e5e7eb" onclick="cropper.setAspectRatio(1)">Ratio 1:1</button>
+                    <button class="btn" style="background:#e5e7eb" onclick="cropper.setAspectRatio(NaN)">Libre</button>
+                    <button class="btn btn-save" onclick="saveImage()">Sauvegarder</button>
+                </div>
+            </div>
+        </div>
+        <div id="loading" class="loading">Enregistrement en cours... ⏳</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script>
+        let currentImagePath = '';
+        let cropper = null;
+        const modal = document.getElementById('modal');
+        const imageElement = document.getElementById('image-to-crop');
+        const titleElement = document.getElementById('editor-title');
+        const loadingElement = document.getElementById('loading');
+
+        function openEditor(path) {
+            currentImagePath = path;
+            titleElement.innerText = "Édition : " + path;
+            
+            // Add timestamp to bypass cache
+            imageElement.src = path + "?t=" + new Date().getTime();
+            
+            modal.classList.add('active');
+
+            // Initialize Cropper after image loads
+            imageElement.onload = () => {
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(imageElement, {
+                    viewMode: 1,
+                    aspectRatio: NaN, // Free crop by default
+                    background: false,
+                    autoCropArea: 0.9,
+                });
+            };
+        }
+
+        function closeEditor() {
+            modal.classList.remove('active');
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+        }
+
+        async function saveImage() {
+            if (!cropper) return;
+            
+            loadingElement.style.display = 'block';
+
+            // Get cropped image data as base64 (PNG to preserve transparency if any)
+            const canvas = cropper.getCroppedCanvas({
+                imageSmoothingEnabled: true,
+                imageSmoothingQuality: 'high',
+            });
+            const base64Data = canvas.toDataURL('image/png');
+
+            try {
+                const response = await fetch('/api/save-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imagePath: currentImagePath,
+                        base64Data: base64Data
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // Success, close editor and refresh thumbnails
+                    closeEditor();
+                    alert("Image enregistrée avec succès !");
+                    // Force refresh images in the background by appending timestamp
+                    document.querySelectorAll('.card').forEach(card => {
+                        if (card.getAttribute('onclick') === "openEditor('" + currentImagePath + "')") {
+                            const img = card.querySelector('img');
+                            img.src = currentImagePath + "?t=" + new Date().getTime();
+                        }
+                    });
+                } else {
+                    alert("Erreur: " + result.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Erreur de connexion.");
+            } finally {
+                loadingElement.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>`;
 
 fs.writeFileSync(path.join(__dirname, 'public', 'crop_images.html'), htmlContent, 'utf8');
-console.log('public/crop_images.html generated successfully.');
+console.log('public/crop_images.html updated with CropperJS editor successfully.');
