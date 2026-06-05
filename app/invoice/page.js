@@ -179,7 +179,21 @@ export default function InvoiceGenerator() {
   };
 
   const addEqToInvoice = async (eq) => {
+    if (!eq) return;
+
     if (eq.isBooking) {
+      const newClientName = eq.booking.customers 
+        ? `${eq.booking.customers.first_name || ''} ${eq.booking.customers.last_name || ''}`.trim() 
+        : `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim();
+        
+      const newClientEmail = (eq.booking.customers ? eq.booking.customers.email : eq.booking.email) || '';
+
+      setInvoiceData(prev => ({
+        ...prev,
+        clientName: prev.clientName || newClientName,
+        clientEmail: prev.clientEmail || newClientEmail
+      }));
+
       let days = 1;
       let durationDisplay = '1 jour';
       if (eq.booking.start_date && eq.booking.end_date) {
@@ -241,41 +255,53 @@ export default function InvoiceGenerator() {
             const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
             return {
               ...prev,
-              clientName: prev.clientName || (eq.booking.customers ? `${eq.booking.customers.first_name || ''} ${eq.booking.customers.last_name || ''}`.trim() : `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim()),
-              clientEmail: prev.clientEmail || (eq.booking.customers ? eq.booking.customers.email : eq.booking.email) || '',
               items: [...prevItemsCleaned, ...newItems]
             };
           });
         }
+      } else if (eq.booking.rental_type === 'wingboost') {
+        // Handle Wingboost with no equipments
+        setInvoiceData(prev => {
+          const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
+          return {
+            ...prev,
+            items: [...prevItemsCleaned, {
+              id: Date.now(),
+              reference: 'WINGBOOST',
+              description: 'Abonnement Wingboost',
+              quantity: 1,
+              unitPrice: 0
+            }]
+          };
+        });
       }
-      setQuickRef('');
-      setSearchResults([]);
-      return;
+    } else {
+      // Direct equipment manual addition
+      setInvoiceData(prev => ({
+        ...prev,
+        items: [
+          ...prev.items, 
+          { 
+            id: Date.now(), 
+            reference: eq.reference ? eq.reference.replace(/^'/, '') : '', 
+            description: eq.name || '', 
+            quantity: 1, 
+            unitPrice: getPricePerDay(eq.reference || '') 
+          }
+        ]
+      }));
     }
-
-    setInvoiceData(prev => ({
-      ...prev,
-      items: [
-        ...prev.items, 
-        { 
-          id: Date.now(), 
-          reference: eq.reference ? eq.reference.replace(/^'/, '') : '', 
-          description: eq.name || '', 
-          quantity: 1, 
-          unitPrice: getPricePerDay(eq.reference || '') 
-        }
-      ]
-    }));
     setQuickRef('');
     setSearchResults([]);
-  };
+  }; 
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const bookingRef = params.get('bookingRef');
       if (bookingRef) {
-        supabase.from('bookings').select('*').eq('reference', bookingRef).maybeSingle().then(({ data }) => {
+        supabase.from('bookings').select('*, customers(first_name, last_name, email)').eq('reference', bookingRef).maybeSingle().then(({ data }) => {
           if (data) {
             addEqToInvoice({
               isBooking: true,
