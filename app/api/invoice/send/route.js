@@ -78,9 +78,9 @@ export async function POST(req) {
     });
 
     // 4. Send the Invoice
-    await stripe.invoices.sendInvoice(invoice.id);
+    const sentInvoice = await stripe.invoices.sendInvoice(invoice.id);
 
-    return new Response(JSON.stringify({ success: true, invoiceId: invoice.id }), {
+    return new Response(JSON.stringify({ success: true, invoiceId: invoice.id, url: sentInvoice.hosted_invoice_url }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });

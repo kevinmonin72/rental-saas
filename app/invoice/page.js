@@ -395,6 +395,9 @@ export default function InvoiceGenerator() {
 
       const data = await res.json();
       if (res.ok) {
+        if (data.url) {
+          window.open(data.url, '_blank');
+        }
         alert("La facture officielle a été générée et envoyée par Stripe au client avec succès !");
       } else {
         alert("Erreur lors de l'envoi : " + (data.error || "Inconnue"));
