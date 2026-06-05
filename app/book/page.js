@@ -749,7 +749,7 @@ export default function PublicBookingPage() {
                           <span>{CATEGORY_ICONS[cat]}</span> {cat}
                         </h3>
                         
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
                           {catEquipments.map(e => {
                             const qtySelected = selectedEquipmentIds.filter(id => id === e.id).length;
                             const isSelected = qtySelected > 0;
@@ -768,62 +768,75 @@ export default function PublicBookingPage() {
                                 }}
                                 style={{ 
                                   display: 'flex', 
+                                  flexDirection: 'column', 
                                   alignItems: 'center', 
                                   justifyContent: 'space-between', 
-                                  padding: '16px 20px', 
-                                  border: `2px solid ${isSelected ? '#F97316' : 'transparent'}`, 
+                                  padding: '16px', 
+                                  border: `2px solid ${isSelected ? '#F97316' : '#F3F4F6'}`, 
+                                  borderRadius: '12px',
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
                                   cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
+                                  gap: '12px'
                                 }}
                               >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, paddingRight: '16px' }}>
-                                  <div style={{ width: '90px', height: '90px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <img 
-                                      src={`/images/products/${e.reference}.png?v=2`} 
-                                      alt={e.name}
-                                      onError={(evt) => {
-                                        evt.target.style.display = 'none';
-                                      }}
-                                      style={{ 
-                                        width: '100%', 
-                                        height: '100%', 
-                                        objectFit: 'cover'
-                                      }} 
-                                    />
-                                  </div>
-                                  <div style={{ flex: 1 }}>
-                                    <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827' }}>
-                                      {e.name}
-                                    </h4>
-                                    <span style={{ fontSize: '13px', color: '#F97316', fontWeight: '600' }}>
-                                      {getItemPrice(e.reference, getBookingDuration(), rentalType)} € pour {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? '½ journée' : `${getBookingDuration()} jour(s)`}
-                                    </span>
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                  <img 
+                                    src={`/images/products/${e.reference}.png?v=2`} 
+                                    alt={e.name}
+                                    onError={(evt) => {
+                                      evt.target.style.display = 'none';
+                                    }}
+                                    style={{ 
+                                      width: '100%', 
+                                      height: '100%', 
+                                      objectFit: 'contain',
+                                      padding: '8px'
+                                    }} 
+                                  />
+                                  <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
+                                    {isOutOfStock ? (
+                                      <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>
+                                    ) : (
+                                      <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>
+                                    )}
                                   </div>
                                 </div>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%' }}>
+                                  <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.3' }}>
+                                    {e.name}
+                                  </h4>
+                                  <span style={{ fontSize: '15px', color: '#F97316', fontWeight: 'bold' }}>
+                                    {getItemPrice(e.reference, getBookingDuration(), rentalType)} €
+                                  </span>
+                                  <span style={{ fontSize: '11px', color: '#6B7280' }}>
+                                    pour {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? '½ journée' : `${getBookingDuration()} jour(s)`}
+                                  </span>
+                                </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                  {isOutOfStock ? (
-                                    <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>) : (
-                                    <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>)}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto' }}>
                                   {isSelected ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', padding: '4px 8px', borderRadius: '8px', border: '1px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: 'white', padding: '4px 8px', borderRadius: '8px', border: '1px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
                                       <button 
                                         type="button"
-                                        style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: '#F97316', fontWeight: 'bold' }}
+                                        style={{ padding: '4px 8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: '#F97316', fontWeight: 'bold' }}
                                         onClick={(ev) => { ev.stopPropagation(); handleRemoveItem(e.id); }}
                                       >-</button>
-                                      <span style={{ fontWeight: 'bold', color: '#F97316', minWidth: '14px', textAlign: 'center' }}>{qtySelected}</span>
+                                      <span style={{ fontWeight: 'bold', color: '#F97316', textAlign: 'center' }}>{qtySelected}</span>
                                       <button 
                                         type="button"
-                                        style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: qtyAvailable > 0 ? 'pointer' : 'not-allowed', fontSize: '18px', color: qtyAvailable > 0 ? '#F97316' : '#FCA5A5', fontWeight: 'bold' }}
+                                        style={{ padding: '4px 8px', border: 'none', background: 'transparent', cursor: qtyAvailable > 0 ? 'pointer' : 'not-allowed', fontSize: '18px', color: qtyAvailable > 0 ? '#F97316' : '#FCA5A5', fontWeight: 'bold' }}
                                         disabled={qtyAvailable === 0}
                                         onClick={(ev) => { ev.stopPropagation(); handleAddItem(e.id); }}
                                       >+</button>
-                                    </div>) : (
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />)}
+                                    </div>
+                                  ) : (
+                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />
+                                  )}
                                 </div>
-                              </div>);
+                              </div>
+                            );
                           })}
                         </div>
                       </div>);
