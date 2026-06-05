@@ -43,7 +43,7 @@ const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-3AILE-SANSBARRE-CS', name: 'Troisième aile (sans barre) - carte session', category: 'Carte Session', quantity: 15 },
   { reference: 'LOK-TWINTIP-OPT-CS', name: 'Planche Twintip opt. - carte session', category: 'Carte Session', quantity: 15 },
   { reference: 'LOK-2WING-AILE-CS', name: 'Deuxième Aile de Wing - carte session', category: 'Carte Session', quantity: 15 },
-  { reference: 'LOK-INITIATION-FOIL-TRACTE', name: 'Initiation foil tracté', category: 'Initiation', quantity: 4 },
+
   { reference: 'LOK-BARRE', name: 'Barre', category: 'Kitesurf', quantity: 50 },
   { reference: 'LOK-KITEFOIL', name: 'Kitefoil', category: 'Kitesurf', quantity: 20 },
   { reference: 'LOK-STRAPLESS', name: 'Strapless', category: 'Kitesurf', quantity: 20 },
@@ -59,7 +59,6 @@ const CATEGORY_ICONS = {
   Accessoires: '',
   Protections: '️',
   'Carte Session': '️',
-  Initiation: '',
   Autres: ''
 };
 
@@ -124,6 +123,7 @@ export default function PublicBookingPage() {
         if (itemsRes.error) throw itemsRes.error;
 
         let dbEquipments = eqRes.data || [];
+        dbEquipments = dbEquipments.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
         const missingGenerics = [];
 
         // Identify which generic equipment categories are missing in the DB
