@@ -17,7 +17,7 @@ const getPricePerDay = (reference) => {
 
 export async function POST(req) {
   try {
-    const { equipmentReferences, startDate, endDate, durationMode, promoCode, email } = await req.json();
+    const { equipmentReferences, startDate, endDate, rentalType, promoCode, email } = await req.json();
 
     if (!startDate || !equipmentReferences || equipmentReferences.length === 0) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
@@ -25,7 +25,7 @@ export async function POST(req) {
 
     // Calculate duration in days
     let days = 1;
-    if (durationMode === 'days' && endDate) {
+    if (rentalType !== 'demi_matin' && rentalType !== 'demi_aprem' && endDate) {
       const s = new Date(startDate);
       const e = new Date(endDate);
       const diffTime = Math.abs(e - s);
@@ -39,7 +39,7 @@ export async function POST(req) {
     }
     
     // Half-day is 60% of the daily rate (0.6 multiplier)
-    const isHalfDay = durationMode === 'half_day';
+    const isHalfDay = rentalType === 'demi_matin' || rentalType === 'demi_aprem';
     let subtotal = 0;
     if (isHalfDay) {
       subtotal = Math.round(pricePerDayTotal * 0.6);
