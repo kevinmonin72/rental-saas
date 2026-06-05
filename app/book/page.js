@@ -748,7 +748,11 @@ export default function PublicBookingPage() {
                           <span>{CATEGORY_ICONS[cat]}</span> {cat}
                         </h3>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+                        <div style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: 'repeat(4, 1fr)', 
+                          gap: '12px' 
+                        }}>
                           {catEquipments.map(e => {
                             const qtySelected = selectedEquipmentIds.filter(id => id === e.id).length;
                             const isSelected = qtySelected > 0;
@@ -770,16 +774,16 @@ export default function PublicBookingPage() {
                                   flexDirection: 'column', 
                                   alignItems: 'center', 
                                   justifyContent: 'space-between', 
-                                  padding: '16px', 
+                                  padding: '10px', 
                                   border: `2px solid ${isSelected ? '#F97316' : '#F3F4F6'}`, 
                                   borderRadius: '12px',
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
                                   cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
-                                  gap: '12px'
+                                  gap: '10px'
                                 }}
                               >
-                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                   <img 
                                     src={`/images/products/${e.reference}.png?v=2`} 
                                     alt={e.name}
@@ -790,7 +794,8 @@ export default function PublicBookingPage() {
                                       width: '100%', 
                                       height: '100%', 
                                       objectFit: 'contain',
-                                      padding: '8px'
+                                      padding: '2px',
+                                      transform: 'scale(1.05)'
                                     }} 
                                   />
                                   <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
