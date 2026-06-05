@@ -250,15 +250,17 @@ export default function InvoiceGenerator() {
       let days = 1;
       let durationDisplay = '1 jour';
       if (eq.booking.start_date && eq.booking.end_date) {
+        const sDateStr = new Date(eq.booking.start_date).toLocaleDateString('fr-FR');
+        const eDateStr = new Date(eq.booking.end_date).toLocaleDateString('fr-FR');
         if (eq.booking.rental_type === 'demi_matin' || eq.booking.rental_type === 'demi_aprem') {
           days = 0.5;
-          durationDisplay = '½ jour';
+          durationDisplay = `le ${sDateStr} (½ jour)`;
         } else {
           const s = new Date(eq.booking.start_date);
           const e = new Date(eq.booking.end_date);
           const diff = Math.abs(e - s);
           days = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-          durationDisplay = `${days} jours`;
+          durationDisplay = `du ${sDateStr} au ${eDateStr} (${days} jour${days > 1 ? 's' : ''})`;
         }
       }
 
@@ -275,7 +277,7 @@ export default function InvoiceGenerator() {
               newItems = [{
                 id: Date.now(),
                 reference: 'WINGBOOST',
-                description: `Wingboost\nMatériel inclus :\n${equipments.map(e => '- ' + e.name).join('\n')}`,
+                description: `Abonnement Wingboost ${durationDisplay}\nMatériel inclus :\n${equipments.map(e => '- ' + e.name).join('\n')}`,
                 quantity: 1,
                 duration: days,
                 unitPrice: 0
@@ -313,9 +315,9 @@ export default function InvoiceGenerator() {
             items: [...prevItemsCleaned, {
               id: Date.now(),
               reference: 'WINGBOOST',
-              description: 'Abonnement Wingboost',
+              description: `Abonnement Wingboost ${durationDisplay}`,
               quantity: 1,
-              duration: 1,
+              duration: days,
               unitPrice: 0
             }]
           };
