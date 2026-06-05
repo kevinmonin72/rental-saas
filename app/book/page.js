@@ -220,23 +220,22 @@ export default function PublicBookingPage() {
     setValidatingPromo(true);
     setPromoError('');
     
-    const { data, error } = await supabase
-      .from('promo_codes')
-      .select('*')
-      .eq('code', promoInput.trim().toUpperCase())
-      .maybeSingle();
+    try {
+      const res = await fetch('/api/promos/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoInput.trim().toUpperCase(), email: email.trim() })
+      });
+      const data = await res.json();
       
-    if (error || !data) {
-      setPromoError('Code promo invalide.');
-    } else if (!data.is_active) {
-      setPromoError('Ce code promo est inactif.');
-    } else if (data.max_uses && data.used_count >= data.max_uses) {
-      setPromoError("Ce code promo a atteint son nombre maximum d'utilisations.");
-    } else if (data.target_email && data.target_email.toLowerCase() !== email.trim().toLowerCase()) {
-      setPromoError("Ce code promo n'est pas valide pour cette adresse email.");
-    } else {
-      setAppliedPromo(data);
-      setPromoError('');
+      if (!res.ok) {
+        setPromoError(data.error || 'Code promo invalide.');
+      } else {
+        setAppliedPromo(data.promo);
+        setPromoError('');
+      }
+    } catch (err) {
+      setPromoError('Erreur de validation.');
     }
     setValidatingPromo(false);
   };
