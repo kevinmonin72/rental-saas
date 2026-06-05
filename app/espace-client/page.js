@@ -158,6 +158,26 @@ export default function EspaceClientPage() {
               <button type="submit" style={{ backgroundColor: '#F97316', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '16px', fontWeight: 600, border: 'none', cursor: 'pointer', marginTop: '8px' }}>
                 Se connecter
               </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <Link href="/book" style={{ fontSize: '14px', color: '#F97316', textDecoration: 'none', fontWeight: 500 }}>
+                  S'inscrire
+                </Link>
+                <button 
+                  type="button" 
+                  onClick={async () => {
+                    if (!email) {
+                      setAuthError('Veuillez saisir votre adresse email ci-dessus, puis cliquez sur Mot de passe oublié.');
+                      return;
+                    }
+                    const { error } = await supabase.auth.resetPasswordForEmail(email);
+                    if (error) setAuthError(error.message);
+                    else setAuthError('Un email de réinitialisation a été envoyé (vérifiez vos spams).');
+                  }}
+                  style={{ fontSize: '14px', color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
             </form>
           </div>
         </main>
