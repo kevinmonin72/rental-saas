@@ -845,6 +845,7 @@ export default function PublicBookingPage() {
                         </div>
                       </div>);
                   })}
+                </div>
               </div>)}
 
             {/* STEP 3: CUSTOMER COORD & STRIPE PAYMENT */}
