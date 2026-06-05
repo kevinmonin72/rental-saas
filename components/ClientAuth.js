@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 import { useStore } from '../lib/store';
 
-const ADMIN_USERNAME = "admin";
+const ADMIN_USERNAME = "marketing@theridery.com";
 const ADMIN_PASSWORD = "Theriderywingboost2K26!!";
 
 export default function ClientAuth({ children }) {
@@ -52,7 +52,7 @@ export default function ClientAuth({ children }) {
           <form onSubmit={handleLogin}>
             <div className="form-group" style={{ textAlign: 'left', marginBottom: '16px' }}>
               <label>Identifiant</label>
-              <input type="text" value={adminId} onChange={(e) => setAdminId(e.target.value)} className="input" placeholder="admin" required />
+              <input type="text" value={adminId} onChange={(e) => setAdminId(e.target.value)} className="input" placeholder="marketing@theridery.com" required />
             </div>
             <div className="form-group" style={{ textAlign: 'left', marginBottom: '24px' }}>
               <label>Mot de passe</label>
