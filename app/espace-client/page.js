@@ -111,7 +111,7 @@ export default function EspaceClientPage() {
         <header style={{ backgroundColor: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
           <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Link href="/">
+              <Link href="/book">
                 <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain', cursor: 'pointer' }} />
               </Link>
             </div>
