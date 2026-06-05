@@ -165,6 +165,54 @@ export default function InvoiceGenerator() {
     }
   };
 
+  const HALF_DAY_PRICES = {
+    'LOK-BOARDBAG-OPT': 12.50,
+    'LOK-PACK-KITE': 92.50,
+    'LOK-AILE-BARRE': 70.00,
+    'LOK-PACK-2AILES-BARRE': 92.50,
+    'LOK-BOARD-TWINTIP': 35.00,
+    'LOK-WING-AILE': 55.00,
+    'LOK-HARNAIS-CULOTTE': 18.75,
+    'LOK-AILE-SANSBARRE': 31.25,
+    'LOK-NEOPRENE-COMBINAISON': 18.75,
+    'LOK-PACK-WING-GONFLABLE': 86.25,
+    'LOK-NEOPRENE-CAGOULE': 6.25,
+    'LOK-PACK-WING-RIGIDE': 86.25,
+    'LOK-PACK-WING-DEBUTANT': 43.75,
+    'LOK-WING-FOIL': 55.00,
+    'LOK-WING-BOARD': 55.00,
+    'LOK-WING-2AILE': 31.25,
+    'LOK-CAGOULE-OPT': 6.25,
+    'LOK-CHAUSSONS-OPT': 6.25,
+    'LOK-GANTS-OPT': 6.25,
+    'LOK-HARNAIS-CEINTURE': 18.75,
+    'LOK-NEOPRENE-VESTE': 18.75,
+    'LOK-NEOPRENE-CHAUSSONS': 6.25,
+    'LOK-COMBINAISON-OPT': 46.25,
+    'LOK-BOARDBAG': 18.75,
+    'LOK-NEOPRENE-GANTS': 6.25,
+    'LOK-HARNAIS-CEINTURE-OPT': 18.75,
+    'LOK-PROT-CASQUE': 11.25,
+    'LOK-VESTENEOPRENE-OPT': 12.50,
+    'LOK-PROT-GILET': 11.25,
+    'LOK-CASQUE-OPT': 6.25,
+    'LOK-GILET-OPT': 6.25,
+    'LOK-HARNAIS-CULOTTE-OPT': 6.25,
+    'LOK-3AILE-SANSBARRE': 31.25,
+    'LOK-2AILE-SANSBARRE-CS': 0,
+    'LOK-3AILE-SANSBARRE-CS': 0,
+    'LOK-TWINTIP-OPT-CS': 0,
+    'LOK-2WING-AILE-CS': 0,
+    'LOK-INITIATION-FOIL-TRACTE': 0,
+    'LOK-BARRE': 36.25,
+    'LOK-KITEFOIL': 73.75,
+    'LOK-STRAPLESS': 48.75,
+    'LOK-TWINTIP-OPT': 18.75,
+    'LOK-BOARD-FOIL-WING': 67.50,
+    'LOK-PADDLE': 18.75,
+    'LOK-SURF': 31.25
+  };
+
   const PRICING_GRIDS = {
     'LOK-PACK-KITE': { 0.5: 74, 1: 79, 2: 134, 3: 184, 4: 204, 5: 214, 6: 224, 7: 234, 8: 245, 9: 255, 10: 269, 11: 279, 12: 279, 13: 279, 14: 284, 15: 284, 16: 284, 17: 284, 18: 284, 19: 284, 20: 284, 21: 289, 22: 289, 23: 289, 24: 289, 25: 289, 26: 289, 27: 289, 28: 299, 29: 299, 30: 299, 31: 299 },
     'LOK-PACK-2AILES-BARRE': { 0.5: 74, 1: 79, 2: 134, 3: 184, 4: 204, 5: 214, 6: 224, 7: 234, 8: 245, 9: 255, 10: 269, 11: 279, 12: 279, 13: 279, 14: 284, 15: 284, 16: 284, 17: 284, 18: 284, 19: 284, 20: 284, 21: 289, 22: 289, 23: 289, 24: 289, 25: 289, 26: 289, 27: 289, 28: 299, 29: 299, 30: 299, 31: 299 },
@@ -232,7 +280,9 @@ export default function InvoiceGenerator() {
                 let finalPrice = 0;
                 let descriptionSuffix = ` (${durationDisplay})`;
                 
-                if (PRICING_GRIDS[ref]) {
+                if (days === 0.5 && HALF_DAY_PRICES[ref] !== undefined) {
+                  finalPrice = HALF_DAY_PRICES[ref];
+                } else if (PRICING_GRIDS[ref]) {
                   const grid = PRICING_GRIDS[ref];
                   let gridDays = days;
                   if (gridDays > 31) gridDays = 31;
