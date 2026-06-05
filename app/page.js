@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 
 export default function DashboardHome() {
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState('globale'); // 'globale' | 'wingboost' | 'ponctuel'
   const [localDataToMigrate, setLocalDataToMigrate] = useState(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const { getDashboardStats, getDetailedActiveBookings, fetchData, bookings, bookingItems } = useStore();
@@ -49,12 +50,10 @@ export default function DashboardHome() {
 
   if (!mounted) return <div style={{ padding: '24px' }}>Chargement...</div>;
 
-  // Group Wingboost bookings by month (last 6 months)
-  const getWingboostStatsByMonth = () => {
+  const getStatsByMonth = (type) => {
     const months = {};
     const today = new Date();
     
-    // Generate the last 6 months keys & labels
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -62,9 +61,9 @@ export default function DashboardHome() {
       months[key] = { key, label, count: 0 };
     }
 
-    // Count wingboost bookings matching month keys
     bookings.forEach(b => {
-      if (b.rental_type === 'wingboost') {
+      const isWingboost = b.rental_type === 'wingboost';
+      if ((type === 'wingboost' && isWingboost) || (type === 'ponctuel' && !isWingboost) || type === 'all') {
         const start = new Date(b.start_date);
         const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}`;
         if (months[key]) {
@@ -76,12 +75,10 @@ export default function DashboardHome() {
     return Object.values(months);
   };
 
-  // Group active bookings by expected return month (current month + 5 next months)
-  const getExpectedReturnsByMonth = () => {
+  const getExpectedReturnsByMonth = (type) => {
     const months = {};
     const today = new Date();
     
-    // Generate current + 5 next months keys & labels
     for (let i = 0; i < 6; i++) {
       const d = new Date(today.getFullYear(), today.getMonth() + i, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -89,10 +86,9 @@ export default function DashboardHome() {
       months[key] = { key, label, count: 0 };
     }
 
-    // Count expected wingboost returns in these months
     bookings.forEach(b => {
-      if (b.status === 'active' && b.rental_type === 'wingboost') {
-        // Base end date of the booking
+      const isWingboost = b.rental_type === 'wingboost';
+      if (b.status === 'active' && ((type === 'wingboost' && isWingboost) || (type === 'ponctuel' && !isWingboost) || type === 'all')) {
         let baseEndDate = new Date(b.end_date);
         if (b.pause_start && b.pause_end) {
           const ps = new Date(b.pause_start);
@@ -105,7 +101,7 @@ export default function DashboardHome() {
         
         const key = `${baseEndDate.getFullYear()}-${String(baseEndDate.getMonth() + 1).padStart(2, '0')}`;
         if (months[key]) {
-          months[key].count++; // Count 1 for the wingboost return
+          months[key].count++;
         }
       }
     });
@@ -120,11 +116,19 @@ export default function DashboardHome() {
 
   const stats = getDashboardStats();
   const activeBookingsList = getDetailedActiveBookings();
-  const wingboostStats = getWingboostStatsByMonth();
-  const maxWingboost = Math.max(...wingboostStats.map(s => s.count), 1);
+  
+  const chartStats = getStatsByMonth(activeTab);
+  const maxChartStats = Math.max(...chartStats.map(s => s.count), 1);
 
-  const returnsStats = getExpectedReturnsByMonth();
+  const returnsStats = getExpectedReturnsByMonth(activeTab);
   const maxReturns = Math.max(...returnsStats.map(s => s.count), 1);
+  
+  // Vue Globale KPIs
+  const totalActiveWB = activeBookingsList.filter(b => b.rental_type === 'wingboost').length;
+  const totalActivePonctuel = activeBookingsList.filter(b => b.rental_type !== 'wingboost').length;
+  // Approximations pour le chiffre d'affaires (à relier aux vrais prix des équipements plus tard)
+  // On met un placeholder pour le moment
+  const revenuePlaceholder = "À venir";
 
   return (
     <div>
@@ -181,111 +185,108 @@ export default function DashboardHome() {
         <h1 style={{ marginBottom: 0 }}>Tableau de bord</h1>
         <ExportButton />
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
-        
-        {/* Réservations Actives */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', minHeight: '220px' }}>
-          <div>
-            <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Réservations Actives</h2>
-            <p style={{ fontSize: '48px', fontWeight: 'bold', color: 'var(--primary-color)', margin: '16px 0 8px 0', lineHeight: '1' }}>{stats.activeBookings}</p>
-          </div>
-          <Link href="/bookings" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            Voir les détails →
-          </Link>
-        </div>
 
-        {/* Wingboost par mois (Évolution) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Wingboost par mois (Évolution)</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
-            {wingboostStats.map((s, idx) => {
-              const heightPct = getBarHeight(s.count, maxWingboost);
-              return (
-                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
-                  {/* Tooltip showing number of people */}
-                  <div className="chart-tooltip">
-                    {s.count} {s.count > 1 ? 'personnes' : 'personne'}
-                  </div>
-                  {/* Bar */}
-                  <Link 
-                    href={`/bookings?startMonth=${s.key}&rentalType=wingboost`}
-                    style={{ display: 'block', width: '100%', height: heightPct }}
-                  >
-                    <div 
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)',
-                        borderRadius: '4px 4px 0 0',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer'
-                      }} 
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.filter = 'brightness(1.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.filter = 'none';
-                      }}
-                    />
-                  </Link>
-                  
-                  {/* Label */}
-                  <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Retours prévus (Mois en cours & suiv.) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
-          <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Retours Wingboost prévus</h2>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
-            {returnsStats.map((s, idx) => {
-              const heightPct = getBarHeight(s.count, maxReturns);
-              return (
-                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
-                  {/* Tooltip showing number of people */}
-                  <div className="chart-tooltip">
-                    {s.count} {s.count > 1 ? 'retours' : 'retour'}
-                  </div>
-                  {/* Bar */}
-                  <Link 
-                    href={`/bookings?endMonth=${s.key}&rentalType=wingboost`}
-                    style={{ display: 'block', width: '100%', height: heightPct }}
-                  >
-                    <div 
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        background: 'linear-gradient(180deg, #F97316 0%, #C2410C 100%)',
-                        borderRadius: '4px 4px 0 0',
-                        transition: 'all 0.2s ease',
-                        cursor: 'pointer'
-                      }} 
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.filter = 'brightness(1.1)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.filter = 'none';
-                      }}
-                    />
-                  </Link>
-                  
-                  {/* Label */}
-                  <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+        <button 
+          onClick={() => setActiveTab('globale')} 
+          className={`btn ${activeTab === 'globale' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          🌍 Vue Globale
+        </button>
+        <button 
+          onClick={() => setActiveTab('wingboost')} 
+          className={`btn ${activeTab === 'wingboost' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          🚀 Wingboost
+        </button>
+        <button 
+          onClick={() => setActiveTab('ponctuel')} 
+          className={`btn ${activeTab === 'ponctuel' ? 'btn-primary' : 'btn-secondary'}`}
+        >
+          🕒 Résas Ponctuelles
+        </button>
       </div>
+      
+      {activeTab === 'globale' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+          <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Réservations Actives</h2>
+            <p style={{ fontSize: '48px', fontWeight: 'bold', color: 'var(--primary-color)', margin: '0', lineHeight: '1' }}>{stats.activeBookings}</p>
+            <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '8px' }}>({totalActiveWB} Wingboost, {totalActivePonctuel} Ponctuelles)</p>
+          </div>
+          <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Matériel Loué</h2>
+            <p style={{ fontSize: '48px', fontWeight: 'bold', color: '#10B981', margin: '0', lineHeight: '1' }}>{stats.activeItems}</p>
+            <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '8px' }}>Sur le terrain actuellement</p>
+          </div>
+          <div className="card" style={{ padding: '24px', textAlign: 'center', backgroundColor: '#FEF3C7', border: '1px solid #F59E0B' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#B45309', marginBottom: '8px', textTransform: 'uppercase' }}>Chiffre d'Affaires Mensuel</h2>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#D97706', margin: '8px 0', lineHeight: '1' }}>{revenuePlaceholder}</p>
+            <p style={{ fontSize: '12px', color: '#B45309', marginTop: '8px' }}>(Nécessite d'associer des prix au matériel)</p>
+          </div>
+        </div>
+      )}
+
+      {(activeTab === 'wingboost' || activeTab === 'ponctuel') && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+          
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px', minHeight: '220px' }}>
+            <div>
+              <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px' }}>Réservations en cours ({activeTab === 'wingboost' ? 'Wingboost' : 'Ponctuelles'})</h2>
+              <p style={{ fontSize: '48px', fontWeight: 'bold', color: 'var(--primary-color)', margin: '16px 0 8px 0', lineHeight: '1' }}>{activeTab === 'wingboost' ? totalActiveWB : totalActivePonctuel}</p>
+            </div>
+            <Link href="/bookings" style={{ color: 'var(--primary-color)', textDecoration: 'none', fontWeight: '600', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Voir les détails →
+            </Link>
+          </div>
+
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Évolution par mois</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
+              {chartStats.map((s, idx) => {
+                const heightPct = getBarHeight(s.count, maxChartStats);
+                return (
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
+                    <div className="chart-tooltip">{s.count} résa{s.count > 1 ? 's' : ''}</div>
+                    <Link href={`/bookings?startMonth=${s.key}&rentalType=${activeTab}`} style={{ display: 'block', width: '100%', height: heightPct }}>
+                      <div 
+                        style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #3B82F6 0%, #1D4ED8 100%)', borderRadius: '4px 4px 0 0', transition: 'all 0.2s ease', cursor: 'pointer' }} 
+                        onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
+                      />
+                    </Link>
+                    <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="card" style={{ display: 'flex', flexDirection: 'column', padding: '24px', minHeight: '220px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '16px' }}>Retours prévus</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', height: '110px', padding: '0 8px', borderBottom: '1px solid var(--border-color)', flex: 1 }}>
+              {returnsStats.map((s, idx) => {
+                const heightPct = getBarHeight(s.count, maxReturns);
+                return (
+                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, height: '100%', justifyContent: 'flex-end', margin: '0 6px', position: 'relative' }} className="chart-bar-container">
+                    <div className="chart-tooltip">{s.count} retour{s.count > 1 ? 's' : ''}</div>
+                    <Link href={`/bookings?endMonth=${s.key}&rentalType=${activeTab}`} style={{ display: 'block', width: '100%', height: heightPct }}>
+                      <div 
+                        style={{ width: '100%', height: '100%', background: 'linear-gradient(180deg, #F97316 0%, #C2410C 100%)', borderRadius: '4px 4px 0 0', transition: 'all 0.2s ease', cursor: 'pointer' }} 
+                        onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.1)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.filter = 'none'; }}
+                      />
+                    </Link>
+                    <span style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '6px', textAlign: 'center', width: '100%', textTransform: 'capitalize' }}>{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      )}
 
       {/* Alertes / Retards */}
       {(() => {
