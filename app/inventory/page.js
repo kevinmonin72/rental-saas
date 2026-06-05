@@ -190,7 +190,7 @@ export default function InventoryPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
-                  Affichage de {Math.min(50, sortedEquipment.length)} sur {sortedEquipment.length} équipements
+                  Affichage de {sortedEquipment.length} équipements
                 </p>
                 {selectedIds.length > 0 && (
                   <button onClick={handleBulkDelete} className="btn btn-secondary" style={{ color: 'white', backgroundColor: '#ef4444', border: 'none', padding: '6px 12px' }}>
@@ -203,44 +203,70 @@ export default function InventoryPage() {
                 <input 
                   type="checkbox" 
                   onChange={handleSelectAll} 
-                  checked={selectedIds.length > 0 && selectedIds.length === Math.min(50, sortedEquipment.length)}
+                  checked={selectedIds.length > 0 && selectedIds.length === sortedEquipment.length}
                   style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                 />
-                <span style={{ fontSize: '14px', fontWeight: '500' }}>Tout sélectionner (sur cette page)</span>
+                <span style={{ fontSize: '14px', fontWeight: '500' }}>Tout sélectionner</span>
               </div>
 
-              {sortedEquipment.slice(0, 50).map(item => (
-                <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.includes(item.id)}
-                    onChange={() => toggleSelect(item.id)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                      <h3 style={{ margin: 0 }}>{item.name}</h3>
-                      <span className="badge">{item.category}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-light)', fontSize: '14px', display: 'flex', gap: '16px' }}>
-                      <span><strong>Réf:</strong> {item.reference || 'N/A'}</span>
-                      <span><strong>Marque:</strong> {item.brand || 'N/A'}</span>
-                      <span><strong>État:</strong> {item.condition}</span>
-                      <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}><strong>Stock:</strong> {item.quantity || 1}</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button onClick={() => setEditingEquipmentId(item.id)} className="btn btn-secondary">Éditer</button>
-                    <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444' }}>Supprimer</button>
+              {Object.entries(
+                sortedEquipment.reduce((acc, eq) => {
+                  const cat = eq.category || 'Autres';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(eq);
+                  return acc;
+                }, {})
+              ).sort(([catA], [catB]) => catA.localeCompare(catB))
+              .map(([category, items]) => (
+                <div key={category} style={{ marginBottom: '24px' }}>
+                  <h3 style={{ 
+                    borderBottom: '2px solid var(--border-color)', 
+                    paddingBottom: '8px', 
+                    marginBottom: '16px',
+                    color: 'var(--primary-color)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    {category === 'Kitesurf' && '🪁'}
+                    {category === 'Wingfoil' && '🌊'}
+                    {category === 'Néoprène' && '🤿'}
+                    {category === 'Accessoires' && '🎒'}
+                    {category === 'Autres' && '📦'}
+                    {category} 
+                    <span style={{ fontSize: '14px', color: 'var(--text-light)', fontWeight: 'normal' }}>({items.length})</span>
+                  </h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {items.map(item => (
+                      <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '12px 16px' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.includes(item.id)}
+                          onChange={() => toggleSelect(item.id)}
+                          style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                            <h4 style={{ margin: 0, fontSize: '15px' }}>{item.name}</h4>
+                            <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151' }}>{item.category || 'Autres'}</span>
+                          </div>
+                          <div style={{ color: 'var(--text-light)', fontSize: '13px', display: 'flex', gap: '16px' }}>
+                            <span><strong>Réf:</strong> {item.reference || 'N/A'}</span>
+                            <span><strong>Marque:</strong> {item.brand || 'N/A'}</span>
+                            <span><strong>État:</strong> {item.condition || 'Non spécifié'}</span>
+                            <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}><strong>Stock:</strong> {item.quantity || 1}</span>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          <button onClick={() => setEditingEquipmentId(item.id)} className="btn btn-secondary" style={{ padding: '4px 12px', fontSize: '12px' }}>Éditer</button>
+                          <button onClick={() => deleteEquipment(item.id)} className="btn btn-secondary" style={{ color: '#ef4444', border: 'none', padding: '4px 12px', fontSize: '12px' }}>Supprimer</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
-              {sortedEquipment.length > 50 && (
-                <p style={{ textAlign: 'center', color: 'var(--text-light)', marginTop: '8px' }}>
-                  + {sortedEquipment.length - 50} autres équipements. <br/>
-                  <small>Utilisez la barre de recherche pour affiner les résultats.</small>
-                </p>
-              )}
             </div>
           )}
         </div>
