@@ -554,8 +554,7 @@ export default function PublicBookingPage() {
       <header className="glass-header" style={{ color: 'white', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '24px' }}></span>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'white', letterSpacing: '-0.5px' }}>THE RIDERY WINGBOOST</h1>
+            <img src="/logo.png" alt="The Ridery Logo" style={{ height: '32px', objectFit: 'contain' }} />
           </div>
           <span style={{ fontSize: '13px', color: '#9CA3AF', backgroundColor: '#374151', padding: '6px 12px', borderRadius: '20px', fontWeight: 500 }}>
             Portail Client
