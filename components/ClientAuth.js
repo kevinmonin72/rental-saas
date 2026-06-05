@@ -24,7 +24,7 @@ export default function ClientAuth({ children }) {
 
   useEffect(() => {
     setMounted(true);
-    const auth = localStorage.getItem('admin_session_token');
+    const auth = localStorage.getItem('admin_session_token_v2');
     if (auth === 'authenticated') {
       setIsAuthenticated(true);
     }
@@ -64,7 +64,7 @@ export default function ClientAuth({ children }) {
   const handleVerifyCode = (e) => {
     e.preventDefault();
     if (userCode === generatedCode) {
-      localStorage.setItem('admin_session_token', 'authenticated');
+      localStorage.setItem('admin_session_token_v2', 'authenticated');
       setIsAuthenticated(true);
       setError('');
     } else {
