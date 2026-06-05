@@ -36,12 +36,6 @@ CREATE TABLE public.booking_items (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Désactiver le RLS pour l'instant (accès complet via l'API)
-ALTER TABLE public.equipment DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.customers DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bookings DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.booking_items DISABLE ROW LEVEL SECURITY;
-
 CREATE TABLE public.promo_codes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT UNIQUE NOT NULL,
@@ -54,4 +48,19 @@ CREATE TABLE public.promo_codes (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.promo_codes DISABLE ROW LEVEL SECURITY;
+-- Activer le RLS pour sécuriser la base de données
+ALTER TABLE public.equipment ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.booking_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
+
+-- Autoriser la lecture publique uniquement sur les équipements (pour le catalogue)
+CREATE POLICY "Allow public read equipment" ON public.equipment FOR SELECT USING (true);
+
+-- Autoriser la lecture publique sur les bookings et booking_items pour le calcul de disponibilité côté client
+-- NOTE: Si possible, il est préférable de déplacer le calcul de disponibilité côté serveur pour ne pas avoir à exposer ces tables.
+CREATE POLICY "Allow public read bookings" ON public.bookings FOR SELECT USING (true);
+CREATE POLICY "Allow public read booking items" ON public.booking_items FOR SELECT USING (true);
+
+-- Aucune politique publique pour customers et promo_codes, seul le serveur (via SUPABASE_SERVICE_ROLE_KEY) peut y accéder.

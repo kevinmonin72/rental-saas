@@ -486,93 +486,41 @@ export default function PublicBookingPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      // 3. Find or create Customer in Supabase
-      let customerId = null;
-      const { data: existingCust, error: searchErr } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-
-      if (searchErr) throw searchErr;
-
-      if (existingCust) {
-        customerId = existingCust.id;
-        let updateData = {};
-        if (phone) updateData.phone = phone.trim();
-        if (address) updateData.address = address.trim();
-        if (Object.keys(updateData).length > 0) {
-          await supabase.from('customers').update(updateData).eq('id', customerId);
-        }
-      } else {
-        customerId = uuidv4();
-        const { error: custErr } = await supabase.from('customers').insert([{
-          id: customerId,
-          first_name: firstName.trim(),
-          last_name: lastName.trim(),
-          email: email.trim().toLowerCase(),
-          phone: phone.trim() || null,
-          address: address.trim() || null
-        }]);
-        if (custErr) throw custErr;
-      }
-
-      // 4. Create Booking
-      const bookingId = uuidv4();
-      const { error: bookErr } = await supabase.from('bookings').insert([{
-        id: bookingId,
-        customer_id: customerId,
-        start_date: startDate,
-        end_date: endDate,
-        status: 'active',
-        shopify_transfer: false,
-        rental_type: rentalType
-      }]);
-
-      if (bookErr) throw bookErr;
-
-      // 5. Create Booking Items for each chosen type of gear
+      // 3. Create Booking securely via backend
       const itemCounts = {};
       selectedEquipmentIds.forEach(id => {
         itemCounts[id] = (itemCounts[id] || 0) + 1;
       });
-
-      const items = Object.entries(itemCounts).map(([eqId, qty]) => ({
-        id: uuidv4(),
-        booking_id: bookingId,
+      const itemsPayload = Object.entries(itemCounts).map(([eqId, qty]) => ({
         equipment_id: eqId,
         quantity: qty
       }));
 
-      const { error: itemsErr } = await supabase.from('booking_items').insert(items);
-      if (itemsErr) throw itemsErr;
+      const createRes = await fetch('/api/bookings/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentIntentId: piData.clientSecret, // Used as an ID for now
+          customerData: {
+            firstName,
+            lastName,
+            email,
+            phone,
+            address
+          },
+          bookingData: {
+            startDate,
+            endDate,
+            rentalType
+          },
+          items: itemsPayload,
+          appliedPromo
+        })
+      });
 
-      // Increment promo code usage if applied
-      if (appliedPromo) {
-        await supabase.from('promo_codes').update({ used_count: appliedPromo.used_count + 1 }).eq('id', appliedPromo.id);
-      }
-
-      // 6. Envoi de l'email de notification au marketing
-      try {
-        const sDate = new Date(startDate);
-        const eDate = new Date(endDate);
-        const datesStr = `Du ${sDate.toLocaleDateString('fr-FR')} au ${eDate.toLocaleDateString('fr-FR')}`;
-        
-        await fetch('/api/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.trim(),
-            phone: phone.trim(),
-            address: address.trim(),
-            equipmentCount: items.length,
-            dates: datesStr
-          })
-        });
-      } catch (notifyErr) {
-        console.error("Erreur d'envoi de la notification:", notifyErr);
+      if (!createRes.ok) {
+        const errData = await createRes.json();
+        throw new Error(errData.error || 'Erreur lors de la création de la réservation côté serveur.');
       }
 
       setStep(4);

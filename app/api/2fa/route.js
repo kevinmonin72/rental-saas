@@ -5,7 +5,10 @@ export async function POST(req) {
     const data = await req.json();
     const { code } = data;
 
-    const klaviyoKey = process.env.KLAVIYO_PRIVATE_KEY || 'pk_R2W6jR_aee0be112b117e9fa9c52d6d9f3e402921';
+    const klaviyoKey = process.env.KLAVIYO_PRIVATE_KEY;
+    if (!klaviyoKey) {
+      return NextResponse.json({ error: 'Configuration Klaviyo manquante' }, { status: 500 });
+    }
 
     const options = {
       method: 'POST',

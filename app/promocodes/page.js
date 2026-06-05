@@ -17,11 +17,13 @@ export default function PromoCodesPage() {
 
   const fetchPromos = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from('promo_codes').select('*').order('created_at', { ascending: false });
-    if (error) {
-      console.error('Erreur chargement codes promo:', error);
-    } else {
+    try {
+      const res = await fetch('/api/promos');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
       setPromos(data || []);
+    } catch (error) {
+      console.error('Erreur chargement codes promo:', error);
     }
     setLoading(false);
   };
@@ -43,31 +45,48 @@ export default function PromoCodesPage() {
       is_active: true
     };
 
-    const { error } = await supabase.from('promo_codes').insert([promoData]);
-    if (error) {
-      alert(`Erreur création: ${error.message}`);
-    } else {
-      setCode('');
-      setDiscountType('percentage');
-      setDiscountValue('');
-      setTargetEmail('');
-      setMaxUses('');
-      fetchPromos();
+    try {
+      const res = await fetch('/api/promos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(promoData)
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        alert(`Erreur création: ${err.error}`);
+      } else {
+        setCode('');
+        setDiscountType('percentage');
+        setDiscountValue('');
+        setTargetEmail('');
+        setMaxUses('');
+        fetchPromos();
+      }
+    } catch (err) {
+      alert(`Erreur serveur: ${err.message}`);
     }
   };
 
   const toggleStatus = async (id, currentStatus) => {
-    const { error } = await supabase.from('promo_codes').update({ is_active: !currentStatus }).eq('id', id);
-    if (!error) {
-      fetchPromos();
+    try {
+      const res = await fetch('/api/promos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, is_active: !currentStatus })
+      });
+      if (res.ok) fetchPromos();
+    } catch (err) {
+      console.error(err);
     }
   };
 
   const deletePromo = async (id) => {
     if (!confirm('Voulez-vous vraiment supprimer ce code promo ?')) return;
-    const { error } = await supabase.from('promo_codes').delete().eq('id', id);
-    if (!error) {
-      fetchPromos();
+    try {
+      const res = await fetch(`/api/promos?id=${id}`, { method: 'DELETE' });
+      if (res.ok) fetchPromos();
+    } catch (err) {
+      console.error(err);
     }
   };
 

@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 import { useStore } from '../lib/store';
-
-const ADMIN_USERNAME = "marketing@theridery.com";
-const ADMIN_PASSWORD = "Theriderywingboost2K26!!";
 
 export default function ClientAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -16,18 +12,28 @@ export default function ClientAuth({ children }) {
   
   // 2FA states
   const [step, setStep] = useState(1);
-  const [generatedCode, setGeneratedCode] = useState('');
   const [userCode, setUserCode] = useState('');
   const [loading, setLoading] = useState(false);
   
   const { fetchData, isLoaded } = useStore();
 
   useEffect(() => {
-    setMounted(true);
-    const auth = localStorage.getItem('admin_session_token_v2');
-    if (auth === 'authenticated') {
-      setIsAuthenticated(true);
-    }
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+          }
+        }
+      } catch (err) {
+        console.error('Erreur vérification session', err);
+      } finally {
+        setMounted(true);
+      }
+    };
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -38,38 +44,53 @@ export default function ClientAuth({ children }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    if (adminId.trim().toLowerCase() === ADMIN_USERNAME.toLowerCase() && password === ADMIN_PASSWORD) {
-      setLoading(true);
-      setError('');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminId, password })
+      });
       
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedCode(code);
+      const data = await res.json();
       
-      try {
-        await fetch('/api/2fa', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code })
-        });
+      if (res.ok) {
         setStep(2);
-      } catch (err) {
-        setError("Erreur lors de l'envoi du code.");
+      } else {
+        setError(data.error || 'Identifiant ou mot de passe incorrect');
       }
-      setLoading(false);
-    } else {
-      setError('Identifiant ou mot de passe incorrect');
+    } catch (err) {
+      setError("Erreur de connexion au serveur.");
     }
+    setLoading(false);
   };
 
-  const handleVerifyCode = (e) => {
+  const handleVerifyCode = async (e) => {
     e.preventDefault();
-    if (userCode === generatedCode) {
-      localStorage.setItem('admin_session_token_v2', 'authenticated');
-      setIsAuthenticated(true);
-      setError('');
-    } else {
-      setError('Code de vérification incorrect');
+    setLoading(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: userCode })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        setIsAuthenticated(true);
+        setError('');
+      } else {
+        setError(data.error || 'Code de vérification incorrect');
+      }
+    } catch (err) {
+      setError("Erreur de vérification.");
     }
+    setLoading(false);
   };
 
   if (!mounted) return null;
@@ -99,7 +120,7 @@ export default function ClientAuth({ children }) {
           ) : (
             <form onSubmit={handleVerifyCode}>
               <div style={{ marginBottom: '16px', fontSize: '14px', color: 'var(--text-light)' }}>
-                Un code à 6 chiffres a été envoyé à <strong>marketing@theridery.com</strong>.
+                Un code à 6 chiffres a été envoyé à <strong>{adminId || 'marketing@theridery.com'}</strong>.
               </div>
               <div className="form-group" style={{ textAlign: 'left', marginBottom: '24px' }}>
                 <label>Code de sécurité</label>
@@ -115,7 +136,9 @@ export default function ClientAuth({ children }) {
                 />
               </div>
               {error && <div style={{ color: '#ef4444', marginBottom: '16px', fontSize: '14px' }}>{error}</div>}
-              <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Valider</button>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+                {loading ? 'Validation...' : 'Valider'}
+              </button>
               <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: 'var(--text-light)', marginTop: '16px', cursor: 'pointer', textDecoration: 'underline' }}>
                 Retour
               </button>
