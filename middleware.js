@@ -22,7 +22,8 @@ export async function middleware(req) {
     '/api/stripe/',
     '/api/bookings/create',
     '/api/shopify/',
-    '/api/notify'
+    '/api/notify',
+    '/api/equipment/sync'
   ];
   
   // Let Next.js static assets pass
