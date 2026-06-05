@@ -9,7 +9,7 @@ import ClientAuth from '../components/ClientAuth';
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
-  const isPublicPage = pathname === '/book';
+  const isPublicPage = pathname === '/book' || pathname === '/espace-client';
 
   if (isPublicPage) {
     return (
