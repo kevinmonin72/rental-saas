@@ -551,12 +551,12 @@ export default function PublicBookingPage() {
         <script src="https://js.stripe.com/v3/" async></script>)}
 
       {/* Header */}
-      <header className="glass-header" style={{ color: 'white', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
+      <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src="/logo.png" alt="The Ridery Logo" style={{ height: '32px', objectFit: 'contain' }} />
           </div>
-          <span style={{ fontSize: '13px', color: '#9CA3AF', backgroundColor: '#374151', padding: '6px 12px', borderRadius: '20px', fontWeight: 500 }}>
+          <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
             Portail Client
           </span>
         </div>
@@ -1083,8 +1083,8 @@ export default function PublicBookingPage() {
 
           {/* Sidebar / Reservation Summary */}
           {step < 4 && (
-            <div className="card" style={{ backgroundColor: 'var(--secondary-color)', color: 'white', position: 'sticky', top: '100px', height: 'fit-content', border: 'none' }}>
-              <h3 style={{ color: 'white', borderBottom: '1px solid #374151', paddingBottom: '12px', marginBottom: '20px', fontSize: '18px', fontWeight: 700 }}>Votre Réservation</h3>
+            <div className="card" style={{ position: 'sticky', top: '100px', height: 'fit-content' }}>
+              <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px', fontSize: '18px', fontWeight: 700 }}>Votre Réservation</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
                 <div>
@@ -1119,10 +1119,10 @@ export default function PublicBookingPage() {
                 </div>
 
                 {selectedEquipmentIds.length > 0 && startDate && endDate && (
-                  <div style={{ borderTop: '1px solid #374151', paddingTop: '16px' }}>
-                    <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Montant total</span>
+                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+                    <span style={{ color: '#6B7280', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Montant total</span>
                     <strong style={{ color: '#F97316', fontSize: '20px' }}>{getBookingTotal()} €</strong>
-                    <span style={{ color: '#9CA3AF', display: 'block', fontSize: '11px', marginTop: '2px' }}>
+                    <span style={{ color: '#6B7280', display: 'block', fontSize: '11px', marginTop: '2px' }}>
                       Taxes incluses {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') && '(60% du tarif jour)'}
                     </span>
                   </div>)}
