@@ -196,19 +196,37 @@ export default function PublicBookingPage() {
     return Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
   };
 
+  const PACK_KITESURF_PRICES = {
+    0.5: 74, 1: 79, 2: 134, 3: 184, 4: 204, 5: 214, 6: 224, 7: 234, 8: 245, 9: 255,
+    10: 269, 11: 279, 12: 279, 13: 279, 14: 284, 15: 284, 16: 284, 17: 284, 18: 284,
+    19: 284, 20: 284, 21: 289, 22: 289, 23: 289, 24: 289, 25: 289, 26: 289, 27: 289,
+    28: 299, 29: 299, 30: 299, 31: 299
+  };
+
   const getBookingTotal = () => {
     const days = getBookingDuration();
     if (days === 0 || selectedEquipmentIds.length === 0) return 0;
     
-    let pricePerDayTotal = 0;
+    let subtotal = 0;
+    
     for (const eqId of selectedEquipmentIds) {
       const item = equipmentList.find(e => e.id === eqId);
       if (item) {
-        pricePerDayTotal += getPricePerDay(item.reference);
+        if (item.reference === 'LOK-PACK-KITE') {
+          let gridDays = days;
+          if (gridDays > 31) gridDays = 31;
+          
+          if (durationMode === 'half_day') {
+            subtotal += PACK_KITESURF_PRICES[0.5];
+          } else {
+            subtotal += PACK_KITESURF_PRICES[Math.floor(gridDays)] || 299;
+          }
+        } else {
+          const pricePerDay = getPricePerDay(item.reference);
+          subtotal += durationMode === 'half_day' ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
+        }
       }
     }
-    
-    let subtotal = durationMode === 'half_day' ? Math.round(pricePerDayTotal * 0.6) : pricePerDayTotal * days;
     
     if (appliedPromo) {
       if (appliedPromo.discount_type === 'percentage') {
