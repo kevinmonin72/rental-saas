@@ -205,7 +205,10 @@ export default function InvoiceGenerator() {
               let finalPrice = 0;
               let descriptionSuffix = ` (${durationDisplay})`;
               
-              if (PRICING_GRIDS[ref]) {
+              if (eq.booking.rental_type === 'wingboost') {
+                finalPrice = 0;
+                descriptionSuffix = ' (Abonnement Wingboost)';
+              } else if (PRICING_GRIDS[ref]) {
                 const grid = PRICING_GRIDS[ref];
                 let gridDays = days;
                 if (gridDays > 31) gridDays = 31;
