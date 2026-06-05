@@ -368,26 +368,46 @@ export default function BookingsPage() {
                 <label>Type de Location</label>
                 <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
-                    <input type="radio" name="rentalType" value="ponctuel" checked={rentalType === 'ponctuel'} onChange={() => setRentalType('ponctuel')} />
+                    <input type="radio" name="rentalGroup" value="ponctuel" checked={rentalType !== 'wingboost'} onChange={() => setRentalType('1_jour')} />
                     🕒 Ponctuelle
                   </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
-                    <input type="radio" name="rentalType" value="journee" checked={rentalType === 'journee'} onChange={() => setRentalType('journee')} />
-                    🌞 1 Journée
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
-                    <input type="radio" name="rentalType" value="demi_matin" checked={rentalType === 'demi_matin'} onChange={() => setRentalType('demi_matin')} />
-                    ☀️ ½j (Matin)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
-                    <input type="radio" name="rentalType" value="demi_aprem" checked={rentalType === 'demi_aprem'} onChange={() => setRentalType('demi_aprem')} />
-                    ⛅ ½j (Aprem)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal', cursor: 'pointer' }}>
-                    <input type="radio" name="rentalType" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} />
+                    <input type="radio" name="rentalGroup" value="wingboost" checked={rentalType === 'wingboost'} onChange={() => setRentalType('wingboost')} />
                     🚀 Wingboost
                   </label>
                 </div>
+                {rentalType !== 'wingboost' && (
+                  <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <label style={{ minWidth: '100px' }}>Durée :</label>
+                    <select 
+                      className="input" 
+                      value={rentalType === 'ponctuel' || rentalType === 'journee' ? '1_jour' : rentalType}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setRentalType(val);
+                        if (val === 'demi_matin' || val === 'demi_aprem' || val === '1_jour') {
+                          if (startDate) setEndDate(startDate);
+                        } else if (val.endsWith('_jours')) {
+                          const days = parseInt(val.split('_')[0]);
+                          if (startDate) {
+                            const start = new Date(startDate);
+                            start.setDate(start.getDate() + days - 1);
+                            setEndDate(start.toISOString().split('T')[0]);
+                          }
+                        }
+                      }}
+                      style={{ maxWidth: '200px' }}
+                    >
+                      <option value="demi_matin">☀️ ½j (Matin)</option>
+                      <option value="demi_aprem">⛅ ½j (Aprem)</option>
+                      <option value="1_jour">1 Jour</option>
+                      {[...Array(30)].map((_, i) => {
+                        const days = i + 2;
+                        return <option key={days} value={`${days}_jours`}>{days} Jours</option>;
+                      })}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">
@@ -665,8 +685,10 @@ export default function BookingsPage() {
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>☀️ ½j (Matin)</span>
                         ) : booking.rental_type === 'demi_aprem' ? (
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>⛅ ½j (Aprem)</span>
-                        ) : booking.rental_type === 'journee' ? (
+                        ) : booking.rental_type === 'journee' || booking.rental_type === '1_jour' ? (
                           <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>🌞 1 Journée</span>
+                        ) : booking.rental_type && booking.rental_type.endsWith('_jours') ? (
+                          <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>🌞 {booking.rental_type.replace('_jours', ' Jours')}</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
                         )}
@@ -848,6 +870,10 @@ export default function BookingsPage() {
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>☀️ ½j (Matin)</span>
                         ) : booking.rental_type === 'demi_aprem' ? (
                           <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: 'none' }}>⛅ ½j (Aprem)</span>
+                        ) : booking.rental_type === 'journee' || booking.rental_type === '1_jour' ? (
+                          <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>🌞 1 Journée</span>
+                        ) : booking.rental_type && booking.rental_type.endsWith('_jours') ? (
+                          <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>🌞 {booking.rental_type.replace('_jours', ' Jours')}</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
                         )}
