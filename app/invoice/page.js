@@ -68,6 +68,7 @@ export default function InvoiceGenerator() {
     companyAddress: '14 B RUE JADIN\n75017 PARIS',
     clientName: '',
     clientAddress: '',
+    clientEmail: '',
     items: [
       { id: 1, reference: '', description: '', quantity: 1, unitPrice: 0 }
     ],
@@ -80,6 +81,7 @@ export default function InvoiceGenerator() {
   const [paymentLink, setPaymentLink] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [showSendOptions, setShowSendOptions] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -99,7 +101,7 @@ export default function InvoiceGenerator() {
         if (possibleBookingRef.length >= 2) {
           const { data: bookData } = await supabase
             .from('bookings')
-            .select('*')
+            .select('*, customers(first_name, last_name, email)')
             .ilike('reference', `%${possibleBookingRef}%`)
             .limit(3);
             
@@ -108,7 +110,7 @@ export default function InvoiceGenerator() {
               isBooking: true,
               id: b.id,
               reference: b.reference || b.id.split('-')[0].toUpperCase(),
-              name: `Importer le matériel de la réservation ${b.first_name || ''} ${b.last_name || ''}`.trim(),
+              name: `Importer le matériel de la réservation ${(b.customers ? b.customers.first_name : b.first_name) || ''} ${(b.customers ? b.customers.last_name : b.last_name) || ''}`.trim(),
               booking: b
             }));
             results = [...bookingResults, ...results];
@@ -239,7 +241,8 @@ export default function InvoiceGenerator() {
             const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
             return {
               ...prev,
-              clientName: prev.clientName || `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim(),
+              clientName: prev.clientName || (eq.booking.customers ? `${eq.booking.customers.first_name || ''} ${eq.booking.customers.last_name || ''}`.trim() : `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim()),
+              clientEmail: prev.clientEmail || (eq.booking.customers ? eq.booking.customers.email : eq.booking.email) || '',
               items: [...prevItemsCleaned, ...newItems]
             };
           });
@@ -374,8 +377,10 @@ export default function InvoiceGenerator() {
   };
 
   const handleSendEmail = async () => {
-    const email = prompt("Veuillez saisir l'adresse email du client :", "");
-    if (!email) return;
+    if (!invoiceData.clientEmail) {
+      alert("Veuillez saisir une adresse email.");
+      return;
+    }
 
     setIsSending(true);
     try {
@@ -384,7 +389,7 @@ export default function InvoiceGenerator() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           invoiceData,
-          customerEmail: email
+          customerEmail: invoiceData.clientEmail
         })
       });
 
@@ -455,8 +460,8 @@ export default function InvoiceGenerator() {
             
             {showSendOptions && (
               <div style={{ position: 'absolute', top: '100%', right: 0, marginTop: '8px', backgroundColor: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', padding: '8px', zIndex: 50, width: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <button className="btn" style={{ width: '100%', backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { setShowSendOptions(false); handleSendEmail(); }} disabled={isSending}>
-                  <span>✉️</span> {isSending ? 'Envoi...' : 'Envoyer une facture'}
+                <button className="btn" style={{ width: '100%', backgroundColor: '#6366F1', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { setShowSendOptions(false); setIsSendModalOpen(true); }} disabled={isSending}>
+                  <span>✉️</span> Envoyer une facture
                 </button>
                 
                 {paymentLink ? (
@@ -512,6 +517,9 @@ export default function InvoiceGenerator() {
             <h3 style={{ fontSize: '14px', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '12px' }}>Client</h3>
             <div className="form-group">
               <input type="text" className="input" placeholder="Nom du client" value={invoiceData.clientName} onChange={e => setInvoiceData({...invoiceData, clientName: e.target.value})} />
+            </div>
+            <div className="form-group">
+              <input type="email" className="input" placeholder="Email du client" value={invoiceData.clientEmail} onChange={e => setInvoiceData({...invoiceData, clientEmail: e.target.value})} />
             </div>
             <div className="form-group">
               <textarea className="input" placeholder="Adresse du client" rows={3} value={invoiceData.clientAddress} onChange={e => setInvoiceData({...invoiceData, clientAddress: e.target.value})} />
@@ -648,6 +656,50 @@ export default function InvoiceGenerator() {
 
         </div>
       </div>
+      
+      {/* EMAIL SEND MODAL */}
+      {isSendModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '12px', width: '400px', maxWidth: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#111827' }}>Envoyer la facture</h2>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5563' }}>Vérifiez l'adresse email avant l'envoi de la facture générée via Stripe.</p>
+            
+            <div className="form-group" style={{ marginBottom: '24px' }}>
+              <label className="form-label">Email du destinataire</label>
+              <input 
+                type="email" 
+                className="input" 
+                value={invoiceData.clientEmail} 
+                onChange={e => setInvoiceData({...invoiceData, clientEmail: e.target.value})}
+                placeholder="client@email.com"
+                style={{ width: '100%' }}
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn" 
+                onClick={() => setIsSendModalOpen(false)} 
+                style={{ padding: '10px 16px', backgroundColor: 'white', border: '1px solid #D1D5DB', borderRadius: '6px', cursor: 'pointer', color: '#374151', fontWeight: '500' }}
+                disabled={isSending}
+              >
+                Annuler
+              </button>
+              <button 
+                className="btn" 
+                onClick={async () => {
+                  await handleSendEmail();
+                  setIsSendModalOpen(false);
+                }} 
+                style={{ padding: '10px 16px', backgroundColor: '#6366F1', border: 'none', borderRadius: '6px', cursor: 'pointer', color: 'white', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '8px' }}
+                disabled={isSending}
+              >
+                {isSending ? 'Envoi en cours...' : 'Confirmer l\'envoi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <style dangerouslySetInnerHTML={{__html: `
         @media (max-width: 1100px) {
           .invoice-layout {

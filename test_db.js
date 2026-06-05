@@ -6,7 +6,7 @@ async function run() {
   const url = urlMatch[1].trim();
   const key = keyMatch[1].trim();
 
-  const res = await fetch(`${url}/rest/v1/bookings?select=id,reference,start_date,end_date&order=created_at.desc&limit=5`, {
+  const res = await fetch(`${url}/rest/v1/bookings?select=id,reference,first_name,last_name,email,customer_id&limit=1`, {
     headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
   });
   const data = await res.json();
