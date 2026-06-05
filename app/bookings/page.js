@@ -31,6 +31,7 @@ export default function BookingsPage() {
   const [highlightedBookingId, setHighlightedBookingId] = useState(null);
   const [startMonthFilter, setStartMonthFilter] = useState(null);
   const [endMonthFilter, setEndMonthFilter] = useState(null);
+  const [activeTab, setActiveTab] = useState('list'); // 'list' | 'new'
 
   const { 
     customers, 
@@ -160,6 +161,7 @@ export default function BookingsPage() {
     setStartMonthFilter(null);
     setEndMonthFilter(null);
     setRentalTypeFilter('all');
+    setActiveTab('list');
   };
 
   const handleEdit = (booking) => {
@@ -171,6 +173,7 @@ export default function BookingsPage() {
     setPauseEnd(booking.pause_end || '');
     setRentalType(booking.rental_type || 'ponctuel');
     setSelectedEquipments(booking.equipments);
+    setActiveTab('new');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -186,6 +189,7 @@ export default function BookingsPage() {
     setSearchQuery('');
     setStartMonthFilter(null);
     setEndMonthFilter(null);
+    setActiveTab('list');
   };
 
   const handleSelectAll = (e, list) => {
@@ -328,11 +332,37 @@ export default function BookingsPage() {
         <h1 style={{ marginBottom: 0 }}>Gestion des Réservations</h1>
         <CsvImporterButton type="bookings" />
       </div>
+
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+        <button 
+          onClick={() => { setActiveTab('new'); handleCancelEdit(); }} 
+          className={`btn ${activeTab === 'new' && !editingBookingId ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 16px', fontSize: '15px' }}
+        >
+          ➕ Nouvelle Réservation
+        </button>
+        {editingBookingId && (
+          <button 
+            className={`btn ${activeTab === 'new' && editingBookingId ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '8px 16px', fontSize: '15px' }}
+          >
+            ✏️ Modifier la Réservation
+          </button>
+        )}
+        <button 
+          onClick={() => setActiveTab('list')} 
+          className={`btn ${activeTab === 'list' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{ padding: '8px 16px', fontSize: '15px' }}
+        >
+          📋 Liste des Réservations
+        </button>
+      </div>
       
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>
+      <div style={{ display: 'block' }}>
         
         {/* Add/Edit Form */}
-        <div className="card">
+        {activeTab === 'new' && (
+        <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2>{editingBookingId ? 'Modifier la Réservation' : 'Nouvelle Réservation'}</h2>
             {editingBookingId && (
@@ -537,7 +567,8 @@ export default function BookingsPage() {
         </div>
 
         {/* List */}
-        <div>
+        {activeTab === 'list' && (
+        <div style={{ width: '100%' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <h2 style={{ margin: 0 }}>Réservations</h2>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -942,6 +973,7 @@ export default function BookingsPage() {
             </div>
           )}
         </div>
+        )}
 
       </div>
     </div>
