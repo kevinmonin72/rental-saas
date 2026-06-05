@@ -52,7 +52,7 @@ export default function ClientAuth({ children }) {
           <form onSubmit={handleLogin}>
             <div className="form-group" style={{ textAlign: 'left', marginBottom: '16px' }}>
               <label>Identifiant</label>
-              <input type="text" value={adminId} onChange={(e) => setAdminId(e.target.value)} className="input" placeholder="marketing@theridery.com" required />
+              <input type="text" value={adminId} onChange={(e) => setAdminId(e.target.value)} className="input" placeholder="Saisissez votre identifiant" required />
             </div>
             <div className="form-group" style={{ textAlign: 'left', marginBottom: '24px' }}>
               <label>Mot de passe</label>
