@@ -163,9 +163,36 @@ export default function InvoiceGenerator() {
     }
   };
 
+  const PRICING_GRIDS = {
+    'LOK-PACK-KITE': { 0.5: 74, 1: 79, 2: 134, 3: 184, 4: 204, 5: 214, 6: 224, 7: 234, 8: 245, 9: 255, 10: 269, 11: 279, 12: 279, 13: 279, 14: 284, 15: 284, 16: 284, 17: 284, 18: 284, 19: 284, 20: 284, 21: 289, 22: 289, 23: 289, 24: 289, 25: 289, 26: 289, 27: 289, 28: 299, 29: 299, 30: 299, 31: 299 },
+    'LOK-PACK-2AILES-BARRE': { 0.5: 74, 1: 79, 2: 134, 3: 184, 4: 204, 5: 214, 6: 224, 7: 234, 8: 245, 9: 255, 10: 269, 11: 279, 12: 279, 13: 279, 14: 284, 15: 284, 16: 284, 17: 284, 18: 284, 19: 284, 20: 284, 21: 289, 22: 289, 23: 289, 24: 289, 25: 289, 26: 289, 27: 289, 28: 299, 29: 299, 30: 299, 31: 299 },
+    'LOK-AILE-BARRE': { 0.5: 56, 1: 59, 2: 99, 3: 139, 4: 159, 5: 169, 6: 179, 7: 189, 8: 195, 9: 205, 10: 209, 11: 219, 12: 219, 13: 219, 14: 224, 15: 224, 16: 224, 17: 224, 18: 224, 19: 224, 20: 224, 21: 224, 22: 229, 23: 229, 24: 229, 25: 229, 26: 229, 27: 229, 28: 249, 29: 249, 30: 249, 31: 249 },
+    'LOK-AILE-SANSBARRE': { 0.5: 25, 1: 25, 2: 35, 3: 40, 4: 45, 5: 45, 6: 45, 7: 45, 8: 50, 9: 55, 10: 60, 11: 60, 12: 60, 13: 60, 14: 65, 15: 65, 16: 65, 17: 65, 18: 65, 19: 65, 20: 65, 21: 70, 22: 70, 23: 70, 24: 70, 25: 70, 26: 70, 27: 70, 28: 72, 29: 72, 30: 72, 31: 72 },
+    'LOK-3AILE-SANSBARRE': { 0.5: 25, 1: 25, 2: 35, 3: 40, 4: 45, 5: 45, 6: 45, 7: 45, 8: 50, 9: 55, 10: 60, 11: 60, 12: 60, 13: 60, 14: 65, 15: 65, 16: 65, 17: 65, 18: 65, 19: 65, 20: 65, 21: 70, 22: 70, 23: 70, 24: 70, 25: 70, 26: 70, 27: 70, 28: 72, 29: 72, 30: 72, 31: 72 },
+    'LOK-BARRE': { 0.5: 29, 1: 29, 2: 30, 3: 35, 4: 40, 5: 45, 6: 50, 7: 55, 8: 60, 9: 65, 10: 70, 11: 90, 12: 90, 13: 90, 14: 90, 15: 120, 16: 120, 17: 120, 18: 120, 19: 120, 20: 120, 21: 120, 22: 130, 23: 130, 24: 130, 25: 130, 26: 130, 27: 130, 28: 130, 29: 130, 30: 130, 31: 130 },
+    'LOK-BOARD-TWINTIP': { 0.5: 28, 1: 30, 2: 35, 3: 40, 4: 45, 5: 50, 6: 55, 7: 60, 8: 65, 9: 70, 10: 75, 11: 80, 12: 85, 13: 90, 14: 120, 15: 120, 16: 120, 17: 120, 18: 120, 19: 120, 20: 120, 21: 130, 22: 130, 23: 130, 24: 130, 25: 130, 26: 130, 27: 130, 28: 150, 29: 150, 30: 150, 31: 150 },
+    'LOK-KITEFOIL': { 0.5: 59, 1: 69, 2: 109, 3: 139, 4: 159, 5: 179, 6: 189, 7: 199, 8: 207, 9: 214, 10: 219, 11: 229, 12: 229, 13: 229, 14: 229, 15: 239, 16: 239, 17: 239, 18: 239, 19: 239, 20: 239, 21: 239, 22: 249, 23: 249, 24: 249, 25: 249, 26: 249, 27: 249, 28: 249, 29: 249, 30: 249, 31: 249 },
+    'LOK-STRAPLESS': { 0.5: 39, 1: 39, 2: 59, 3: 69, 4: 79, 5: 89, 6: 99, 7: 119, 8: 123, 9: 127, 10: 129, 11: 149, 12: 149, 13: 149, 14: 149, 15: 169, 16: 169, 17: 169, 18: 169, 19: 169, 20: 169, 21: 169, 22: 179, 23: 179, 24: 179, 25: 179, 26: 179, 27: 179, 28: 179, 29: 179, 30: 179, 31: 179 },
+    'LOK-TWINTIP-OPT': { 0.5: 15, 1: 20, 2: 35, 3: 45, 4: 45, 5: 45, 6: 45, 7: 45, 8: 50, 9: 50, 10: 60, 11: 60, 12: 60, 13: 60, 14: 60, 15: 60, 16: 60, 17: 60, 18: 60, 19: 60, 20: 60, 21: 60, 22: 60, 23: 60, 24: 60, 25: 60, 26: 60, 27: 60, 28: 50, 29: 50, 30: 50, 31: 50 }
+  };
+
   const addEqToInvoice = async (eq) => {
     if (eq.isBooking) {
-      // Fetch items of the booking
+      let days = 1;
+      let durationDisplay = '1 jour';
+      if (eq.booking.start_date && eq.booking.end_date) {
+        if (eq.booking.rental_type === 'demi_matin' || eq.booking.rental_type === 'demi_aprem') {
+          days = 0.5;
+          durationDisplay = '½ jour';
+        } else {
+          const s = new Date(eq.booking.start_date);
+          const e = new Date(eq.booking.end_date);
+          const diff = Math.abs(e - s);
+          days = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+          durationDisplay = `${days} jours`;
+        }
+      }
+
       const { data: bItems } = await supabase.from('booking_items').select('*').eq('booking_id', eq.id);
       if (bItems && bItems.length > 0) {
         const eqIds = bItems.map(bi => bi.equipment_id);
@@ -173,13 +200,33 @@ export default function InvoiceGenerator() {
         
         if (equipments && equipments.length > 0) {
           setInvoiceData(prev => {
-            const newItems = equipments.map((itemEq, idx) => ({
-              id: Date.now() + idx,
-              reference: itemEq.reference ? itemEq.reference.replace(/^'/, '') : '',
-              description: itemEq.name || 'Équipement importé',
-              quantity: 1,
-              unitPrice: getPricePerDay(itemEq.reference || '')
-            }));
+            const newItems = equipments.map((itemEq, idx) => {
+              const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
+              let finalPrice = 0;
+              let finalQuantity = days;
+              let descriptionSuffix = '';
+              
+              if (PRICING_GRIDS[ref]) {
+                const grid = PRICING_GRIDS[ref];
+                let gridDays = days;
+                if (gridDays > 31) gridDays = 31;
+                finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
+                finalQuantity = 1; // Le prix est déjà le total pour la période
+                descriptionSuffix = ` (${durationDisplay})`;
+              } else {
+                const perDay = getPricePerDay(ref);
+                finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay;
+                if (days === 0.5) finalQuantity = 1;
+              }
+
+              return {
+                id: Date.now() + idx,
+                reference: ref,
+                description: (itemEq.name || 'Équipement importé') + descriptionSuffix,
+                quantity: finalQuantity,
+                unitPrice: finalPrice
+              };
+            });
             
             const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
             return {
@@ -211,6 +258,27 @@ export default function InvoiceGenerator() {
     setQuickRef('');
     setSearchResults([]);
   };
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const bookingRef = params.get('bookingRef');
+      if (bookingRef) {
+        supabase.from('bookings').select('*').eq('reference', bookingRef).maybeSingle().then(({ data }) => {
+          if (data) {
+            addEqToInvoice({
+              isBooking: true,
+              id: data.id,
+              reference: data.reference,
+              name: `Importer le matériel de la réservation ${data.first_name || ''} ${data.last_name || ''}`.trim(),
+              booking: data
+            });
+            window.history.replaceState({}, document.title, '/invoice');
+          }
+        });
+      }
+    }
+  }, []);
 
   const handleAddItem = () => {
     setInvoiceData({

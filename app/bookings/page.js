@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
 import { useStore } from '../../lib/store';
 
@@ -730,24 +731,42 @@ export default function BookingsPage() {
                       })()}
                     </div>
                     
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px', minWidth: '220px' }}>
-                      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                        <button onClick={() => handleEdit(booking)} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px' }}>✏️ Modifier</button>
-                        <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
-                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px', minWidth: '220px' }}>
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                          <button onClick={() => handleEdit(booking)} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px' }}>✏️ Modifier</button>
+                          <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
+                        </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <input 
-                          type="checkbox" 
-                          id={`shopify-${booking.id}`}
-                          checked={booking.shopify_transfer || false}
-                          onChange={(e) => toggleShopifyTransfer(booking.id, e.target.checked)}
-                          style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
-                        />
-                        <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
-                          Transfert Shopify
-                        </label>
-                      </div>
+                        <Link 
+                          href={`/invoice?bookingRef=${booking.reference || booking.id.split('-')[0].toUpperCase()}`}
+                          style={{ 
+                            display: 'block', 
+                            textAlign: 'center', 
+                            padding: '6px', 
+                            backgroundColor: 'var(--primary-color)', 
+                            color: 'white', 
+                            borderRadius: '6px', 
+                            textDecoration: 'none', 
+                            fontSize: '13px', 
+                            fontWeight: 'bold',
+                            marginBottom: '4px'
+                          }}
+                        >
+                          📄 Créer Facture
+                        </Link>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <input 
+                            type="checkbox" 
+                            id={`shopify-${booking.id}`}
+                            checked={booking.shopify_transfer || false}
+                            onChange={(e) => toggleShopifyTransfer(booking.id, e.target.checked)}
+                            style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
+                          />
+                          <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
+                            Transfert Shopify
+                          </label>
+                        </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <input 
