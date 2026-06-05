@@ -57,7 +57,11 @@ export default function ClientAuth({ children }) {
       const data = await res.json();
       
       if (res.ok) {
-        setStep(2);
+        if (data.bypass2FA) {
+          setIsAuthenticated(true);
+        } else {
+          setStep(2);
+        }
       } else {
         setError(data.error || 'Identifiant ou mot de passe incorrect');
       }

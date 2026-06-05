@@ -12,58 +12,24 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Identifiants incorrects' }, { status: 401 });
     }
 
-    // Generate secure 6-digit code server-side
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    // Temporarily disabled 2FA due to Klaviyo issues
+    // Directly sign the admin session token
+    const sessionToken = await signToken({ role: 'admin' }, '7d');
+
+    const response = NextResponse.json({ success: true, bypass2FA: true });
     
-    // Log the code locally for development purposes since email delivery might be delayed
-    console.log(`[2FA CODE GENERATED] ${code}`);
-
-    // Send code via Klaviyo
-    const klaviyoKey = process.env.KLAVIYO_PRIVATE_KEY;
-    if (!klaviyoKey) {
-      console.warn("KLAVIYO_PRIVATE_KEY is not defined, skipping email sending.");
-    } else {
-      const options = {
-        method: 'POST',
-        headers: {
-          accept: 'application/json',
-          revision: '2024-02-15',
-          'content-type': 'application/json',
-          Authorization: `Klaviyo-API-Key ${klaviyoKey}`
-        },
-        body: JSON.stringify({
-          data: {
-            type: 'event',
-            attributes: {
-              properties: { AdminCode: code },
-              metric: { data: { type: 'metric', attributes: { name: 'Admin Login Request' } } },
-              profile: { data: { type: 'profile', attributes: { email: ADMIN_USERNAME } } }
-            }
-          }
-        })
-      };
-
-      const klaviyoResponse = await fetch('https://a.klaviyo.com/api/events/', options);
-      if (!klaviyoResponse.ok) {
-        console.error('Klaviyo event error', await klaviyoResponse.text());
-      }
-    }
-
-    // Create 2FA token (expires in 10 minutes)
-    const token = await signToken({ code }, '10m');
-
-    // Set HTTP-only cookie
-    const response = NextResponse.json({ success: true });
-    response.cookies.set('2fa_token', token, {
+    // Set the persistent session cookie
+    response.cookies.set('admin_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 600, // 10 minutes
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/'
     });
 
     return response;
   } catch (error) {
+    console.error('Login error', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
