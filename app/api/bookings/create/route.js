@@ -13,8 +13,14 @@ export async function POST(req) {
       return NextResponse.json({ error: 'ID de paiement manquant' }, { status: 400 });
     }
 
-    if (!paymentIntentId.startsWith('mock_')) {
-      const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+    if (paymentIntentId.startsWith('mock_')) {
+      if (stripeSecretKey) {
+        // En production (quand Stripe est configuré), on refuse catégoriquement les paiements simulés
+        return NextResponse.json({ error: 'Paiement simulé interdit sur cet environnement' }, { status: 403 });
+      }
+    } else {
       if (!stripeSecretKey) {
         return NextResponse.json({ error: 'Configuration Stripe manquante sur le serveur' }, { status: 500 });
       }

@@ -12,7 +12,18 @@ export async function middleware(req) {
   const { pathname } = req.nextUrl;
 
   // Paths that are explicitly public or don't need auth
-  const publicPaths = ['/book', '/espace-client', '/api/auth/login', '/api/auth/verify', '/api/auth/logout', '/api/2fa'];
+  const publicPaths = [
+    '/book', 
+    '/espace-client', 
+    '/api/auth/login', 
+    '/api/auth/verify', 
+    '/api/auth/logout', 
+    '/api/2fa',
+    '/api/stripe/',
+    '/api/bookings/create',
+    '/api/shopify/',
+    '/api/notify'
+  ];
   
   // Let Next.js static assets pass
   if (pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname.startsWith('/public')) {
