@@ -18,7 +18,7 @@ export default function ClientAuth({ children }) {
 
   useEffect(() => {
     setMounted(true);
-    const auth = localStorage.getItem('auth_token');
+    const auth = localStorage.getItem('admin_session_token');
     if (auth === 'authenticated') {
       setIsAuthenticated(true);
     }
@@ -33,7 +33,7 @@ export default function ClientAuth({ children }) {
   const handleLogin = (e) => {
     e.preventDefault();
     if (adminId === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-      localStorage.setItem('auth_token', 'authenticated');
+      localStorage.setItem('admin_session_token', 'authenticated');
       setIsAuthenticated(true);
       setError('');
     } else {
