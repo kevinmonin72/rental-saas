@@ -843,16 +843,6 @@ export default function PublicBookingPage() {
                         </div>
                       </div>);
                   })}
-                </div>
-
-                <button 
-                  onClick={handleNextStep2} 
-                  disabled={selectedEquipmentIds.length === 0}
-                  className="btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', fontSize: '16px', backgroundColor: selectedEquipmentIds.length === 0 ? '#9CA3AF' : 'var(--primary-color)', cursor: selectedEquipmentIds.length === 0 ? 'not-allowed' : 'pointer' }}
-                >
-                  Continuer vers le paiement →
-                </button>
               </div>)}
 
             {/* STEP 3: CUSTOMER COORD & STRIPE PAYMENT */}
@@ -1123,6 +1113,16 @@ export default function PublicBookingPage() {
                     <span style={{ color: '#6B7280', display: 'block', fontSize: '11px', marginTop: '2px' }}>
                       Taxes incluses {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') && '(60% du tarif jour)'}
                     </span>
+                    
+                    {step === 2 && (
+                      <button 
+                        onClick={handleNextStep2} 
+                        className="btn-primary"
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', fontSize: '16px', marginTop: '20px' }}
+                      >
+                        Continuer vers le paiement →
+                      </button>
+                    )}
                   </div>)}
 
                 {(firstName || lastName || email) && (
