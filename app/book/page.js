@@ -562,7 +562,7 @@ export default function PublicBookingPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 24px 80px 24px' }}>
+      <main style={{ maxWidth: '1400px', margin: '40px auto', padding: '0 24px 80px 24px' }}>
         
         {/* Progress Wizard Header */}
         {step < 4 && (
@@ -585,13 +585,13 @@ export default function PublicBookingPage() {
 
         {error && (
           <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: '500' }}>
-            ️ {error}
+            ⚠️ {error}
           </div>)}
 
-        <div style={{ display: 'grid', gridTemplateColumns: step === 4 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
           
           {/* Main Card */}
-          <div className="card" style={{ padding: '32px' }}>
+          <div className="card" style={{ padding: '32px', flex: step === 4 ? '1 1 100%' : '1 1 65%', minWidth: '300px' }}>
             
             {/* STEP 1: DATES */}
             {step === 1 && (
@@ -1074,7 +1074,7 @@ export default function PublicBookingPage() {
 
           {/* Sidebar / Reservation Summary */}
           {step < 4 && (
-            <div className="card" style={{ position: 'sticky', top: '100px', height: 'fit-content' }}>
+            <div className="card" style={{ position: 'sticky', top: '100px', height: 'fit-content', flex: '1 1 350px', maxWidth: '400px', minWidth: '300px' }}>
               <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px', fontSize: '18px', fontWeight: 700 }}>Votre Réservation</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
