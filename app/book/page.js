@@ -562,7 +562,7 @@ export default function PublicBookingPage() {
         </div>
       </header>
 
-      <main style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 24px 80px 24px' }}>
+      <main style={{ maxWidth: '1200px', margin: '40px auto', padding: '0 24px 80px 24px' }}>
         
         {/* Progress Wizard Header */}
         {step < 4 && (
@@ -772,18 +772,15 @@ export default function PublicBookingPage() {
                                 style={{ 
                                   display: 'flex', 
                                   flexDirection: 'column', 
-                                  alignItems: 'center', 
-                                  justifyContent: 'space-between', 
-                                  padding: '10px', 
-                                  border: `2px solid ${isSelected ? '#F97316' : '#F3F4F6'}`, 
+                                  border: `2px solid ${isSelected ? '#F97316' : '#E5E7EB'}`, 
                                   borderRadius: '12px',
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
                                   cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
-                                  gap: '10px'
+                                  overflow: 'hidden'
                                 }}
                               >
-                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E5E7EB', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #E5E7EB' }}>
                                   <img 
                                     src={`/images/products/${e.reference}.png?v=2`} 
                                     alt={e.name}
@@ -794,50 +791,51 @@ export default function PublicBookingPage() {
                                       width: '100%', 
                                       height: '100%', 
                                       objectFit: 'contain',
-                                      padding: '2px',
-                                      transform: 'scale(1.05)'
+                                      padding: '0'
                                     }} 
                                   />
                                   <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
                                     {isOutOfStock ? (
-                                      <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>
+                                      <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '4px 8px', borderRadius: '6px', fontWeight: 700, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Rupture</span>
                                     ) : (
-                                      <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>
+                                      <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '4px 8px', borderRadius: '6px', fontWeight: 700, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>{qtyAvailable} dispo</span>
                                     )}
                                   </div>
                                 </div>
                                 
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%' }}>
-                                  <h4 style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.3' }}>
-                                    {e.name}
-                                  </h4>
-                                  <span style={{ fontSize: '15px', color: '#F97316', fontWeight: 'bold' }}>
-                                    {getItemPrice(e.reference, getBookingDuration(), rentalType)} €
-                                  </span>
-                                  <span style={{ fontSize: '11px', color: '#6B7280' }}>
-                                    pour {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? '½ journée' : `${getBookingDuration()} jour(s)`}
-                                  </span>
-                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', padding: '12px', flex: 1 }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', marginBottom: '12px', flex: 1 }}>
+                                    <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.3' }}>
+                                      {e.name}
+                                    </h4>
+                                    <span style={{ fontSize: '16px', color: '#F97316', fontWeight: '900' }}>
+                                      {getItemPrice(e.reference, getBookingDuration(), rentalType)} €
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
+                                      pour {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? '½ journée' : `${getBookingDuration()} jour(s)`}
+                                    </span>
+                                  </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto' }}>
-                                  {isSelected ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: 'white', padding: '4px 8px', borderRadius: '8px', border: '1px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
-                                      <button 
-                                        type="button"
-                                        style={{ padding: '4px 8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: '#F97316', fontWeight: 'bold' }}
-                                        onClick={(ev) => { ev.stopPropagation(); handleRemoveItem(e.id); }}
-                                      >-</button>
-                                      <span style={{ fontWeight: 'bold', color: '#F97316', textAlign: 'center' }}>{qtySelected}</span>
-                                      <button 
-                                        type="button"
-                                        style={{ padding: '4px 8px', border: 'none', background: 'transparent', cursor: qtyAvailable > 0 ? 'pointer' : 'not-allowed', fontSize: '18px', color: qtyAvailable > 0 ? '#F97316' : '#FCA5A5', fontWeight: 'bold' }}
-                                        disabled={qtyAvailable === 0}
-                                        onClick={(ev) => { ev.stopPropagation(); handleAddItem(e.id); }}
-                                      >+</button>
-                                    </div>
-                                  ) : (
-                                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />
-                                  )}
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', marginTop: 'auto' }}>
+                                    {isSelected ? (
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', backgroundColor: 'white', padding: '6px 8px', borderRadius: '8px', border: '2px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
+                                        <button 
+                                          type="button"
+                                          style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: '#F97316', fontWeight: 'bold' }}
+                                          onClick={(ev) => { ev.stopPropagation(); handleRemoveItem(e.id); }}
+                                        >-</button>
+                                        <span style={{ fontWeight: 'bold', color: '#F97316', textAlign: 'center', fontSize: '16px' }}>{qtySelected}</span>
+                                        <button 
+                                          type="button"
+                                          style={{ padding: '0 8px', border: 'none', background: 'transparent', cursor: qtyAvailable > 0 ? 'pointer' : 'not-allowed', fontSize: '18px', color: qtyAvailable > 0 ? '#F97316' : '#FCA5A5', fontWeight: 'bold' }}
+                                          disabled={qtyAvailable === 0}
+                                          onClick={(ev) => { ev.stopPropagation(); handleAddItem(e.id); }}
+                                        >+</button>
+                                      </div>
+                                    ) : (
+                                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             );
