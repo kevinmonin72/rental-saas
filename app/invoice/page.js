@@ -52,11 +52,12 @@ const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 50 }
 ];
 
-const getPricePerDay = (reference) => {
-  if (reference.includes('PACK')) return 40; 
-  if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; 
-  if (reference.includes('BOARD') || reference.includes('TWINTIP')) return 20; 
-  if (reference.includes('NEOPRENE') || reference.includes('COMBINAISON')) return 10; 
+const getPricePerDay = (reference, name = '', category = '') => {
+  const text = `${reference} ${name} ${category}`.toUpperCase();
+  if (text.includes('PACK')) return 40; 
+  if (text.includes('WING') || text.includes('FOIL') || text.includes('KITE')) return 25; 
+  if (text.includes('BOARD') || text.includes('TWINTIP') || text.includes('PLANCHE') || text.includes('SURF') || text.includes('PADDLE')) return 20; 
+  if (text.includes('NEOPRENE') || text.includes('COMBINAISON') || text.includes('HARNAIS')) return 10; 
   return 10; 
 };
 
@@ -168,7 +169,7 @@ export default function InvoiceGenerator() {
   };
 
   // Helper pour calculer le prix à partir des grilles
-  const getCalculatedPrice = (ref, days) => {
+  const getCalculatedPrice = (ref, days, name = '', category = '') => {
     let finalPrice = 0;
     if (PRICING_GRIDS[ref]) {
       const grid = PRICING_GRIDS[ref];
@@ -176,7 +177,7 @@ export default function InvoiceGenerator() {
       if (gridDays > 31) gridDays = 31;
       finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
     } else {
-      const perDay = getPricePerDay(ref);
+      const perDay = getPricePerDay(ref, name, category);
       finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
     }
     return finalPrice;
@@ -282,7 +283,7 @@ export default function InvoiceGenerator() {
             } else {
               newItems = equipments.map((itemEq, idx) => {
                 const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
-                let finalPrice = getCalculatedPrice(ref, days);
+                let finalPrice = getCalculatedPrice(ref, days, itemEq.name, itemEq.category);
                 let descriptionSuffix = ` (${durationDisplay})`;
                 
                 return {
@@ -332,7 +333,7 @@ export default function InvoiceGenerator() {
             description: eq.name || '', 
             quantity: 1, 
             duration: 1,
-            unitPrice: getCalculatedPrice(eq.reference ? eq.reference.replace(/^'/, '') : '', 1) 
+            unitPrice: getCalculatedPrice(eq.reference ? eq.reference.replace(/^'/, '') : '', 1, eq.name, eq.category) 
           }
         ]
       }));
@@ -385,12 +386,14 @@ export default function InvoiceGenerator() {
         if (field === 'reference' && value) {
           const eq = GENERIC_EQUIPMENTS.find(e => e.reference === value);
           if (eq) {
-            updated.description = eq.name;
+            if (!updated.description || updated.description.trim() === '') {
+              updated.description = eq.name;
+            }
             const dur = updated.duration || 1;
-            updated.unitPrice = getCalculatedPrice(eq.reference, dur);
+            updated.unitPrice = getCalculatedPrice(eq.reference, dur, updated.description, updated.category);
           }
         } else if (field === 'duration' && updated.reference) {
-          updated.unitPrice = getCalculatedPrice(updated.reference, value);
+          updated.unitPrice = getCalculatedPrice(updated.reference, value, updated.description, updated.category || '');
         }
         
         return updated;

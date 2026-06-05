@@ -1,15 +1,10 @@
-const fs = require('fs');
-async function run() {
-  const env = fs.readFileSync('.env.local', 'utf8');
-  const urlMatch = env.match(/NEXT_PUBLIC_SUPABASE_URL=(.*)/);
-  const keyMatch = env.match(/NEXT_PUBLIC_SUPABASE_ANON_KEY=(.*)/);
-  const url = urlMatch[1].trim();
-  const key = keyMatch[1].trim();
+require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js');
 
-  const res = await fetch(`${url}/rest/v1/bookings?select=id,reference,first_name,last_name,email,customer_id&limit=1`, {
-    headers: { 'apikey': key, 'Authorization': `Bearer ${key}` }
-  });
-  const data = await res.json();
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+async function run() {
+  const { data } = await supabase.from('equipment').select('*').limit(5);
   console.log(data);
 }
 run();
