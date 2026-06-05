@@ -203,27 +203,23 @@ export default function InvoiceGenerator() {
             const newItems = equipments.map((itemEq, idx) => {
               const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
               let finalPrice = 0;
-              let finalQuantity = days;
-              let descriptionSuffix = '';
+              let descriptionSuffix = ` (${durationDisplay})`;
               
               if (PRICING_GRIDS[ref]) {
                 const grid = PRICING_GRIDS[ref];
                 let gridDays = days;
                 if (gridDays > 31) gridDays = 31;
                 finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
-                finalQuantity = 1; // Le prix est déjà le total pour la période
-                descriptionSuffix = ` (${durationDisplay})`;
               } else {
                 const perDay = getPricePerDay(ref);
-                finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay;
-                if (days === 0.5) finalQuantity = 1;
+                finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
               }
 
               return {
                 id: Date.now() + idx,
                 reference: ref,
                 description: (itemEq.name || 'Équipement importé') + descriptionSuffix,
-                quantity: finalQuantity,
+                quantity: 1,
                 unitPrice: finalPrice
               };
             });
