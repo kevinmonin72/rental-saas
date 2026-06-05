@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 export default function PromoCodesPage() {
   const [promos, setPromos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form State
   const [code, setCode] = useState('');
@@ -79,7 +80,17 @@ export default function PromoCodesPage() {
 
       <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
         <div className="card" style={{ flex: '1' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '16px' }}>Liste des codes</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Liste des codes</h2>
+            <input 
+              type="text" 
+              className="input" 
+              placeholder="Rechercher (code, email)..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ width: '250px', margin: 0 }}
+            />
+          </div>
           {loading ? (
             <p>Chargement...</p>
           ) : promos.length === 0 ? (
@@ -98,7 +109,10 @@ export default function PromoCodesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {promos.map(p => (
+                  {promos.filter(p => {
+                    const q = searchQuery.toLowerCase();
+                    return p.code.toLowerCase().includes(q) || (p.target_email && p.target_email.toLowerCase().includes(q));
+                  }).map(p => (
                     <tr key={p.id}>
                       <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{p.code}</td>
                       <td>{p.discount_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} €`}</td>
