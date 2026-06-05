@@ -1,38 +1,41 @@
 import { NextResponse } from 'next/server';
-import { Resend } from 'resend';
 
 export async function POST(req) {
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_for_build');
     const data = await req.json();
     const { code } = data;
 
-    if (!process.env.RESEND_API_KEY) {
-      console.warn("RESEND_API_KEY is not configured. Email will not be sent.");
-      return NextResponse.json({ success: true, warning: 'No API Key' });
+    const klaviyoKey = process.env.KLAVIYO_PRIVATE_KEY || 'pk_R2W6jR_aee0be112b117e9fa9c52d6d9f3e402921';
+
+    const options = {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        revision: '2024-02-15',
+        'content-type': 'application/json',
+        Authorization: `Klaviyo-API-Key ${klaviyoKey}`
+      },
+      body: JSON.stringify({
+        data: {
+          type: 'event',
+          attributes: {
+            properties: { AdminCode: code },
+            metric: { data: { type: 'metric', attributes: { name: 'Admin Login Request' } } },
+            profile: { data: { type: 'profile', attributes: { email: 'marketing@theridery.com' } } }
+          }
+        }
+      })
+    };
+
+    const response = await fetch('https://a.klaviyo.com/api/events/', options);
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Klaviyo error:', errText);
+      return NextResponse.json({ error: 'Erreur Klaviyo' }, { status: 500 });
     }
 
-    const { data: emailData, error } = await resend.emails.send({
-      from: 'The Ridery Admin <onboarding@resend.dev>', // or a verified domain later
-      to: ['marketing@theridery.com'],
-      subject: `Code de sécurité Admin: ${code}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-          <h1 style="color: #F97316;">Tentative de connexion Administrateur</h1>
-          <p>Quelqu'un essaie de se connecter à votre panneau d'administration The Ridery.</p>
-          <div style="background-color: #f4f4f5; padding: 15px; border-radius: 8px; font-size: 24px; text-align: center; font-weight: bold; margin: 20px 0;">
-            ${code}
-          </div>
-          <p>Si vous n'êtes pas à l'origine de cette demande, vous pouvez l'ignorer.</p>
-        </div>
-      `,
-    });
-
-    if (error) {
-      return NextResponse.json({ error }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, data: emailData });
+    return NextResponse.json({ success: true });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
