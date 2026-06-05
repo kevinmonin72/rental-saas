@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 15 },
-  { reference: 'LOK-PACK-KITE', name: 'Pack Kitesurf - à personnaliser ✨', category: 'Kitesurf', quantity: 50 },
+  { reference: 'LOK-PACK-KITE', name: 'Pack Kitesurf - à personnaliser ', category: 'Kitesurf', quantity: 50 },
   { reference: 'LOK-AILE-BARRE', name: 'Aile + Barre', category: 'Kitesurf', quantity: 50 },
   { reference: 'LOK-PACK-2AILES-BARRE', name: 'Pack 2 Ailes + Barre', category: 'Kitesurf', quantity: 50 },
   { reference: 'LOK-BOARD-TWINTIP', name: 'Planche Twintip', category: 'Kitesurf', quantity: 19 },
@@ -50,18 +50,17 @@ const GENERIC_EQUIPMENTS = [
   { reference: 'LOK-TWINTIP-OPT', name: 'Planche Twintip Opt.', category: 'Kitesurf', quantity: 20 },
   { reference: 'LOK-BOARD-FOIL-WING', name: 'Planche + Foil de Wing', category: 'Wingfoil', quantity: 49 },
   { reference: 'LOK-PADDLE', name: 'Paddle', category: 'Autres', quantity: 25 },
-  { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 50 }
-];
+  { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 50 }];
 
 const CATEGORY_ICONS = {
-  Kitesurf: '💨',
-  Wingfoil: '🏄',
-  Néoprène: '🌊',
-  Accessoires: '🎒',
-  Protections: '🛡️',
-  'Carte Session': '🎟️',
-  Initiation: '✨',
-  Autres: '🛶'
+  Kitesurf: '',
+  Wingfoil: '',
+  Néoprène: '',
+  Accessoires: '',
+  Protections: '️',
+  'Carte Session': '️',
+  Initiation: '',
+  Autres: ''
 };
 
 const CATEGORY_IMAGES = {
@@ -127,8 +126,7 @@ export default function PublicBookingPage() {
         const [eqRes, bookRes, itemsRes] = await Promise.all([
           supabase.from('equipment').select('*'),
           supabase.from('bookings').select('*').eq('status', 'active'),
-          supabase.from('booking_items').select('*')
-        ]);
+          supabase.from('booking_items').select('*')]);
 
         if (eqRes.error) throw eqRes.error;
         if (bookRes.error) throw bookRes.error;
@@ -551,8 +549,7 @@ export default function PublicBookingPage() {
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         `}} />
-      </div>
-    );
+      </div>);
   }
 
   return (
@@ -560,14 +557,13 @@ export default function PublicBookingPage() {
       
       {/* Script Stripe loader if configured */}
       {isStripeConfigured && (
-        <script src="https://js.stripe.com/v3/" async></script>
-      )}
+        <script src="https://js.stripe.com/v3/" async></script>)}
 
       {/* Header */}
       <header className="glass-header" style={{ color: 'white', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '24px' }}>🚀</span>
+            <span style={{ fontSize: '24px' }}></span>
             <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'white', letterSpacing: '-0.5px' }}>THE RIDERY WINGBOOST</h1>
           </div>
           <span style={{ fontSize: '13px', color: '#9CA3AF', backgroundColor: '#374151', padding: '6px 12px', borderRadius: '20px', fontWeight: 500 }}>
@@ -595,14 +591,12 @@ export default function PublicBookingPage() {
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step >= 3 ? '#F97316' : '#D1D5DB', color: 'white', fontSize: '14px', fontWeight: 'bold' }}>3</span>
               <span style={{ fontWeight: step === 3 ? 'bold' : 'normal', color: step === 3 ? '#111827' : '#6B7280', fontSize: '14px' }}>Coordonnées & Paiement</span>
             </div>
-          </div>
-        )}
+          </div>)}
 
         {error && (
           <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: '500' }}>
-            ⚠️ {error}
-          </div>
-        )}
+            ️ {error}
+          </div>)}
 
         <div style={{ display: 'grid', gridTemplateColumns: step === 4 ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
           
@@ -661,8 +655,8 @@ export default function PublicBookingPage() {
                       style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none', backgroundColor: 'white' }}
                       required
                     >
-                      <option value="demi_matin">☀️ ½j (Matin)</option>
-                      <option value="demi_aprem">⛅ ½j (Aprem)</option>
+                      <option value="demi_matin">️ ½j (Matin)</option>
+                      <option value="demi_aprem"> ½j (Aprem)</option>
                       <option value="1_jour">1 Jour</option>
                       {[...Array(30)].map((_, i) => {
                         const days = i + 2;
@@ -675,8 +669,7 @@ export default function PublicBookingPage() {
                 <button type="submit" className="premium-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', fontSize: '16px', marginTop: '16px', cursor: 'pointer' }}>
                   Rechercher le matériel disponible →
                 </button>
-              </form>
-            )}
+              </form>)}
 
             {/* STEP 2: SELECT EQUIPMENT TYPES */}
             {step === 2 && (
@@ -690,7 +683,7 @@ export default function PublicBookingPage() {
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
                   <input 
                     type="text" 
-                    placeholder="🔍 Rechercher un modèle..." 
+                    placeholder=" Rechercher un modèle..." 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     style={{ flex: 1, minWidth: '200px', padding: '10px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none' }}
@@ -714,7 +707,7 @@ export default function PublicBookingPage() {
                       transition: 'all 0.2s'
                     }}
                   >
-                    📂 Tous ({equipmentList.length})
+                     Tous ({equipmentList.length})
                   </button>
                   {Object.keys(CATEGORY_ICONS).map(cat => {
                     const count = equipmentList.filter(e => {
@@ -742,8 +735,7 @@ export default function PublicBookingPage() {
                         }}
                       >
                         {CATEGORY_ICONS[cat]} {cat} ({count})
-                      </button>
-                    );
+                      </button>);
                   })}
                 </div>
 
@@ -821,10 +813,8 @@ export default function PublicBookingPage() {
 
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                                   {isOutOfStock ? (
-                                    <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>
-                                  ) : (
-                                    <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>
-                                  )}
+                                    <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>Rupture</span>) : (
+                                    <span style={{ fontSize: '11px', color: '#10B981', backgroundColor: '#D1FAE5', padding: '3px 6px', borderRadius: '4px', fontWeight: 600 }}>{qtyAvailable} dispo</span>)}
                                   {isSelected ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', padding: '4px 8px', borderRadius: '8px', border: '1px solid #F97316' }} onClick={ev => ev.stopPropagation()}>
                                       <button 
@@ -839,17 +829,13 @@ export default function PublicBookingPage() {
                                         disabled={qtyAvailable === 0}
                                         onClick={(ev) => { ev.stopPropagation(); handleAddItem(e.id); }}
                                       >+</button>
-                                    </div>
-                                  ) : (
-                                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />
-                                  )}
+                                    </div>) : (
+                                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '2px solid #D1D5DB', transition: 'all 0.15s' }} />)}
                                 </div>
-                              </div>
-                            );
+                              </div>);
                           })}
                         </div>
-                      </div>
-                    );
+                      </div>);
                   })}
                 </div>
 
@@ -860,8 +846,7 @@ export default function PublicBookingPage() {
                 >
                   Continuer vers le paiement →
                 </button>
-              </div>
-            )}
+              </div>)}
 
             {/* STEP 3: CUSTOMER COORD & STRIPE PAYMENT */}
             {step === 3 && (
@@ -936,12 +921,10 @@ export default function PublicBookingPage() {
                     {appliedPromo ? (
                       <button type="button" onClick={() => setAppliedPromo(null)} style={{ padding: '0 16px', backgroundColor: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
                         Retirer
-                      </button>
-                    ) : (
+                      </button>) : (
                       <button type="button" onClick={handleApplyPromo} disabled={validatingPromo || !promoInput.trim()} style={{ padding: '0 16px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (!promoInput.trim() || validatingPromo) ? 'not-allowed' : 'pointer' }}>
                         {validatingPromo ? '...' : 'Appliquer'}
-                      </button>
-                    )}
+                      </button>)}
                   </div>
                   {promoError && <p style={{ color: '#DC2626', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>{promoError}</p>}
                   {appliedPromo && <p style={{ color: '#059669', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>Code {appliedPromo.code} appliqué avec succès !</p>}
@@ -951,19 +934,18 @@ export default function PublicBookingPage() {
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', marginBottom: '32px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      💳 Paiement sécurisé par <strong>stripe</strong>
+                       Paiement sécurisé par <strong>stripe</strong>
                     </span>
                     <div style={{ display: 'flex', gap: '4px' }}>
-                      <span style={{ fontSize: '20px' }}>🌐</span>
-                      <span style={{ fontSize: '20px' }}>🔒</span>
+                      <span style={{ fontSize: '20px' }}></span>
+                      <span style={{ fontSize: '20px' }}></span>
                     </div>
                   </div>
 
                   {!isStripeConfigured && (
                     <div style={{ fontSize: '12px', color: '#B45309', backgroundColor: '#FEF3C7', padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #FCD34D', fontWeight: 500 }}>
-                      ⚙️ <strong>Mode Démo :</strong> Entrez n'importe quelle carte bancaire (ex: 4242 4242...) pour valider.
-                    </div>
-                  )}
+                      ️ <strong>Mode Démo :</strong> Entrez n'importe quelle carte bancaire (ex: 4242 4242...) pour valider.
+                    </div>)}
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -1013,15 +995,14 @@ export default function PublicBookingPage() {
                   disabled={loading}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '14px', backgroundColor: '#F97316', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer', transition: 'background-color 0.2s' }}
                 >
-                  {loading ? 'Transaction en cours...' : `Payer & Valider (${getBookingTotal()} €) 🔒`}
+                  {loading ? 'Transaction en cours...' : `Payer & Valider (${getBookingTotal()} €) `}
                 </button>
-              </form>
-            )}
+              </form>)}
 
             {/* STEP 4: CONFIRMATION */}
             {step === 4 && (
               <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                <span style={{ fontSize: '64px', display: 'block', marginBottom: '24px', animation: 'bounce 1s infinite' }}>🎉</span>
+                <span style={{ fontSize: '64px', display: 'block', marginBottom: '24px', animation: 'bounce 1s infinite' }}></span>
                 <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#111827', marginBottom: '16px', letterSpacing: '-0.5px' }}>Félicitations !</h2>
                 <p style={{ fontSize: '16px', color: '#4B5563', maxWidth: '500px', margin: '0 auto 32px auto', lineHeight: '1.6' }}>
                   Votre paiement a bien été validé et votre réservation de matériel est enregistrée.
@@ -1030,17 +1011,16 @@ export default function PublicBookingPage() {
                 <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', maxWidth: '500px', margin: '0 auto 32px auto', textAlign: 'left' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 700, borderBottom: '1px solid #E5E7EB', paddingBottom: '8px', marginBottom: '12px' }}>Détails de la réservation</h3>
                   <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div>📅 <strong>Dates :</strong> {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? `Le ${new Date(startDate).toLocaleDateString('fr-FR')} (${rentalType === 'demi_matin' ? 'Matin' : 'Après-midi'})` : `Du ${new Date(startDate).toLocaleDateString('fr-FR')} au ${new Date(endDate).toLocaleDateString('fr-FR')} (${getBookingDuration()} jours)`}</div>
-                    <div>💰 <strong>Montant payé :</strong> {getBookingTotal()} € (par carte bancaire)</div>
-                    <div>👤 <strong>Client :</strong> {firstName} {lastName} ({email})</div>
-                    <div>📦 <strong>Matériel réservé :</strong>
+                    <div> <strong>Dates :</strong> {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? `Le ${new Date(startDate).toLocaleDateString('fr-FR')} (${rentalType === 'demi_matin' ? 'Matin' : 'Après-midi'})` : `Du ${new Date(startDate).toLocaleDateString('fr-FR')} au ${new Date(endDate).toLocaleDateString('fr-FR')} (${getBookingDuration()} jours)`}</div>
+                    <div> <strong>Montant payé :</strong> {getBookingTotal()} € (par carte bancaire)</div>
+                    <div> <strong>Client :</strong> {firstName} {lastName} ({email})</div>
+                    <div> <strong>Matériel réservé :</strong>
                       <ul style={{ padding: 0, margin: 0, listStyle: 'none' }}>
                         {Object.entries(
                           selectedEquipmentIds.reduce((acc, id) => {
                             acc[id] = (acc[id] || 0) + 1;
                             return acc;
-                          }, {})
-                        ).map(([id, qty]) => {
+                          }, {})).map(([id, qty]) => {
                           const eq = equipmentList.find(e => e.id === id);
                           if (!eq) return null;
                           return (
@@ -1050,8 +1030,7 @@ export default function PublicBookingPage() {
                                 <span style={{ color: '#111827', fontWeight: 500 }}>{eq.name}</span>
                               </div>
                               <span style={{ color: '#4B5563' }}>{getItemPrice(eq.reference, getBookingDuration(), rentalType) * qty} €</span>
-                            </li>
-                          );
+                            </li>);
                         })}
                       </ul>
                     </div>
@@ -1087,8 +1066,7 @@ export default function PublicBookingPage() {
                     50% { transform: translateY(-10px); }
                   }
                 `}} />
-              </div>
-            )}
+              </div>)}
 
           </div>
 
@@ -1104,17 +1082,11 @@ export default function PublicBookingPage() {
                     halfDayDate ? (
                       <strong style={{ color: '#F3F4F6' }}>
                         Le {new Date(halfDayDate).toLocaleDateString('fr-FR')} ({halfDaySlot === 'demi_matin' ? 'Matin' : 'Aprem'})
-                      </strong>
-                    ) : (
-                      <em style={{ color: '#9CA3AF' }}>Non définies</em>
-                    )
-                  ) : (
+                      </strong>) : (
+                      <em style={{ color: '#9CA3AF' }}>Non définies</em>)) : (
                     startDate && endDate ? (
-                      <strong style={{ color: '#F3F4F6' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>
-                    ) : (
-                      <em style={{ color: '#9CA3AF' }}>Non définies</em>
-                    )
-                  )}
+                      <strong style={{ color: '#F3F4F6' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>) : (
+                      <em style={{ color: '#9CA3AF' }}>Non définies</em>))}
                 </div>
 
                 {/* Type de location masqué car uniquement Ponctuel */}
@@ -1127,15 +1099,12 @@ export default function PublicBookingPage() {
                         selectedEquipmentIds.reduce((acc, id) => {
                           acc[id] = (acc[id] || 0) + 1;
                           return acc;
-                        }, {})
-                      ).map(([id, qty]) => {
+                        }, {})).map(([id, qty]) => {
                         const item = equipmentList.find(e => e.id === id);
                         return <li key={id}>{item ? <><span style={{ color: '#F97316', fontWeight: 'bold', marginRight: '6px' }}>{qty}x</span>{item.name}</> : 'Équipement'}</li>;
                       })}
-                    </ul>
-                  ) : (
-                    <em style={{ color: '#9CA3AF' }}>Aucun matériel choisi</em>
-                  )}
+                    </ul>) : (
+                    <em style={{ color: '#9CA3AF' }}>Aucun matériel choisi</em>)}
                 </div>
 
                 {selectedEquipmentIds.length > 0 && startDate && endDate && (
@@ -1145,23 +1114,19 @@ export default function PublicBookingPage() {
                     <span style={{ color: '#9CA3AF', display: 'block', fontSize: '11px', marginTop: '2px' }}>
                       Taxes incluses {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') && '(60% du tarif jour)'}
                     </span>
-                  </div>
-                )}
+                  </div>)}
 
                 {(firstName || lastName || email) && (
                   <div style={{ borderTop: '1px solid #374151', paddingTop: '16px' }}>
                     <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Vos coordonnées</span>
                     <strong style={{ color: '#F3F4F6', display: 'block' }}>{firstName} {lastName}</strong>
                     <span style={{ color: '#9CA3AF', fontSize: '13px' }}>{email}</span>
-                  </div>
-                )}
+                  </div>)}
               </div>
-            </div>
-          )}
+            </div>)}
 
         </div>
 
       </main>
-    </div>
-  );
+    </div>);
 }

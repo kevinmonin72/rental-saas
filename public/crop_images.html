@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Outil de recadrage des images</title>
+    <style>
+        body { font-family: sans-serif; background: #f3f4f6; padding: 20px; }
+        .gallery { display: flex; flex-wrap: wrap; gap: 20px; }
+        .card { background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 200px; display: flex; flex-direction: column; align-items: center; }
+        .img-container { width: 150px; height: 150px; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #fafafa; margin-bottom: 10px; overflow: hidden; }
+        img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .name { font-size: 12px; color: #333; text-align: center; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>Toutes les images (97)</h1>
+    <p>Vous pouvez visualiser toutes les images ci-dessous. Modifiez-les dans le dossier <code>public/images</code>.</p>
+    <div class="gallery">
+        
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/cat_accessoires.png" alt="/images/cat_accessoires.png">
+            </div>
+            <div class="name">/images/cat_accessoires.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/cat_autres.png" alt="/images/cat_autres.png">
+            </div>
+            <div class="name">/images/cat_autres.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/cat_kitesurf.png" alt="/images/cat_kitesurf.png">
+            </div>
+            <div class="name">/images/cat_kitesurf.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/cat_neoprene.png" alt="/images/cat_neoprene.png">
+            </div>
+            <div class="name">/images/cat_neoprene.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/cat_wingfoil.png" alt="/images/cat_wingfoil.png">
+            </div>
+            <div class="name">/images/cat_wingfoil.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-2AILE-SANSBARRE-CS.png" alt="/images/products/LOK-2AILE-SANSBARRE-CS.png">
+            </div>
+            <div class="name">/images/products/LOK-2AILE-SANSBARRE-CS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-2WING-AILE-CS.png" alt="/images/products/LOK-2WING-AILE-CS.png">
+            </div>
+            <div class="name">/images/products/LOK-2WING-AILE-CS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-3AILE-SANSBARRE-CS.png" alt="/images/products/LOK-3AILE-SANSBARRE-CS.png">
+            </div>
+            <div class="name">/images/products/LOK-3AILE-SANSBARRE-CS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-3AILE-SANSBARRE.png" alt="/images/products/LOK-3AILE-SANSBARRE.png">
+            </div>
+            <div class="name">/images/products/LOK-3AILE-SANSBARRE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-AILE-BARRE.png" alt="/images/products/LOK-AILE-BARRE.png">
+            </div>
+            <div class="name">/images/products/LOK-AILE-BARRE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-AILE-SANSBARRE.png" alt="/images/products/LOK-AILE-SANSBARRE.png">
+            </div>
+            <div class="name">/images/products/LOK-AILE-SANSBARRE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-BARRE.png" alt="/images/products/LOK-BARRE.png">
+            </div>
+            <div class="name">/images/products/LOK-BARRE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-BOARD-FOIL-WING.png" alt="/images/products/LOK-BOARD-FOIL-WING.png">
+            </div>
+            <div class="name">/images/products/LOK-BOARD-FOIL-WING.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-BOARD-TWINTIP.png" alt="/images/products/LOK-BOARD-TWINTIP.png">
+            </div>
+            <div class="name">/images/products/LOK-BOARD-TWINTIP.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-BOARDBAG-OPT.png" alt="/images/products/LOK-BOARDBAG-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-BOARDBAG-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-BOARDBAG.png" alt="/images/products/LOK-BOARDBAG.png">
+            </div>
+            <div class="name">/images/products/LOK-BOARDBAG.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-CAGOULE-OPT.png" alt="/images/products/LOK-CAGOULE-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-CAGOULE-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-CASQUE-OPT.png" alt="/images/products/LOK-CASQUE-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-CASQUE-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-CHAUSSONS-OPT.png" alt="/images/products/LOK-CHAUSSONS-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-CHAUSSONS-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-COMBINAISON-OPT.png" alt="/images/products/LOK-COMBINAISON-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-COMBINAISON-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-GANTS-OPT.png" alt="/images/products/LOK-GANTS-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-GANTS-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-GILET-OPT.png" alt="/images/products/LOK-GILET-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-GILET-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-HARNAIS-CEINTURE-OPT.png" alt="/images/products/LOK-HARNAIS-CEINTURE-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-HARNAIS-CEINTURE-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-HARNAIS-CEINTURE.png" alt="/images/products/LOK-HARNAIS-CEINTURE.png">
+            </div>
+            <div class="name">/images/products/LOK-HARNAIS-CEINTURE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-HARNAIS-CULOTTE-OPT.png" alt="/images/products/LOK-HARNAIS-CULOTTE-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-HARNAIS-CULOTTE-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-HARNAIS-CULOTTE.png" alt="/images/products/LOK-HARNAIS-CULOTTE.png">
+            </div>
+            <div class="name">/images/products/LOK-HARNAIS-CULOTTE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-INITIATION-FOIL-TRACTE.png" alt="/images/products/LOK-INITIATION-FOIL-TRACTE.png">
+            </div>
+            <div class="name">/images/products/LOK-INITIATION-FOIL-TRACTE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-KITEFOIL.png" alt="/images/products/LOK-KITEFOIL.png">
+            </div>
+            <div class="name">/images/products/LOK-KITEFOIL.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-NEOPRENE-CAGOULE.png" alt="/images/products/LOK-NEOPRENE-CAGOULE.png">
+            </div>
+            <div class="name">/images/products/LOK-NEOPRENE-CAGOULE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-NEOPRENE-CHAUSSONS.png" alt="/images/products/LOK-NEOPRENE-CHAUSSONS.png">
+            </div>
+            <div class="name">/images/products/LOK-NEOPRENE-CHAUSSONS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-NEOPRENE-COMBINAISON.png" alt="/images/products/LOK-NEOPRENE-COMBINAISON.png">
+            </div>
+            <div class="name">/images/products/LOK-NEOPRENE-COMBINAISON.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-NEOPRENE-GANTS.png" alt="/images/products/LOK-NEOPRENE-GANTS.png">
+            </div>
+            <div class="name">/images/products/LOK-NEOPRENE-GANTS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-NEOPRENE-VESTE.png" alt="/images/products/LOK-NEOPRENE-VESTE.png">
+            </div>
+            <div class="name">/images/products/LOK-NEOPRENE-VESTE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PACK-2AILES-BARRE.png" alt="/images/products/LOK-PACK-2AILES-BARRE.png">
+            </div>
+            <div class="name">/images/products/LOK-PACK-2AILES-BARRE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PACK-KITE.png" alt="/images/products/LOK-PACK-KITE.png">
+            </div>
+            <div class="name">/images/products/LOK-PACK-KITE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PACK-WING-DEBUTANT.png" alt="/images/products/LOK-PACK-WING-DEBUTANT.png">
+            </div>
+            <div class="name">/images/products/LOK-PACK-WING-DEBUTANT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PACK-WING-GONFLABLE.png" alt="/images/products/LOK-PACK-WING-GONFLABLE.png">
+            </div>
+            <div class="name">/images/products/LOK-PACK-WING-GONFLABLE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PACK-WING-RIGIDE.png" alt="/images/products/LOK-PACK-WING-RIGIDE.png">
+            </div>
+            <div class="name">/images/products/LOK-PACK-WING-RIGIDE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PADDLE.png" alt="/images/products/LOK-PADDLE.png">
+            </div>
+            <div class="name">/images/products/LOK-PADDLE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PROT-CASQUE.png" alt="/images/products/LOK-PROT-CASQUE.png">
+            </div>
+            <div class="name">/images/products/LOK-PROT-CASQUE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-PROT-GILET.png" alt="/images/products/LOK-PROT-GILET.png">
+            </div>
+            <div class="name">/images/products/LOK-PROT-GILET.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-STRAPLESS.png" alt="/images/products/LOK-STRAPLESS.png">
+            </div>
+            <div class="name">/images/products/LOK-STRAPLESS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-SURF.png" alt="/images/products/LOK-SURF.png">
+            </div>
+            <div class="name">/images/products/LOK-SURF.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-TWINTIP-OPT-CS.png" alt="/images/products/LOK-TWINTIP-OPT-CS.png">
+            </div>
+            <div class="name">/images/products/LOK-TWINTIP-OPT-CS.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-TWINTIP-OPT.png" alt="/images/products/LOK-TWINTIP-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-TWINTIP-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-VESTENEOPRENE-OPT.png" alt="/images/products/LOK-VESTENEOPRENE-OPT.png">
+            </div>
+            <div class="name">/images/products/LOK-VESTENEOPRENE-OPT.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-WING-2AILE.png" alt="/images/products/LOK-WING-2AILE.png">
+            </div>
+            <div class="name">/images/products/LOK-WING-2AILE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-WING-AILE.png" alt="/images/products/LOK-WING-AILE.png">
+            </div>
+            <div class="name">/images/products/LOK-WING-AILE.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-WING-BOARD.png" alt="/images/products/LOK-WING-BOARD.png">
+            </div>
+            <div class="name">/images/products/LOK-WING-BOARD.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/LOK-WING-FOIL.png" alt="/images/products/LOK-WING-FOIL.png">
+            </div>
+            <div class="name">/images/products/LOK-WING-FOIL.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row1_col1.png" alt="/images/products/accessoires_row1_col1.png">
+            </div>
+            <div class="name">/images/products/accessoires_row1_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row1_col2.png" alt="/images/products/accessoires_row1_col2.png">
+            </div>
+            <div class="name">/images/products/accessoires_row1_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row1_col3.png" alt="/images/products/accessoires_row1_col3.png">
+            </div>
+            <div class="name">/images/products/accessoires_row1_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row1_col4.png" alt="/images/products/accessoires_row1_col4.png">
+            </div>
+            <div class="name">/images/products/accessoires_row1_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row2_col1.png" alt="/images/products/accessoires_row2_col1.png">
+            </div>
+            <div class="name">/images/products/accessoires_row2_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row2_col2.png" alt="/images/products/accessoires_row2_col2.png">
+            </div>
+            <div class="name">/images/products/accessoires_row2_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row2_col3.png" alt="/images/products/accessoires_row2_col3.png">
+            </div>
+            <div class="name">/images/products/accessoires_row2_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row2_col4.png" alt="/images/products/accessoires_row2_col4.png">
+            </div>
+            <div class="name">/images/products/accessoires_row2_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row3_col1.png" alt="/images/products/accessoires_row3_col1.png">
+            </div>
+            <div class="name">/images/products/accessoires_row3_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row3_col2.png" alt="/images/products/accessoires_row3_col2.png">
+            </div>
+            <div class="name">/images/products/accessoires_row3_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row3_col3.png" alt="/images/products/accessoires_row3_col3.png">
+            </div>
+            <div class="name">/images/products/accessoires_row3_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/accessoires_row3_col4.png" alt="/images/products/accessoires_row3_col4.png">
+            </div>
+            <div class="name">/images/products/accessoires_row3_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/autres_row1_col1.png" alt="/images/products/autres_row1_col1.png">
+            </div>
+            <div class="name">/images/products/autres_row1_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/autres_row1_col2.png" alt="/images/products/autres_row1_col2.png">
+            </div>
+            <div class="name">/images/products/autres_row1_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/autres_row1_col3.png" alt="/images/products/autres_row1_col3.png">
+            </div>
+            <div class="name">/images/products/autres_row1_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row1_col1.png" alt="/images/products/kitesurf_row1_col1.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row1_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row1_col2.png" alt="/images/products/kitesurf_row1_col2.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row1_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row1_col3.png" alt="/images/products/kitesurf_row1_col3.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row1_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row1_col4.png" alt="/images/products/kitesurf_row1_col4.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row1_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row2_col1.png" alt="/images/products/kitesurf_row2_col1.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row2_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row2_col2.png" alt="/images/products/kitesurf_row2_col2.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row2_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row2_col3.png" alt="/images/products/kitesurf_row2_col3.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row2_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/kitesurf_row2_col4.png" alt="/images/products/kitesurf_row2_col4.png">
+            </div>
+            <div class="name">/images/products/kitesurf_row2_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row1_col1.png" alt="/images/products/neoprene_row1_col1.png">
+            </div>
+            <div class="name">/images/products/neoprene_row1_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row1_col2.png" alt="/images/products/neoprene_row1_col2.png">
+            </div>
+            <div class="name">/images/products/neoprene_row1_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row1_col3.png" alt="/images/products/neoprene_row1_col3.png">
+            </div>
+            <div class="name">/images/products/neoprene_row1_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row1_col4.png" alt="/images/products/neoprene_row1_col4.png">
+            </div>
+            <div class="name">/images/products/neoprene_row1_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row2_col1.png" alt="/images/products/neoprene_row2_col1.png">
+            </div>
+            <div class="name">/images/products/neoprene_row2_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row2_col2.png" alt="/images/products/neoprene_row2_col2.png">
+            </div>
+            <div class="name">/images/products/neoprene_row2_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row2_col3.png" alt="/images/products/neoprene_row2_col3.png">
+            </div>
+            <div class="name">/images/products/neoprene_row2_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row2_col4.png" alt="/images/products/neoprene_row2_col4.png">
+            </div>
+            <div class="name">/images/products/neoprene_row2_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row3_col1.png" alt="/images/products/neoprene_row3_col1.png">
+            </div>
+            <div class="name">/images/products/neoprene_row3_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row3_col2.png" alt="/images/products/neoprene_row3_col2.png">
+            </div>
+            <div class="name">/images/products/neoprene_row3_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row3_col3.png" alt="/images/products/neoprene_row3_col3.png">
+            </div>
+            <div class="name">/images/products/neoprene_row3_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/neoprene_row3_col4.png" alt="/images/products/neoprene_row3_col4.png">
+            </div>
+            <div class="name">/images/products/neoprene_row3_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row1_col1.png" alt="/images/products/wingfoil_row1_col1.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row1_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row1_col2.png" alt="/images/products/wingfoil_row1_col2.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row1_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row1_col3.png" alt="/images/products/wingfoil_row1_col3.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row1_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row1_col4.png" alt="/images/products/wingfoil_row1_col4.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row1_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row2_col1.png" alt="/images/products/wingfoil_row2_col1.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row2_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row2_col2.png" alt="/images/products/wingfoil_row2_col2.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row2_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row2_col3.png" alt="/images/products/wingfoil_row2_col3.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row2_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row2_col4.png" alt="/images/products/wingfoil_row2_col4.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row2_col4.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row3_col1.png" alt="/images/products/wingfoil_row3_col1.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row3_col1.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row3_col2.png" alt="/images/products/wingfoil_row3_col2.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row3_col2.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row3_col3.png" alt="/images/products/wingfoil_row3_col3.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row3_col3.png</div>
+        </div>
+        <div class="card">
+            <div class="img-container">
+                <img src="/images/products/wingfoil_row3_col4.png" alt="/images/products/wingfoil_row3_col4.png">
+            </div>
+            <div class="name">/images/products/wingfoil_row3_col4.png</div>
+        </div>
+    </div>
+</body>
+</html>
