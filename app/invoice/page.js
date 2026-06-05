@@ -83,15 +83,39 @@ export default function InvoiceGenerator() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
-      if (quickRef.length > 1) {
-        const { data } = await supabase
+      const term = quickRef.trim();
+      if (term.length > 1) {
+        // Search equipment
+        const { data: eqData } = await supabase
           .from('equipment')
           .select('*')
-          .or(`reference.ilike.*${quickRef}*,name.ilike.*${quickRef}*`)
+          .or(`reference.ilike.*${term}*,name.ilike.*${term}*`)
           .limit(10);
-        if (data) {
-          setSearchResults(data);
+          
+        let results = eqData || [];
+        
+        // Search booking if it matches pattern
+        const possibleBookingRef = term.replace(/^#/, '').toUpperCase();
+        if (possibleBookingRef.length >= 2) {
+          const { data: bookData } = await supabase
+            .from('bookings')
+            .select('*')
+            .ilike('reference', `%${possibleBookingRef}%`)
+            .limit(3);
+            
+          if (bookData && bookData.length > 0) {
+            const bookingResults = bookData.map(b => ({
+              isBooking: true,
+              id: b.id,
+              reference: b.reference || b.id.split('-')[0].toUpperCase(),
+              name: `Importer le matériel de la réservation ${b.first_name || ''} ${b.last_name || ''}`.trim(),
+              booking: b
+            }));
+            results = [...bookingResults, ...results];
+          }
         }
+        
+        setSearchResults(results);
       } else {
         setSearchResults([]);
       }
@@ -102,18 +126,33 @@ export default function InvoiceGenerator() {
 
   const handleQuickAddRef = async (e) => {
     e.preventDefault();
-    if (!quickRef.trim()) return;
+    const term = quickRef.trim();
+    if (!term) return;
     
+    // Check if the typed text exactly matches one of the search results
+    if (searchResults && searchResults.length > 0) {
+      if (searchResults.length === 1) {
+        addEqToInvoice(searchResults[0]);
+        return;
+      }
+      const exactMatch = searchResults.find(r => r.reference && r.reference.replace(/^#|^'/, '').toLowerCase() === term.replace(/^#/, '').toLowerCase());
+      if (exactMatch) {
+        addEqToInvoice(exactMatch);
+        return;
+      }
+    }
+    
+    // Fallback manual search if searchResults didn't catch it
     const { data } = await supabase
       .from('equipment')
       .select('*')
-      .or(`reference.ilike.*${quickRef.trim()}*,name.ilike.*${quickRef.trim()}*`)
+      .or(`reference.ilike.*${term}*,name.ilike.*${term}*`)
       .limit(10);
       
     if (data && data.length === 1) {
       addEqToInvoice(data[0]);
     } else if (data && data.length > 1) {
-      const exactMatch = data.find(e => e.reference && e.reference.replace(/^'/, '').toLowerCase() === quickRef.trim().toLowerCase());
+      const exactMatch = data.find(eq => eq.reference && eq.reference.replace(/^'/, '').toLowerCase() === term.toLowerCase());
       if (exactMatch) {
         addEqToInvoice(exactMatch);
       } else {
@@ -124,7 +163,38 @@ export default function InvoiceGenerator() {
     }
   };
 
-  const addEqToInvoice = (eq) => {
+  const addEqToInvoice = async (eq) => {
+    if (eq.isBooking) {
+      // Fetch items of the booking
+      const { data: bItems } = await supabase.from('booking_items').select('*').eq('booking_id', eq.id);
+      if (bItems && bItems.length > 0) {
+        const eqIds = bItems.map(bi => bi.equipment_id);
+        const { data: equipments } = await supabase.from('equipment').select('*').in('id', eqIds);
+        
+        if (equipments && equipments.length > 0) {
+          setInvoiceData(prev => {
+            const newItems = equipments.map((itemEq, idx) => ({
+              id: Date.now() + idx,
+              reference: itemEq.reference ? itemEq.reference.replace(/^'/, '') : '',
+              description: itemEq.name || 'Équipement importé',
+              quantity: 1,
+              unitPrice: getPricePerDay(itemEq.reference || '')
+            }));
+            
+            const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
+            return {
+              ...prev,
+              clientName: prev.clientName || `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim(),
+              items: [...prevItemsCleaned, ...newItems]
+            };
+          });
+        }
+      }
+      setQuickRef('');
+      setSearchResults([]);
+      return;
+    }
+
     setInvoiceData(prev => ({
       ...prev,
       items: [
@@ -383,7 +453,7 @@ export default function InvoiceGenerator() {
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder="Chercher un produit par référence ou nom..." 
+                  placeholder="Chercher un équipement ou taper une réf de réservation (ex: #RW0001)..." 
                   value={quickRef}
                   onChange={e => setQuickRef(e.target.value)}
                   style={{ width: '100%', fontSize: '13px' }}
@@ -398,7 +468,7 @@ export default function InvoiceGenerator() {
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#F9FAFB'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'white'}
                       >
-                        <strong>{eq.reference}</strong> - {eq.name}
+                        <strong>{eq.isBooking ? `📦 ${eq.reference}` : eq.reference}</strong> - {eq.name}
                       </li>
                     ))}
                   </ul>
