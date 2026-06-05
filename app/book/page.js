@@ -63,16 +63,7 @@ const CATEGORY_ICONS = {
   Autres: ''
 };
 
-const CATEGORY_IMAGES = {
-  Kitesurf: '/images/cat_kitesurf.png',
-  Wingfoil: '/images/cat_wingfoil.png',
-  Néoprène: '/images/cat_neoprene.png',
-  Accessoires: '/images/cat_accessoires.png',
-  Protections: '/images/cat_accessoires.png',
-  'Carte Session': '/images/cat_autres.png',
-  Initiation: '/images/cat_autres.png',
-  Autres: '/images/cat_autres.png'
-};
+
 
 const getPricePerDay = (reference) => {
   if (reference.includes('PACK')) return 40; // Packs: 40€/jour
@@ -792,7 +783,7 @@ export default function PublicBookingPage() {
                                       src={`/images/products/${e.reference}.png`} 
                                       alt={e.name}
                                       onError={(evt) => {
-                                        evt.target.src = CATEGORY_IMAGES[cat] || '/images/cat_autres.png';
+                                        evt.target.style.display = 'none';
                                       }}
                                       style={{ 
                                         width: '100%', 
