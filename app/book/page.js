@@ -96,6 +96,8 @@ export default function PublicBookingPage() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [authMode, setAuthMode] = useState('guest'); // 'guest', 'create_account', 'login'
+  const [password, setPassword] = useState('');
 
   // Payment Form State
   const [cardNumber, setCardNumber] = useState('');
@@ -424,6 +426,28 @@ export default function PublicBookingPage() {
     setError('');
 
     try {
+      // 0. Create Auth User if requested
+      if (authMode === 'create_account') {
+        if (password.length < 6) {
+          setError('Le mot de passe doit faire au moins 6 caractères.');
+          setLoading(false);
+          return;
+        }
+        const { error: authErr } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password: password,
+          options: {
+            data: {
+              first_name: firstName.trim(),
+              last_name: lastName.trim()
+            }
+          }
+        });
+        if (authErr) {
+          throw new Error('Erreur lors de la création du compte : ' + authErr.message);
+        }
+      }
+
       // 1. Create PaymentIntent through our API (Simulated or Real)
       const selectedRefs = selectedEquipmentIds.map(id => {
         const item = equipmentList.find(e => e.id === id);
@@ -556,9 +580,15 @@ export default function PublicBookingPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain' }} />
           </div>
-          <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
-            Portail Client
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              Mon Espace
+            </Link>
+            <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
+              Portail Client
+            </span>
+          </div>
         </div>
       </header>
 
@@ -856,6 +886,29 @@ export default function PublicBookingPage() {
                   <button type="button" onClick={() => setStep(2)} style={{ color: '#F97316', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>← Retour matériel</button>
                 </div>
 
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                  <div 
+                    onClick={() => setAuthMode('guest')}
+                    style={{ flex: 1, padding: '16px', border: authMode === 'guest' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'guest' ? '#FFF7ED' : 'white' }}
+                  >
+                    <div style={{ fontWeight: 'bold', color: authMode === 'guest' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'guest' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
+                      Continuer comme invité
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Rapide, sans création de compte.</div>
+                  </div>
+                  <div 
+                    onClick={() => setAuthMode('create_account')}
+                    style={{ flex: 1, padding: '16px', border: authMode === 'create_account' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'create_account' ? '#FFF7ED' : 'white' }}
+                  >
+                    <div style={{ fontWeight: 'bold', color: authMode === 'create_account' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'create_account' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
+                      Créer un Espace Client
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
                   <div style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -882,28 +935,44 @@ export default function PublicBookingPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
-                    <input 
-                      type="email" 
-                      value={email} 
-                      onChange={(e) => setEmail(e.target.value)} 
-                      placeholder="jean.dupont@example.com" 
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      required 
-                    />
+                  <div style={{ display: 'flex', gap: '16px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
+                      <input 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        placeholder="jean.dupont@example.com" 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                        required 
+                      />
+                    </div>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Téléphone</label>
+                      <input 
+                        type="tel" 
+                        value={phone} 
+                        onChange={(e) => setPhone(e.target.value)} 
+                        placeholder="+33 6 12 34 56 78" 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                      />
+                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Numéro de téléphone</label>
-                    <input 
-                      type="tel" 
-                      value={phone} 
-                      onChange={(e) => setPhone(e.target.value)} 
-                      placeholder="+33 6 12 34 56 78" 
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                    />
-                  </div>
+                  {authMode === 'create_account' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Créez votre mot de passe</label>
+                      <input 
+                        type="password" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        placeholder="Minimum 6 caractères" 
+                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                        required={authMode === 'create_account'} 
+                      />
+                      <span style={{ fontSize: '12px', color: '#6B7280' }}>Ce mot de passe vous permettra de vous connecter à votre Espace Client pour gérer vos réservations.</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Promo Code Element */}
