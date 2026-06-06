@@ -457,7 +457,7 @@ export default function InvoiceGenerator() {
     }
   };
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (isAlreadyPaid = false) => {
     if (!invoiceData.clientEmail) {
       alert("Veuillez saisir une adresse email.");
       return;
@@ -465,21 +465,26 @@ export default function InvoiceGenerator() {
 
     setIsSending(true);
     try {
+      const payloadData = { ...invoiceData, isAlreadyPaid };
       const res = await fetch('/api/invoice/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          invoiceData,
+          invoiceData: payloadData,
           customerEmail: invoiceData.clientEmail
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        if (data.url) {
+        if (data.url && !isAlreadyPaid) {
           window.open(data.url, '_blank');
         }
-        alert("La facture officielle a été générée et envoyée par Stripe au client avec succès !");
+        if (isAlreadyPaid) {
+          alert("Le reçu de paiement a été généré et envoyé au client avec succès !");
+        } else {
+          alert("La facture a été envoyée par Shopify avec son lien de paiement !");
+        }
       } else {
         alert("Erreur lors de l'envoi : " + (data.error || "Inconnue"));
       }
@@ -728,7 +733,7 @@ export default function InvoiceGenerator() {
               <button onClick={() => setIsSendModalOpen(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6B7280' }}>✕</button>
             </div>
             
-            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5563' }}>Vérifiez l'adresse email et choisissez le mode d'envoi via Stripe.</p>
+            <p style={{ margin: '0 0 24px 0', fontSize: '14px', color: '#4B5563' }}>Vérifiez l'adresse email et choisissez le mode d'envoi via Shopify.</p>
             
             <div className="form-group" style={{ marginBottom: '24px' }}>
               <label className="form-label">Email du destinataire</label>
@@ -746,13 +751,25 @@ export default function InvoiceGenerator() {
               <button 
                 className="btn" 
                 onClick={async () => {
-                  await handleSendEmail();
+                  await handleSendEmail(true); // isAlreadyPaid = true
                   setIsSendModalOpen(false);
                 }} 
                 style={{ padding: '12px', backgroundColor: '#6366F1', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
                 disabled={isSending}
               >
-                <span>✉️</span> {isSending ? 'Envoi en cours...' : 'Envoyer la facture par email'}
+                <span>🧾</span> {isSending ? 'Envoi en cours...' : 'Envoyer juste le reçu (Facture déjà payée)'}
+              </button>
+
+              <button 
+                className="btn" 
+                onClick={async () => {
+                  await handleSendEmail(false); // isAlreadyPaid = false
+                  setIsSendModalOpen(false);
+                }} 
+                style={{ padding: '12px', backgroundColor: '#F59E0B', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
+                disabled={isSending}
+              >
+                <span>🚀</span> {isSending ? 'Envoi en cours...' : 'Envoyer facture + Lien de paiement direct'}
               </button>
 
               {paymentLink ? (
@@ -761,21 +778,9 @@ export default function InvoiceGenerator() {
                   </button>
                 ) : (
                   <button className="btn" style={{ width: '100%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => handleGeneratePaymentLink()} disabled={isGeneratingLink}>
-                    <span>💳</span> {isGeneratingLink ? 'Création...' : 'Créer un lien de paiement (sans email)'}
+                    <span>🔗</span> {isGeneratingLink ? 'Création...' : 'Générer le lien de paiement seul (Copier)'}
                   </button>
                 )}
-
-              <button 
-                className="btn" 
-                onClick={async () => {
-                  await handleSendEmail();
-                  setIsSendModalOpen(false);
-                }} 
-                style={{ padding: '12px', backgroundColor: '#F59E0B', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                disabled={isSending}
-              >
-                <span>🚀</span> Les 2 (Facture + Lien par email)
-              </button>
             </div>
           </div>
         </div>

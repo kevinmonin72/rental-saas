@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export async function GET() {
   try {
-    const { data: dbEquipments, error } = await supabaseAdmin.from('equipment').select('*');
+    const { data: dbEquipments, error } = await supabaseAdmin.from('equipment').select('*').like('reference', 'LOK-%');
     if (error) throw error;
 
     const missingGenerics = [];

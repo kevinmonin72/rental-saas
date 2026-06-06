@@ -7,8 +7,7 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
-  const { data, error } = await supabase.from('customers').select('*').eq('email', 'kevin.monin72@gmail.com');
-  console.log('Customers:', data);
-  console.log('Error:', error);
+  const { data, error } = await supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(5);
+  console.log("Bookings:", data);
 }
 main();

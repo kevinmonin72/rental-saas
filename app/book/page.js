@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 // GENERIC_EQUIPMENTS moved to lib/catalog.js to avoid syncing from the client
+import { GENERIC_EQUIPMENTS } from '../../lib/catalog';
 
 const CATEGORY_ICONS = {
   Kitesurf: '',
@@ -54,6 +55,7 @@ export default function PublicBookingPage() {
   const [address, setAddress] = useState('');
   const [authMode, setAuthMode] = useState('guest'); // 'guest', 'create_account', 'login'
   const [password, setPassword] = useState('');
+  const [isInIframe, setIsInIframe] = useState(false);
 
   // Payment Form State
   const [cardNumber, setCardNumber] = useState('');
@@ -72,7 +74,7 @@ export default function PublicBookingPage() {
     async function loadData() {
       try {
         const [eqRes, bookRes, itemsRes] = await Promise.all([
-          supabase.from('equipment').select('*'),
+          supabase.from('equipment').select('*').in('reference', GENERIC_EQUIPMENTS.map(e => e.reference)),
           supabase.from('bookings').select('*').eq('status', 'active'),
           supabase.from('booking_items').select('*')]);
 
@@ -89,7 +91,7 @@ export default function PublicBookingPage() {
             const syncData = await syncRes.json();
             if (syncData.synced > 0) {
               // Re-fetch equipment if something was added/updated
-              const newEqRes = await supabase.from('equipment').select('*');
+              const newEqRes = await supabase.from('equipment').select('*').in('reference', GENERIC_EQUIPMENTS.map(e => e.reference));
               if (!newEqRes.error && newEqRes.data) {
                 dbEquipments = newEqRes.data.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
               }
@@ -103,9 +105,40 @@ export default function PublicBookingPage() {
         setBookings(bookRes.data || []);
         setBookingItems(itemsRes.data || []);
 
+        // Pre-fill user data if logged in
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const user = session.user;
+          const { data: profile } = await supabase.from('customers').select('*').eq('email', user.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+          if (profile) {
+            setFirstName(profile.first_name || user.user_metadata?.first_name || '');
+            setLastName(profile.last_name || user.user_metadata?.last_name || '');
+            setEmail(profile.email || user.email);
+            setPhone(profile.phone || '');
+            setAddress(profile.address || '');
+          } else {
+            setFirstName(user.user_metadata?.first_name || user.email.split('@')[0] || '');
+            setLastName(user.user_metadata?.last_name || '');
+            setEmail(user.email);
+          }
+          setAuthMode('logged_in');
+        }
+
         // Check if publishable key is defined
         if (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
           setIsStripeConfigured(true);
+        }
+        
+        // Check if we are in an iframe
+        let isIframe = false;
+        try {
+          isIframe = window.self !== window.top || window.self !== window.parent;
+        } catch (e) {
+          isIframe = true;
+        }
+        if (isIframe) {
+          setIsInIframe(true);
+          document.body.style.backgroundColor = 'transparent';
         }
       } catch (err) {
         console.error(err);
@@ -357,11 +390,6 @@ export default function PublicBookingPage() {
       setError('Veuillez renseigner votre prénom, nom et email.');
       return;
     }
-
-    if (!cardNumber || !expiry || !cvc) {
-      setError('Veuillez remplir les informations de votre carte bancaire.');
-      return;
-    }
     
     setLoading(true);
     setError('');
@@ -404,7 +432,13 @@ export default function PublicBookingPage() {
           endDate,
           rentalType,
           promoCode: appliedPromo ? appliedPromo.code : null,
-          email: email.trim().toLowerCase()
+          email: email.trim().toLowerCase(),
+          customerData: {
+            firstName,
+            lastName,
+            phone,
+            address
+          }
         })
       });
 
@@ -414,7 +448,24 @@ export default function PublicBookingPage() {
 
       const piData = await piRes.json();
 
-      // 2. Perform Payment processing simulation or real charge
+      if (piData.shopify && piData.url) {
+        // Shopify checkout takes a moment to be available after API creation
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        try {
+          // Method 1: window.open with _top
+          const newWindow = window.open(piData.url, '_top');
+          if (!newWindow) throw new Error('Blocked by popup blocker');
+        } catch (e) {
+          // Method 2: Fallback to an anchor tag click
+          const link = document.createElement('a');
+          link.href = piData.url;
+          link.target = '_top';
+          document.body.appendChild(link);
+          link.click();
+        }
+        return;
+      }
+      
       if (piData.mock) {
         await new Promise(resolve => setTimeout(resolve, 2000));
         console.log("Paiement simulé validé avec succès.");
@@ -426,7 +477,7 @@ export default function PublicBookingPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
 
-      // 3. Create Booking securely via backend
+      // 3. Create Booking securely via backend (fallback only if not shopify)
       const itemCounts = {};
       selectedEquipmentIds.forEach(id => {
         itemCounts[id] = (itemCounts[id] || 0) + 1;
@@ -484,31 +535,43 @@ export default function PublicBookingPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#F3F4F6', fontFamily: 'Inter, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F3F4F6', fontFamily: 'Inter, -apple-system, sans-serif' }}>
       
       {/* Script Stripe loader if configured */}
       {isStripeConfigured && (
         <script src="https://js.stripe.com/v3/" async></script>)}
 
       {/* Header */}
-      <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain' }} />
+      {!isInIframe && (
+        <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain' }} />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                {authMode === 'logged_in' && firstName ? `${firstName} ${lastName}` : 'Mon Espace'}
+              </Link>
+              <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
+                Portail Client
+              </span>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              Mon Espace
-            </Link>
-            <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
-              Portail Client
-            </span>
-          </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main style={{ maxWidth: '1400px', margin: '40px auto', padding: '0 24px 80px 24px' }}>
+      <main style={{ maxWidth: '1400px', margin: isInIframe ? '20px auto' : '40px auto', padding: isInIframe ? '0 12px 80px 12px' : '0 24px 80px 24px' }}>
+        
+        {isInIframe && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+            <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              {authMode === 'logged_in' && firstName ? `${firstName} ${lastName}` : 'Mon Compte'}
+            </Link>
+          </div>
+        )}
+
         
         {/* Progress Wizard Header */}
         {step < 4 && (
@@ -802,28 +865,30 @@ export default function PublicBookingPage() {
                   <button type="button" onClick={() => setStep(2)} style={{ color: '#F97316', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>← Retour matériel</button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
-                  <div 
-                    onClick={() => setAuthMode('guest')}
-                    style={{ flex: 1, padding: '16px', border: authMode === 'guest' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'guest' ? '#FFF7ED' : 'white' }}
-                  >
-                    <div style={{ fontWeight: 'bold', color: authMode === 'guest' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'guest' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
-                      Continuer comme invité
+                {authMode !== 'logged_in' && (
+                  <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                    <div 
+                      onClick={() => setAuthMode('guest')}
+                      style={{ flex: 1, padding: '16px', border: authMode === 'guest' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'guest' ? '#FFF7ED' : 'white' }}
+                    >
+                      <div style={{ fontWeight: 'bold', color: authMode === 'guest' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'guest' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
+                        Continuer comme invité
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Rapide, sans création de compte.</div>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Rapide, sans création de compte.</div>
-                  </div>
-                  <div 
-                    onClick={() => setAuthMode('create_account')}
-                    style={{ flex: 1, padding: '16px', border: authMode === 'create_account' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'create_account' ? '#FFF7ED' : 'white' }}
-                  >
-                    <div style={{ fontWeight: 'bold', color: authMode === 'create_account' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'create_account' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
-                      Créer un Espace Client
+                    <div 
+                      onClick={() => setAuthMode('create_account')}
+                      style={{ flex: 1, padding: '16px', border: authMode === 'create_account' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'create_account' ? '#FFF7ED' : 'white' }}
+                    >
+                      <div style={{ fontWeight: 'bold', color: authMode === 'create_account' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'create_account' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
+                        Créer un Espace Client
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
                     </div>
-                    <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
                   </div>
-                </div>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
                   <div style={{ display: 'flex', gap: '16px' }}>
@@ -927,73 +992,13 @@ export default function PublicBookingPage() {
                   {appliedPromo && <p style={{ color: '#059669', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>Code {appliedPromo.code} appliqué avec succès !</p>}
                 </div>
 
-                {/* Stripe Checkout Mock Element */}
-                <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: '#F9FAFB', marginBottom: '32px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                       Paiement sécurisé par <strong>stripe</strong>
-                    </span>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      <span style={{ fontSize: '20px' }}></span>
-                      <span style={{ fontSize: '20px' }}></span>
-                    </div>
-                  </div>
-
-                  {!isStripeConfigured && (
-                    <div style={{ fontSize: '12px', color: '#B45309', backgroundColor: '#FEF3C7', padding: '10px 12px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #FCD34D', fontWeight: 500 }}>
-                      ️ <strong>Mode Démo :</strong> Entrez n'importe quelle carte bancaire (ex: 4242 4242...) pour valider.
-                    </div>)}
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563' }}>Numéro de carte</label>
-                      <input 
-                        type="text" 
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        placeholder="4242 4242 4242 4242"
-                        maxLength="19"
-                        style={{ padding: '11px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: 'white' }}
-                        required
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563' }}>Date d'expiration</label>
-                        <input 
-                          type="text" 
-                          value={expiry}
-                          onChange={handleExpiryChange}
-                          placeholder="MM / YY"
-                          maxLength="7"
-                          style={{ padding: '11px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: 'white', textAlign: 'center' }}
-                          required
-                        />
-                      </div>
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '12px', fontWeight: 600, color: '#4B5563' }}>CVC (Code sécu.)</label>
-                        <input 
-                          type="password" 
-                          value={cvc}
-                          onChange={handleCvcChange}
-                          placeholder="123"
-                          maxLength="4"
-                          style={{ padding: '11px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '14px', outline: 'none', backgroundColor: 'white', textAlign: 'center' }}
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
                 <button 
                   type="submit" 
                   disabled={loading}
                   className="btn-primary"
                   style={{ width: '100%', padding: '14px', fontSize: '16px' }}
                 >
-                  {loading ? 'Transaction en cours...' : `Payer & Valider (${getBookingTotal()} €) `}
+                  {loading ? 'Redirection vers Shopify...' : `Valider et payer sécurisé (${getBookingTotal()} €) `}
                 </button>
               </form>)}
 

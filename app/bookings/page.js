@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
 import { useStore } from '../../lib/store';
+import { GENERIC_EQUIPMENTS } from '../../lib/catalog';
 
 export default function BookingsPage() {
   const formatName = (f, l) => {
@@ -15,10 +16,12 @@ export default function BookingsPage() {
   const [mounted, setMounted] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
   const [equipmentSearch, setEquipmentSearch] = useState('');
+  const [genericEquipmentSearch, setGenericEquipmentSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
   const [selectedEquipments, setSelectedEquipments] = useState([]);
   const [currentEqSelection, setCurrentEqSelection] = useState('');
+  const [currentGenericEqSelection, setCurrentGenericEqSelection] = useState('');
   const [rentalType, setRentalType] = useState('ponctuel');
   const [editingBookingId, setEditingBookingId] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -491,25 +494,62 @@ export default function BookingsPage() {
                 <input 
                   type="text" 
                   className="input" 
-                  placeholder="🔍 Filtrer par nom ou réf d'équipement..." 
+                  placeholder="🔍 Filtrer par nom ou réf de produit catalogue..." 
+                  style={{ marginBottom: '8px' }}
+                  value={genericEquipmentSearch}
+                  onChange={(e) => setGenericEquipmentSearch(e.target.value)}
+                />
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                  <select 
+                    className="input" 
+                    value={currentGenericEqSelection} 
+                    onChange={(e) => setCurrentGenericEqSelection(e.target.value)} 
+                    style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
+                  >
+                    <option value="">-- Choisir un produit catalogue (Optionnel) --</option>
+                    {GENERIC_EQUIPMENTS.filter(e => {
+                      const term = genericEquipmentSearch.toLowerCase();
+                      return `${e.reference} ${e.name}`.toLowerCase().includes(term);
+                    }).map(eq => (
+                      <option key={eq.reference} value={eq.reference}>{eq.reference} - {eq.name}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
+                    if (currentGenericEqSelection) {
+                      let eq = equipment.find(e => e.reference === currentGenericEqSelection && !e.serial_number);
+                      if (!eq) eq = equipment.find(e => e.reference === currentGenericEqSelection);
+                      if (eq) {
+                        setSelectedEquipments([...selectedEquipments, eq]);
+                        setCurrentGenericEqSelection('');
+                      } else {
+                        alert("Cet équipement n'est pas dans la base de données. Veuillez synchroniser le catalogue.");
+                      }
+                    }
+                  }}>Ajouter Catalogue</button>
+                </div>
+
+                <input 
+                  type="text" 
+                  className="input" 
+                  placeholder="🔍 Filtrer par nom ou réf d'équipement spécifique..." 
                   style={{ marginBottom: '8px' }}
                   value={equipmentSearch}
                   onChange={(e) => setEquipmentSearch(e.target.value)}
                 />
                 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <select 
                     className="input" 
                     value={currentEqSelection} 
                     onChange={(e) => setCurrentEqSelection(e.target.value)} 
-                    style={{ marginBottom: 0 }}
+                    style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
                   >
                     <option value="">-- Sélectionner un équipement --</option>
                     {filteredEquipmentForSelect.filter(e => !selectedEquipments.find(se => se.id === e.id)).map(e => (
                       <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
                     ))}
                   </select>
-                  <button type="button" className="btn btn-secondary" onClick={() => {
+                  <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
                     if (currentEqSelection) {
                       const eq = equipment.find(e => e.id === currentEqSelection);
                       if (eq) {

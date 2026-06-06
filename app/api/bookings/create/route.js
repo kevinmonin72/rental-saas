@@ -15,22 +15,15 @@ export async function POST(req) {
 
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-    if (paymentIntentId.startsWith('mock_')) {
-      if (stripeSecretKey) {
-        // En production (quand Stripe est configuré), on refuse catégoriquement les paiements simulés
-        return NextResponse.json({ error: 'Paiement simulé interdit sur cet environnement' }, { status: 403 });
-      }
-    } else {
-      if (!stripeSecretKey) {
-        return NextResponse.json({ error: 'Configuration Stripe manquante sur le serveur' }, { status: 500 });
-      }
+    if (!stripeSecretKey) {
+      return NextResponse.json({ error: 'Configuration Stripe manquante sur le serveur' }, { status: 500 });
+    }
 
-      const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
-      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-      if (pi.status !== 'succeeded') {
-        return NextResponse.json({ error: 'Le paiement na pas été validé par Stripe' }, { status: 400 });
-      }
+    if (pi.status !== 'succeeded') {
+      return NextResponse.json({ error: 'Le paiement na pas été validé par Stripe' }, { status: 400 });
     }
 
     // 2. Create or Update Customer
@@ -48,6 +41,8 @@ export async function POST(req) {
     if (existingCust) {
       customerId = existingCust.id;
       let updateData = {};
+      if (customerData.firstName) updateData.first_name = customerData.firstName.trim();
+      if (customerData.lastName) updateData.last_name = customerData.lastName.trim();
       if (customerData.phone) updateData.phone = customerData.phone.trim();
       if (customerData.address) updateData.address = customerData.address.trim();
       if (Object.keys(updateData).length > 0) {

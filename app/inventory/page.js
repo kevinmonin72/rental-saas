@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
+import ShopifySyncButton from '../../components/ShopifySyncButton';
 import { useStore } from '../../lib/store';
 
 export default function InventoryPage() {
@@ -109,7 +110,10 @@ export default function InventoryPage() {
           </Link>
           <h1 style={{ marginBottom: 0 }}>Gestion de l'Inventaire</h1>
         </div>
-        <CsvImporterButton type="equipment" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <ShopifySyncButton type="inventory" />
+          <CsvImporterButton type="equipment" />
+        </div>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>

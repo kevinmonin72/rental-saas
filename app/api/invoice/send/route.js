@@ -1,91 +1,130 @@
-import Stripe from 'stripe';
+import { NextResponse } from 'next/server';
 
 export async function POST(req) {
   try {
     const { invoiceData, customerEmail } = await req.json();
-
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
     
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ error: "Clé Stripe non configurée" }), { status: 500 });
+    if (!shopifyToken) {
+      return NextResponse.json({ error: "Token Shopify non configuré" }, { status: 500 });
     }
     if (!customerEmail) {
-      return new Response(JSON.stringify({ error: "L'email du client est requis" }), { status: 400 });
+      return NextResponse.json({ error: "L'email du client est requis" }, { status: 400 });
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
-
-    // 1. Find or create Stripe Customer
-    let customer;
-    const existingCustomers = await stripe.customers.list({
-      email: customerEmail,
-      limit: 1
-    });
-
-    if (existingCustomers.data.length > 0) {
-      customer = existingCustomers.data[0];
-    } else {
-      customer = await stripe.customers.create({
-        email: customerEmail,
-        name: invoiceData.clientName || undefined,
-        address: invoiceData.clientAddress ? {
-          line1: invoiceData.clientAddress
-        } : undefined
-      });
-    }
-
-    // 2. Create Stripe Invoice Items
-    // Stripe invoices collect pending invoice items for a customer.
-    // If there are existing pending items, we should ideally clear them or create a new invoice draft directly,
-    // but the simplest way is to create invoice items and then create the invoice immediately.
-    for (const item of invoiceData.items) {
-      if (!item.description && !item.reference) continue; // Skip empty rows
-      
-      const unitAmount = Math.round(item.unitPrice * 100);
-      
-      await stripe.invoiceItems.create({
-        customer: customer.id,
-        currency: 'eur',
+    // Prepare Line Items
+    const lineItems = invoiceData.items.filter(item => {
+      // Ignorer uniquement si c'est vraiment vide (0 qté, 0 prix, pas de description)
+      if (!item.description && !item.reference && item.quantity === 0 && item.unitPrice === 0) return false;
+      return true;
+    }).map(item => {
+      return {
+        title: item.description || item.reference || 'Équipement (Ligne vide)',
+        price: item.unitPrice.toString(),
         quantity: item.quantity,
-        unit_amount: unitAmount,
-        description: item.description || item.reference || 'Équipement',
-      });
-    }
+        sku: item.reference || '',
+        custom: true
+      };
+    }).filter(Boolean);
 
-    // Add tax as a line item since managing tax rates dynamically via API requires pre-created TaxRate objects in Stripe
+    // Prepare tax if necessary
     const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
     const taxAmount = subtotal * (invoiceData.taxRate / 100);
     if (taxAmount > 0) {
-      await stripe.invoiceItems.create({
-        customer: customer.id,
-        currency: 'eur',
+      lineItems.push({
+        title: `TVA (${invoiceData.taxRate}%)`,
+        price: taxAmount.toString(),
         quantity: 1,
-        unit_amount: Math.round(taxAmount * 100),
-        description: `TVA (${invoiceData.taxRate}%)`,
+        custom: true
       });
     }
 
-    // 3. Create the Invoice
-    const invoice = await stripe.invoices.create({
-      customer: customer.id,
-      collection_method: 'send_invoice',
-      days_until_due: 30,
-      description: `Facture The Ridery - ${invoiceData.number}`,
-      // Optionally we can set custom fields or metadata
-      metadata: {
-        ridery_invoice_number: invoiceData.number
+    const payload = {
+      draft_order: {
+        line_items: lineItems,
+        email: customerEmail,
+        use_customer_default_address: false,
+        tags: `invoice_${invoiceData.number || 'rental_saas'}`,
+        note: `Facture The Ridery - ${invoiceData.number}`,
+        customer: {
+          first_name: invoiceData.clientName || 'Client',
+          last_name: '-',
+          email: customerEmail,
+        },
+        billing_address: {
+          first_name: invoiceData.clientName || 'Client',
+          last_name: '-',
+          address1: invoiceData.clientAddress || '',
+        }
       }
+    };
+
+    // 1. Create Draft Order
+    const shopifyRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders.json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyToken
+      },
+      body: JSON.stringify(payload)
     });
 
-    // 4. Send the Invoice
-    const sentInvoice = await stripe.invoices.sendInvoice(invoice.id);
+    const data = await shopifyRes.json();
 
-    return new Response(JSON.stringify({ success: true, invoiceId: invoice.id, url: sentInvoice.hosted_invoice_url }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    if (!shopifyRes.ok) {
+      console.error('Erreur Shopify Draft Order:', data);
+      return NextResponse.json({ error: "Erreur lors de la création de la facture Shopify" }, { status: 500 });
+    }
+
+    const draftOrderId = data.draft_order.id;
+    const invoiceUrl = data.draft_order.invoice_url;
+
+    // Attendre 1.5 seconde car Shopify a besoin de temps pour calculer les taxes en arrière-plan
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    if (invoiceData.isAlreadyPaid) {
+      // 2A. Complete Draft Order to create a Paid Order
+      const completeRes = await fetch(`https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders/${draftOrderId}/complete.json?payment_pending=false`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': shopifyToken
+        }
+      });
+      const completeData = await completeRes.json();
+      if (!completeRes.ok) {
+        console.error('Erreur Shopify Complete Order:', completeData);
+        return NextResponse.json({ error: "Erreur lors de la validation du paiement Shopify" }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, url: invoiceUrl, status: 'paid' }, { status: 200 });
+    } else {
+      // 2B. Send Invoice Email with Payment Link
+      const sendRes = await fetch(`https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders/${draftOrderId}/send_invoice.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': shopifyToken
+        },
+        body: JSON.stringify({
+          draft_order_invoice: {
+            to: customerEmail,
+            subject: `Votre facture The Ridery - ${invoiceData.number}`,
+            custom_message: "Merci pour votre réservation. Voici le lien pour régler votre facture de location."
+          }
+        })
+      });
+
+      const sendData = await sendRes.json();
+
+      if (!sendRes.ok) {
+        console.error('Erreur Shopify Send Invoice:', sendData);
+        return NextResponse.json({ error: "Erreur lors de l'envoi de la facture Shopify" }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, url: invoiceUrl, status: 'pending' }, { status: 200 });
+    }
   } catch (error) {
-    console.error('Erreur Stripe Invoicing:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    console.error('Erreur Shopify Invoicing:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

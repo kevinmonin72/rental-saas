@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
+import ShopifySyncButton from '../../components/ShopifySyncButton';
 import { useStore } from '../../lib/store';
 
 export default function CustomersPage() {
@@ -163,7 +164,10 @@ export default function CustomersPage() {
           </Link>
           <h1 style={{ marginBottom: 0 }}>Gestion des Clients</h1>
         </div>
-        <CsvImporterButton type="customers" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <ShopifySyncButton type="customers" />
+          <CsvImporterButton type="customers" />
+        </div>
       </div>
       
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '40px' }}>

@@ -64,10 +64,28 @@ const PRICING_GRIDS = {
 
 export async function POST(req) {
   try {
-    const { equipmentReferences, startDate, endDate, rentalType, promoCode, email } = await req.json();
+    const { equipmentReferences, startDate, endDate, rentalType, promoCode, email, customerData } = await req.json();
 
     if (!startDate || !equipmentReferences || equipmentReferences.length === 0) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+    }
+
+    // Save/update customer info proactively
+    if (email && customerData) {
+      const { data: existingCust } = await supabase.from('customers').select('id').eq('email', email).maybeSingle();
+      const custPayload = {
+        first_name: customerData.firstName || '',
+        last_name: customerData.lastName || '',
+        email: email,
+        phone: customerData.phone || null,
+        address: customerData.address || null
+      };
+
+      if (existingCust) {
+        await supabase.from('customers').update(custPayload).eq('id', existingCust.id);
+      } else {
+        await supabase.from('customers').insert({ id: crypto.randomUUID(), ...custPayload });
+      }
     }
 
     // Calculate duration in days
@@ -99,6 +117,57 @@ export async function POST(req) {
       }
     }
 
+    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
+    if (!shopifyToken) {
+      return NextResponse.json({ error: "Token Shopify non configuré" }, { status: 500 });
+    }
+
+    const lineItems = equipmentReferences.map(ref => {
+      let itemPrice = 0;
+      if (PRICING_GRIDS[ref]) {
+        const grid = PRICING_GRIDS[ref];
+        let gridDays = days;
+        if (gridDays > 31) gridDays = 31;
+        itemPrice = isHalfDay ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
+      } else {
+        const pricePerDay = getPricePerDay(ref);
+        itemPrice = isHalfDay ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
+      }
+      return {
+        title: `Location: ${ref}`,
+        price: itemPrice.toString(),
+        quantity: 1,
+        sku: ref,
+        custom: true,
+        properties: [
+          { name: "Date de début", value: startDate },
+          { name: "Date de fin", value: endDate || startDate }
+        ]
+      };
+    });
+
+    const payload = {
+      draft_order: {
+        line_items: lineItems,
+        email: email || undefined,
+        use_customer_default_address: false,
+        tags: "rental_saas_booking",
+        note: `Réservation Rental SaaS: ${startDate} au ${endDate || startDate}`,
+        customer: customerData ? {
+          first_name: customerData.firstName,
+          last_name: customerData.lastName,
+          email: email,
+          phone: customerData.phone
+        } : undefined,
+        billing_address: customerData ? {
+          first_name: customerData.firstName,
+          last_name: customerData.lastName,
+          phone: customerData.phone,
+          address1: customerData.address
+        } : undefined
+      }
+    };
+
     // Apply promo if any
     if (promoCode) {
       const { data: promo, error } = await supabase.from('promo_codes').select('*').eq('code', promoCode.toUpperCase()).maybeSingle();
@@ -108,50 +177,41 @@ export async function POST(req) {
         if (promo.target_email && email && promo.target_email.toLowerCase() !== email.toLowerCase()) isValid = false;
 
         if (isValid) {
-          if (promo.discount_type === 'percentage') {
-            subtotal = subtotal * (1 - promo.discount_value / 100);
-          } else if (promo.discount_type === 'amount') {
-            subtotal = subtotal - promo.discount_value;
-          }
+          payload.draft_order.applied_discount = {
+            description: "Code promo",
+            value_type: promo.discount_type === 'percentage' ? 'percentage' : 'fixed_amount',
+            value: promo.discount_value.toString(),
+            title: promo.code
+          };
         }
       }
     }
 
-    const amountInCents = Math.max(0, Math.round(subtotal * 100));
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const shopifyRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders.json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyToken
+      },
+      body: JSON.stringify(payload)
+    });
 
-    if (!stripeSecretKey) {
-      console.log("Stripe Secret Key non configurée. Passage en mode simulation.");
-      return NextResponse.json({
-        mock: true,
-        clientSecret: 'mock_secret_intent_' + Math.random().toString(36).substring(2),
-        amount: amountInCents / 100,
-        days: isHalfDay ? 0.5 : days
-      });
+    const data = await shopifyRes.json();
+
+    if (!shopifyRes.ok) {
+      console.error('Erreur Shopify Draft Order:', data);
+      return NextResponse.json({ error: "Erreur Shopify" }, { status: 500 });
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: '2023-10-16'
-    });
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInCents,
-      currency: 'eur',
-      metadata: {
-        startDate,
-        endDate,
-        equipments: equipmentReferences.join(', ')
-      }
-    });
-
     return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      amount: amountInCents / 100,
-      days: isHalfDay ? 0.5 : days
+      url: data.draft_order.invoice_url,
+      amount: subtotal,
+      days: isHalfDay ? 0.5 : days,
+      shopify: true
     });
 
   } catch (error) {
-    console.error('Erreur API Stripe PaymentIntent:', error);
+    console.error('Erreur API PaymentIntent (Shopify):', error);
     return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: 500 });
   }
 }

@@ -1,43 +1,50 @@
-import Stripe from 'stripe';
+import { NextResponse } from 'next/server';
 
 export async function POST(req) {
   try {
     const { amount, description, customerEmail, invoiceNumber } = await req.json();
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
     
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ error: "Clé Stripe non configurée" }), { status: 500 });
+    if (!shopifyToken) {
+      return NextResponse.json({ error: "Token Shopify non configuré" }, { status: 500 });
     }
 
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' });
+    const payload = {
+      draft_order: {
+        line_items: [
+          {
+            title: `Location: ${description || 'Matériel'}`,
+            price: amount.toString(),
+            quantity: 1,
+            custom: true
+          }
+        ],
+        email: customerEmail || undefined,
+        use_customer_default_address: true,
+        tags: `invoice_${invoiceNumber || 'rental_saas'}`,
+        note: `Facture générée depuis Rental SaaS ${invoiceNumber ? '#' + invoiceNumber : ''}`
+      }
+    };
 
-    const unitAmount = Math.round(amount * 100);
-
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: `Facture ${invoiceNumber || ''}`,
-            description: description || 'Paiement',
-          },
-          unit_amount: unitAmount,
-        },
-        quantity: 1,
-      }],
-      mode: 'payment',
-      success_url: `${req.headers.get('origin') || 'http://localhost:3000'}/?payment=success`,
-      cancel_url: `${req.headers.get('origin') || 'http://localhost:3000'}/?payment=cancelled`,
-      customer_email: customerEmail || undefined,
+    const shopifyRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders.json', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Shopify-Access-Token': shopifyToken
+      },
+      body: JSON.stringify(payload)
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const data = await shopifyRes.json();
+
+    if (!shopifyRes.ok) {
+      console.error('Erreur Shopify Draft Order:', data);
+      return NextResponse.json({ error: "Erreur Shopify" }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: data.draft_order.invoice_url }, { status: 200 });
   } catch (error) {
-    console.error('Erreur génération lien de paiement Stripe:', error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    console.error('Erreur génération lien de paiement Shopify:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
