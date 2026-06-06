@@ -73,16 +73,17 @@ export default function PublicBookingPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [eqRes, bookRes, itemsRes] = await Promise.all([
-          supabase.from('equipment').select('*').in('reference', GENERIC_EQUIPMENTS.map(e => e.reference)),
+        const catalogRes = await fetch('/api/equipment/catalog');
+        const catalogData = await catalogRes.json();
+
+        const [bookRes, itemsRes] = await Promise.all([
           supabase.from('bookings').select('*').eq('status', 'active'),
           supabase.from('booking_items').select('*')]);
 
-        if (eqRes.error) throw eqRes.error;
         if (bookRes.error) throw bookRes.error;
         if (itemsRes.error) throw itemsRes.error;
 
-        let dbEquipments = eqRes.data || [];
+        let dbEquipments = catalogData.equipments || [];
         dbEquipments = dbEquipments.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
         // Call the backend to sync equipment catalog securely
         try {
@@ -90,10 +91,13 @@ export default function PublicBookingPage() {
           if (syncRes.ok) {
             const syncData = await syncRes.json();
             if (syncData.synced > 0) {
-              // Re-fetch equipment if something was added/updated
-              const newEqRes = await supabase.from('equipment').select('*').in('reference', GENERIC_EQUIPMENTS.map(e => e.reference));
-              if (!newEqRes.error && newEqRes.data) {
-                dbEquipments = newEqRes.data.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
+              // Force refresh the catalog by calling the API again with a cache-busting timestamp
+              const newCatalogRes = await fetch('/api/equipment/catalog?refresh=' + Date.now());
+              if (newCatalogRes.ok) {
+                const newCatalogData = await newCatalogRes.json();
+                if (newCatalogData.equipments) {
+                  dbEquipments = newCatalogData.equipments.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
+                }
               }
             }
           }
