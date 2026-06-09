@@ -35,14 +35,30 @@ export default function EspaceClientPage() {
 
   useEffect(() => {
     let isIframe = false;
+    let observer = null;
+    let sendHeight = null;
     try {
       isIframe = window.self !== window.top || window.self !== window.parent;
     } catch (e) {
       isIframe = true;
     }
+    
     if (isIframe) {
       setIsInIframe(true);
       document.body.style.backgroundColor = 'transparent';
+      
+      // Auto-resize iframe script
+      sendHeight = () => {
+        const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+        window.parent.postMessage({ type: 'resize', height }, '*');
+      };
+
+      sendHeight();
+      observer = new MutationObserver(sendHeight);
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+      
+      // Also resize when window is resized
+      window.addEventListener('resize', sendHeight);
     }
     
     // Inject Tailwind CSS into head to bypass Shopify App Proxy stripping
@@ -52,6 +68,11 @@ export default function EspaceClientPage() {
     
     checkSession();
     fetchEquipment();
+    
+    return () => {
+      if (observer) observer.disconnect();
+      if (sendHeight) window.removeEventListener('resize', sendHeight);
+    };
   }, []);
 
   const checkSession = async () => {
