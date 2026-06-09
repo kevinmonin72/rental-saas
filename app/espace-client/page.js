@@ -337,6 +337,7 @@ export default function EspaceClientPage() {
           </div>
         </main>
       </div>
+      </>
     );
   }
 
