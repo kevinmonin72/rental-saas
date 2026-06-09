@@ -43,7 +43,7 @@ export default function EspaceClientPage() {
     
     if (isIframe) {
       setIsInIframe(true);
-      document.body.style.backgroundColor = 'transparent';
+      document.body.style.backgroundColor = '#F9FAFB';
       
       // Auto-resize iframe script
       sendHeight = () => {
