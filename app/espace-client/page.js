@@ -252,26 +252,7 @@ export default function EspaceClientPage() {
   if (!user) {
     return (
       <>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            tailwind.config = {
-              theme: {
-                extend: {
-                  colors: {
-                    ridery: {
-                      teal: '#14b8a6',
-                      orange: '#f97316',
-                      dark: '#111827',
-                      light: '#f9fafb'
-                    }
-                  }
-                }
-              }
-            }
-          `
-        }} />
-        <script src="https://cdn.tailwindcss.com"></script>
-        
+        <link rel="stylesheet" href="https://rental-saas-seven.vercel.app/tailwind-proxy.css" />
         <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB', display: 'flex', flexDirection: 'column' }}>
         {!isInIframe && (
           <header style={{ backgroundColor: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -347,26 +328,7 @@ export default function EspaceClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  ridery: {
-                    teal: '#14b8a6',
-                    orange: '#f97316',
-                    dark: '#111827',
-                    light: '#f9fafb'
-                  }
-                }
-              }
-            }
-          }
-        `
-      }} />
-      <script src="https://cdn.tailwindcss.com"></script>
-      
+      <link rel="stylesheet" href="https://rental-saas-seven.vercel.app/tailwind-proxy.css" />
       <style>{`
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .status-active { background-color: #dcfce7; color: #166534; }
