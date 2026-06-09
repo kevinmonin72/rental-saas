@@ -44,6 +44,12 @@ export default function EspaceClientPage() {
       setIsInIframe(true);
       document.body.style.backgroundColor = 'transparent';
     }
+    
+    // Inject Tailwind CSS into head to bypass Shopify App Proxy stripping
+    const styleEl = document.createElement('style');
+    styleEl.innerHTML = tailwindStyles;
+    document.head.appendChild(styleEl);
+    
     checkSession();
     fetchEquipment();
   }, []);
@@ -254,7 +260,6 @@ export default function EspaceClientPage() {
   if (!user) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: tailwindStyles }} />
         <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB', display: 'flex', flexDirection: 'column' }}>
         {!isInIframe && (
           <header style={{ backgroundColor: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
@@ -330,7 +335,6 @@ export default function EspaceClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
-      <style dangerouslySetInnerHTML={{ __html: tailwindStyles }} />
       <style>{`
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .status-active { background-color: #dcfce7; color: #166534; }
