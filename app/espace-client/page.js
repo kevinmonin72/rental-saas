@@ -389,7 +389,7 @@ export default function EspaceClientPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
         {/* Sidebar Navigation */}
         <aside className="w-full md:w-64 shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sticky top-24">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sticky top-24">
                 <nav className="space-y-1">
                     <button onClick={() => setActiveTab('dashboard')} className={`${navItemBase} ${activeTab === 'dashboard' ? navItemActive : navItemInactive}`}>
                         <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
@@ -413,7 +413,7 @@ export default function EspaceClientPage() {
                         <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                         Mes Commandes
                     </button>
-                    <hr className="my-4 border-gray-100" />
+                    <hr className="my-4 border-gray-200" />
                     <button onClick={() => setActiveTab('profil')} className={`${navItemBase} ${activeTab === 'profil' ? navItemActive : navItemInactive}`}>
                         <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         Mes Infos Persos
@@ -439,7 +439,7 @@ export default function EspaceClientPage() {
 
                 <div className={`grid grid-cols-1 md:grid-cols-${hasWingboost ? '3' : '2'} gap-6`}>
                     {/* Stat 1 */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center">
                         <div className="p-3 rounded-full bg-teal-50 text-ridery-teal mr-4">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
@@ -449,7 +449,7 @@ export default function EspaceClientPage() {
                         </div>
                     </div>
                     {/* Stat 2 */}
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex items-center">
                         <div className="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                         </div>
@@ -496,7 +496,7 @@ export default function EspaceClientPage() {
                 </div>
                 
                 {bookings.length === 0 ? (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">Aucune location pour le moment.</div>
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">Aucune location pour le moment.</div>
                 ) : (
                   bookings.map(booking => {
                     const bItems = bookingItems.filter(bi => bi.booking_id === booking.id);
@@ -505,8 +505,8 @@ export default function EspaceClientPage() {
                     const eDate = new Date(booking.end_date);
                     
                     return (
-                      <div key={booking.id} className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition ${!isActive ? 'opacity-75' : ''}`}>
-                          <div className={`border-b border-gray-100 px-6 py-4 flex justify-between items-center ${isActive ? 'bg-gray-50/50' : ''}`}>
+                      <div key={booking.id} className={`bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition ${!isActive ? 'opacity-75' : ''}`}>
+                          <div className={`border-b border-gray-200 px-6 py-4 flex justify-between items-center ${isActive ? 'bg-gray-50/50' : ''}`}>
                               <div className="flex items-center space-x-3">
                                   <span className={`status-badge ${isActive ? 'status-active' : 'status-past'}`}>{isActive ? 'En cours' : 'Terminée'}</span>
                                   <span className="text-sm font-medium text-gray-500">Réf: LOC-{booking.reference || booking.id.substring(0,8)}</span>
@@ -550,9 +550,9 @@ export default function EspaceClientPage() {
                 {fetchingShopify ? (
                   <div className="text-center p-8 text-gray-500">Chargement de vos commandes Shopify...</div>
                 ) : shopifyOrders.length === 0 ? (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-500">Aucun achat récent trouvé sur la boutique.</div>
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">Aucun achat récent trouvé sur la boutique.</div>
                 ) : (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                       <div className="overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-200">
                               <thead className="bg-gray-50">
@@ -594,7 +594,7 @@ export default function EspaceClientPage() {
                     <h2 className="text-2xl font-bold text-ridery-dark">Mes Informations</h2>
                 </div>
                 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                     {infoMessage && (
                       <div className={`p-4 rounded-lg mb-6 ${infoMessage.includes('Erreur') ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
                         {infoMessage}
@@ -624,7 +624,7 @@ export default function EspaceClientPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse Postale</label>
                             <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ridery-teal focus:border-ridery-teal outline-none transition" />
                         </div>
-                        <div className="pt-4 border-t border-gray-100 flex justify-end">
+                        <div className="pt-4 border-t border-gray-200 flex justify-end">
                             <button type="submit" className="bg-ridery-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-md hover:shadow-lg">
                                 Sauvegarder les modifications
                             </button>
@@ -636,7 +636,7 @@ export default function EspaceClientPage() {
 
           {/* COURS & WINGBOOST (Placholders) */}
           {(activeTab === 'cours' || activeTab === 'wingboost') && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-500 animate-[fadeIn_0.3s_ease-in-out]">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-500 animate-[fadeIn_0.3s_ease-in-out]">
               <div className="text-4xl mb-4">{activeTab === 'cours' ? '👨‍🏫' : '🚀'}</div>
               <h3 className="text-xl font-bold text-ridery-dark mb-2">{activeTab === 'cours' ? 'Mes Cours' : 'Abonnement Wingboost'}</h3>
               <p>Cette fonctionnalité est en cours de développement et sera disponible prochainement.</p>

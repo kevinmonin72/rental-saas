@@ -1,4 +1,5 @@
-export const tailwindStyles = `\n*, ::before, ::after {
+export const tailwindStyles = `
+*, ::before, ::after {
   --tw-border-spacing-x: 0;
   --tw-border-spacing-y: 0;
   --tw-translate-x: 0;
@@ -334,16 +335,30 @@ export const tailwindStyles = `\n*, ::before, ::after {
   flex: 1 1 0%;
 }
 
+.flex-shrink {
+  flex-shrink: 1;
+}
+
 .shrink-0 {
   flex-shrink: 0;
 }
 
-.translate-x-1\\/4 {
+.translate-x-1 {
+  --tw-translate-x: 0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.translate-x-1\/4 {
   --tw-translate-x: 25%;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.translate-y-1\\/4 {
+.translate-y-1 {
+  --tw-translate-y: 0.25rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.translate-y-1\/4 {
   --tw-translate-y: 25%;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
@@ -352,7 +367,7 @@ export const tailwindStyles = `\n*, ::before, ::after {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
-.animate-\\[fadeIn_0\\.3s_ease-in-out\\] {
+.animate-\[fadeIn_0\.3s_ease-in-out\] {
   animation: fadeIn 0.3s ease-in-out;
 }
 
@@ -362,6 +377,18 @@ export const tailwindStyles = `\n*, ::before, ::after {
 
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.grid-cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.grid-cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.flex-row {
+  flex-direction: row;
 }
 
 .flex-col {
@@ -497,7 +524,12 @@ export const tailwindStyles = `\n*, ::before, ::after {
   border-color: rgb(249 250 251 / var(--tw-border-opacity, 1));
 }
 
-.border-ridery-orange\\/30 {
+.border-ridery-orange {
+  --tw-border-opacity: 1;
+  border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));
+}
+
+.border-ridery-orange\/30 {
   border-color: rgb(249 115 22 / 0.3);
 }
 
@@ -516,7 +548,7 @@ export const tailwindStyles = `\n*, ::before, ::after {
   background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1));
 }
 
-.bg-gray-50\\/50 {
+.bg-gray-50\/50 {
   background-color: rgb(249 250 251 / 0.5);
 }
 
@@ -535,7 +567,12 @@ export const tailwindStyles = `\n*, ::before, ::after {
   background-color: rgb(255 237 213 / var(--tw-bg-opacity, 1));
 }
 
-.bg-orange-50\\/30 {
+.bg-orange-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+
+.bg-orange-50\/30 {
   background-color: rgb(255 247 237 / 0.3);
 }
 
@@ -588,6 +625,11 @@ export const tailwindStyles = `\n*, ::before, ::after {
 .px-6 {
   padding-left: 1.5rem;
   padding-right: 1.5rem;
+}
+
+.px-8 {
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 .py-2 {
@@ -825,6 +867,11 @@ export const tailwindStyles = `\n*, ::before, ::after {
 
 .blur {
   --tw-blur: blur(8px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
+
+.grayscale {
+  --tw-grayscale: grayscale(100%);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
 
@@ -1093,100 +1140,101 @@ select.input {
   background-color: #FFF7ED !important;
 }
 
-.last\\:mb-0:last-child {
+.last\:mb-0:last-child {
   margin-bottom: 0px;
 }
 
-.last\\:border-0:last-child {
+.last\:border-0:last-child {
   border-width: 0px;
 }
 
-.last\\:pb-0:last-child {
+.last\:pb-0:last-child {
   padding-bottom: 0px;
 }
 
-.hover\\:bg-gray-100:hover {
+.hover\:bg-gray-100:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
 }
 
-.hover\\:bg-gray-800:hover {
+.hover\:bg-gray-800:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(31 41 55 / var(--tw-bg-opacity, 1));
 }
 
-.hover\\:bg-red-50:hover {
+.hover\:bg-red-50:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
 }
 
-.hover\\:bg-teal-400:hover {
+.hover\:bg-teal-400:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(45 212 191 / var(--tw-bg-opacity, 1));
 }
 
-.hover\\:shadow-lg:hover {
+.hover\:shadow-lg:hover {
   --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-.hover\\:shadow-md:hover {
+.hover\:shadow-md:hover {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-.focus\\:border-ridery-teal:focus {
+.focus\:border-ridery-teal:focus {
   --tw-border-opacity: 1;
   border-color: rgb(20 184 166 / var(--tw-border-opacity, 1));
 }
 
-.focus\\:outline-none:focus {
+.focus\:outline-none:focus {
   outline: 2px solid transparent;
   outline-offset: 2px;
 }
 
-.focus\\:ring-ridery-teal:focus {
+.focus\:ring-ridery-teal:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(20 184 166 / var(--tw-ring-opacity, 1));
 }
 
 @media (min-width: 640px) {
-  .sm\\:px-6 {
+  .sm\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
 @media (min-width: 768px) {
-  .md\\:w-64 {
+  .md\:w-64 {
     width: 16rem;
   }
 
-  .md\\:grid-cols-2 {
+  .md\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .md\\:grid-cols-3 {
+  .md\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .md\\:flex-row {
+  .md\:flex-row {
     flex-direction: row;
   }
 
-  .md\\:items-center {
+  .md\:items-center {
     align-items: center;
   }
 }
 
 @media (min-width: 1024px) {
-  .lg\\:px-8 {
+  .lg\:px-8 {
     padding-left: 2rem;
     padding-right: 2rem;
   }
 }
 
 
-\n`;
+
+`;
