@@ -42,9 +42,10 @@ export async function POST(request) {
         const data = await res.json();
         for (const product of data.products) {
           for (const variant of product.variants) {
-            if (variant.sku) {
-              allVariantsMap.set(variant.sku, {
-                reference: variant.sku,
+            const ref = variant.sku || variant.barcode || variant.id.toString();
+            if (ref) {
+              allVariantsMap.set(ref, {
+                reference: ref,
                 name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
                 category: product.product_type || 'Général',
                 quantity: variant.inventory_quantity || 0,
