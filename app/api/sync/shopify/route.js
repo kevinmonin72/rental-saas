@@ -28,38 +28,78 @@ export async function POST(request) {
   try {
     if (type === 'inventory') {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      let url = `https://${domain}/admin/api/2024-01/products.json?status=any&limit=250&updated_at_min=${thirtyDaysAgo}`;
-      let hasNext = true;
       let allVariantsMap = new Map();
-
-      // We'll limit to max 5 pages to avoid Vercel timeout on Hobby plan (10s)
+      let hasNextPage = true;
+      let cursor = null;
       let pageCount = 0;
-      while (hasNext && pageCount < 5) {
+
+      while (hasNextPage && pageCount < 5) {
         pageCount++;
-        const res = await fetchWithRetry(url, token);
+        const query = `
+        {
+          products(first: 250, sortKey: UPDATED_AT, reverse: true${cursor ? `, after: "${cursor}"` : ''}) {
+            pageInfo {
+              hasNextPage
+              endCursor
+            }
+            edges {
+              node {
+                id
+                title
+                productType
+                updatedAt
+                variants(first: 50) {
+                  edges {
+                    node {
+                      id
+                      title
+                      sku
+                      barcode
+                      inventoryQuantity
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }`;
+
+        const res = await fetch(`https://${domain}/admin/api/2024-01/graphql.json`, {
+          method: 'POST',
+          headers: {
+            'X-Shopify-Access-Token': token,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+
         if (!res.ok) throw new Error(await res.text());
-        
         const data = await res.json();
-        for (const product of data.products) {
-          for (const variant of product.variants) {
-            const ref = variant.sku || variant.barcode || variant.id.toString();
+        if (data.errors) throw new Error(data.errors[0].message);
+
+        const products = data.data.products.edges;
+        for (const { node: product } of products) {
+          // If we reach products older than 30 days, we can stop
+          if (new Date(product.updatedAt) < new Date(thirtyDaysAgo)) {
+            hasNextPage = false;
+            break;
+          }
+
+          for (const { node: variant } of product.variants.edges) {
+            const ref = variant.sku || variant.barcode || variant.id.split('/').pop();
             if (ref) {
               allVariantsMap.set(ref, {
                 reference: ref,
                 name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
-                category: product.product_type || 'Général',
-                quantity: variant.inventory_quantity || 0,
+                category: product.productType || 'Général',
+                quantity: variant.inventoryQuantity || 0,
               });
             }
           }
         }
-        
-        const linkHeader = res.headers.get('link');
-        if (linkHeader && linkHeader.includes('rel="next"')) {
-          const match = linkHeader.match(/<([^>]+)>; rel="next"/);
-          url = match ? match[1] : null;
-          if (!url) hasNext = false;
-        } else hasNext = false;
+
+        hasNextPage = data.data.products.pageInfo.hasNextPage;
+        cursor = data.data.products.pageInfo.endCursor;
       }
 
       const allVariants = Array.from(allVariantsMap.values());
