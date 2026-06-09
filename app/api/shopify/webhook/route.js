@@ -21,12 +21,9 @@ function extractDatesFromLineItem(item) {
     }
   }
   
-  const todayStr = new Date().toISOString().split('T')[0];
-  const nextWeekStr = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-  
   return {
-    startDate: startDate || todayStr,
-    endDate: endDate || nextWeekStr
+    startDate: startDate,
+    endDate: endDate
   };
 }
 
@@ -177,13 +174,19 @@ export async function POST(req) {
         if (equipmentId) {
           const { startDate, endDate } = extractDatesFromLineItem(item);
           const isWingboost = String(item.title).toLowerCase().includes('wingboost') || String(item.sku).toLowerCase().includes('wingboost');
+          
+          if (!isWingboost && (!startDate || !endDate)) {
+            console.log(`Skipping non-rental item: ${item.title}`);
+            continue;
+          }
+          
           const bookingId = crypto.randomUUID();
           
           await supabase.from('bookings').insert([{
             id: bookingId,
             customer_id: customerId,
-            start_date: startDate,
-            end_date: endDate,
+            start_date: startDate || new Date().toISOString().split('T')[0], // Fallback if Wingboost has no dates
+            end_date: endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Wingboost default 1 month
             status: 'active',
             shopify_transfer: true,
             rental_type: isWingboost ? 'wingboost' : 'ponctuel'
