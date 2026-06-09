@@ -27,7 +27,8 @@ export async function POST(request) {
 
   try {
     if (type === 'inventory') {
-      let url = `https://${domain}/admin/api/2024-01/products.json?status=active&limit=250`;
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      let url = `https://${domain}/admin/api/2024-01/products.json?status=active&limit=250&updated_at_min=${thirtyDaysAgo}`;
       let hasNext = true;
       let allVariantsMap = new Map();
 
@@ -85,7 +86,8 @@ export async function POST(request) {
     }
     
     if (type === 'customers') {
-      let url = `https://${domain}/admin/api/2024-01/customers.json?limit=250`;
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      let url = `https://${domain}/admin/api/2024-01/customers.json?limit=250&updated_at_min=${thirtyDaysAgo}`;
       let hasNext = true;
       let allCustomersMap = new Map();
       let pageCount = 0;
