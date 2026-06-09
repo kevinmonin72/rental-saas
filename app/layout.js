@@ -15,7 +15,7 @@ export default function RootLayout({ children }) {
     return (
       <html lang="fr">
         <body>
-          <main style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
+          <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
         </body>
