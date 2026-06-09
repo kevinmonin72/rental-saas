@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../lib/supabase-admin';
+import { supabaseAdmin } from '../../../../lib/supabase-admin';
 
 async function fetchWithRetry(url, token) {
   let attempts = 0;
