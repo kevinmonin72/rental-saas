@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 
-import { tailwindStyles } from './styles';
-
 export default function EspaceClientPage() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -60,11 +58,6 @@ export default function EspaceClientPage() {
       // Also resize when window is resized
       window.addEventListener('resize', sendHeight);
     }
-    
-    // Inject Tailwind CSS into head to bypass Shopify App Proxy stripping
-    const styleEl = document.createElement('style');
-    styleEl.innerHTML = tailwindStyles;
-    document.head.appendChild(styleEl);
     
     checkSession();
     fetchEquipment();
