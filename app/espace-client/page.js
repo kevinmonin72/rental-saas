@@ -264,7 +264,7 @@ export default function EspaceClientPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#F9FAFB' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB' }}>
         <p style={{ color: '#6B7280', fontSize: '18px' }}>Chargement...</p>
       </div>
     );
@@ -352,7 +352,7 @@ export default function EspaceClientPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
+    <div className={`min-h-screen text-gray-800 font-sans ${isInIframe ? 'bg-transparent' : 'bg-gray-50'}`}>
       <style>{`
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .status-active { background-color: #dcfce7; color: #166534; }
