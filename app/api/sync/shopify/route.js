@@ -28,7 +28,7 @@ export async function POST(request) {
   try {
     if (type === 'inventory') {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-      let url = `https://${domain}/admin/api/2024-01/products.json?status=active&limit=250&updated_at_min=${thirtyDaysAgo}`;
+      let url = `https://${domain}/admin/api/2024-01/products.json?status=any&limit=250&updated_at_min=${thirtyDaysAgo}`;
       let hasNext = true;
       let allVariantsMap = new Map();
 
