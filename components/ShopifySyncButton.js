@@ -11,13 +11,31 @@ export default function ShopifySyncButton({ type }) {
 
   const handleSync = async () => {
     setSyncing(true);
-    // Simulation of synchronization
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLastSync(new Date().toLocaleString('fr-FR', {
-      day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
-    }));
-    setSyncing(false);
-    // We could call a real update API here if we had one.
+    try {
+      const res = await fetch('/api/sync/shopify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setLastSync(new Date().toLocaleString('fr-FR', {
+          day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        }));
+        // Re-fetch data if needed from global store
+        const state = useStore.getState();
+        if (state.fetchData) {
+          await state.fetchData();
+        }
+      } else {
+        alert("Erreur de synchronisation: " + data.error);
+      }
+    } catch (err) {
+      alert("Erreur réseau lors de la synchronisation.");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   return (
