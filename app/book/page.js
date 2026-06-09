@@ -545,36 +545,9 @@ export default function PublicBookingPage() {
       {isStripeConfigured && (
         <script src="https://js.stripe.com/v3/" async></script>)}
 
-      {/* Header */}
-      {!isInIframe && (
-        <header style={{ backgroundColor: 'white', borderBottom: '1px solid var(--border-color)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
-          <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <img src="/logo.png" alt="The Ridery Logo" style={{ height: '48px', objectFit: 'contain' }} />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                {authMode === 'logged_in' && firstName ? `${firstName} ${lastName}` : 'Mon Espace'}
-              </Link>
-              <span className="badge" style={{ fontSize: '13px', fontWeight: 500 }}>
-                Portail Client
-              </span>
-            </div>
-          </div>
-        </header>
-      )}
+      {/* Header removed as requested */}
 
       <main style={{ maxWidth: '1400px', margin: isInIframe ? '20px auto' : '40px auto', padding: isInIframe ? '0 12px 80px 12px' : '0 24px 80px 24px' }}>
-        
-        {isInIframe && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-            <Link href="/espace-client" style={{ fontSize: '14px', fontWeight: 600, color: '#374151', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', backgroundColor: 'white', borderRadius: '8px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-              {authMode === 'logged_in' && firstName ? `${firstName} ${lastName}` : 'Mon Compte'}
-            </Link>
-          </div>
-        )}
 
         
         {/* Progress Wizard Header */}
