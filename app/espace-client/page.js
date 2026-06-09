@@ -330,7 +330,7 @@ export default function EspaceClientPage() {
   }
 
   const navItemBase = "w-full flex items-center px-4 py-3 text-sm rounded-xl transition-colors";
-  const navItemActive = "bg-gray-900 text-white font-semibold";
+  const navItemActive = "bg-ridery-dark text-white font-semibold";
   const navItemInactive = "text-gray-600 hover:bg-gray-100";
 
   const hasWingboost = shopifyOrders.some(order => 
@@ -352,11 +352,11 @@ export default function EspaceClientPage() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex items-center">
-                        <h1 className="text-2xl font-extrabold tracking-tighter text-gray-900">THE RIDERY</h1>
+                        <h1 className="text-2xl font-extrabold tracking-tighter text-ridery-dark">THE RIDERY</h1>
                     </div>
                     <div className="flex items-center space-x-4">
                         <span className="text-sm font-medium text-gray-500">Bonjour, {customerInfo.first_name || user.email}</span>
-                        <div className="h-8 w-8 rounded-full bg-teal-500 flex items-center justify-center text-white font-bold uppercase">
+                        <div className="h-8 w-8 rounded-full bg-ridery-teal flex items-center justify-center text-white font-bold uppercase">
                             {(customerInfo.first_name || user.email)[0]}
                         </div>
                     </div>
@@ -384,7 +384,7 @@ export default function EspaceClientPage() {
                     </button>
                     {hasWingboost && (
                       <button onClick={() => setActiveTab('wingboost')} className={`${navItemBase} ${activeTab === 'wingboost' ? navItemActive : navItemInactive}`}>
-                          <svg className={`w-5 h-5 mr-3 ${activeTab === 'wingboost' ? 'text-white' : 'text-orange-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                          <svg className={`w-5 h-5 mr-3 ${activeTab === 'wingboost' ? 'text-white' : 'text-ridery-orange'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                           Abo Wingboost
                       </button>
                     )}
@@ -412,19 +412,19 @@ export default function EspaceClientPage() {
           {activeTab === 'dashboard' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
                 <div>
-                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Vue d'ensemble</h2>
+                    <h2 className="text-3xl font-extrabold text-ridery-dark tracking-tight">Vue d'ensemble</h2>
                     <p className="text-gray-500 mt-1">Bienvenue dans votre espace centralisé The Ridery.</p>
                 </div>
 
                 <div className={`grid grid-cols-1 md:grid-cols-${hasWingboost ? '3' : '2'} gap-6`}>
                     {/* Stat 1 */}
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
-                        <div className="p-3 rounded-full bg-teal-50 text-teal-500 mr-4">
+                        <div className="p-3 rounded-full bg-teal-50 text-ridery-teal mr-4">
                             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Locations en cours</p>
-                            <p className="text-2xl font-bold text-gray-900">{bookings.filter(b => b.status === 'active').length}</p>
+                            <p className="text-2xl font-bold text-ridery-dark">{bookings.filter(b => b.status === 'active').length}</p>
                         </div>
                     </div>
                     {/* Stat 2 */}
@@ -434,28 +434,28 @@ export default function EspaceClientPage() {
                         </div>
                         <div>
                             <p className="text-sm font-medium text-gray-500">Achats Boutique</p>
-                            <p className="text-lg font-bold text-gray-900">{shopifyOrders.length} commandes</p>
+                            <p className="text-lg font-bold text-ridery-dark">{shopifyOrders.length} commandes</p>
                         </div>
                     </div>
                     {/* Stat 3 */}
                     {hasWingboost && (
-                      <div className="bg-white p-6 rounded-2xl shadow-sm border border-orange-500/30 bg-orange-50 flex items-center">
-                          <div className="p-3 rounded-full bg-orange-100 text-orange-500 mr-4">
+                      <div className="bg-white p-6 rounded-2xl shadow-sm border border-ridery-orange/30 bg-orange-50/30 flex items-center">
+                          <div className="p-3 rounded-full bg-orange-100 text-ridery-orange mr-4">
                               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                           </div>
                           <div>
                               <p className="text-sm font-medium text-gray-500">Wingboost</p>
-                              <p className="text-xl font-bold text-gray-900">Actif 🚀</p>
+                              <p className="text-xl font-bold text-ridery-dark">Actif 🚀</p>
                           </div>
                       </div>
                     )}
                 </div>
 
-                <div className="bg-gray-900 rounded-2xl p-8 text-white relative overflow-hidden shadow-lg mt-8">
+                <div className="bg-ridery-dark rounded-2xl p-8 text-white relative overflow-hidden shadow-lg mt-8">
                     <div className="relative z-10">
                         <h3 className="text-2xl font-bold mb-2">Prêt pour la prochaine session ?</h3>
-                        <p className="text-gray-300 mb-6 max-w-md">Réservez votre matériel dès maintenant et partez sur l'eau.</p>
-                        <Link href="/book" className="bg-teal-500 hover:bg-teal-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors inline-block">
+                        <p className="text-gray-300 mb-6 max-w-md">Réservez votre matériel dès maintenant et profitez de -10% grâce à votre abonnement Wingboost.</p>
+                        <Link href="/book" className="bg-ridery-teal hover:bg-teal-400 text-white font-semibold py-3 px-6 rounded-xl transition-colors inline-block">
                             Louer du matériel
                         </Link>
                     </div>
@@ -470,8 +470,8 @@ export default function EspaceClientPage() {
           {activeTab === 'locations' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
                 <div className="flex justify-between items-center border-b border-gray-200 pb-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Mes Locations</h2>
-                    <Link href="/book" className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition">Nouvelle location</Link>
+                    <h2 className="text-2xl font-bold text-ridery-dark">Mes Locations</h2>
+                    <Link href="/book" className="bg-ridery-dark text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition">Nouvelle location</Link>
                 </div>
                 
                 {bookings.length === 0 ? (
@@ -503,7 +503,7 @@ export default function EspaceClientPage() {
                                               {eq.category.includes('Wing') ? '🪁' : eq.category.includes('Kite') ? '🌊' : '🏄‍♂️'}
                                           </div>
                                           <div>
-                                              <h3 className="text-lg font-bold text-gray-900">{eq.name}</h3>
+                                              <h3 className="text-lg font-bold text-ridery-dark">{eq.name}</h3>
                                               <p className="text-gray-500 mt-1">Quantité : {item.quantity}</p>
                                           </div>
                                       </div>
@@ -522,7 +522,7 @@ export default function EspaceClientPage() {
           {activeTab === 'commandes' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
                 <div className="border-b border-gray-200 pb-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Achats Boutique (Shopify)</h2>
+                    <h2 className="text-2xl font-bold text-ridery-dark">Achats Boutique (Shopify)</h2>
                     <p className="text-gray-500 mt-1">Suivez l'expédition de vos commandes The Ridery.</p>
                 </div>
                 
@@ -545,7 +545,7 @@ export default function EspaceClientPage() {
                               <tbody className="bg-white divide-y divide-gray-200">
                                   {shopifyOrders.map(order => (
                                     <tr key={order.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{order.name}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-ridery-dark">{order.name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString('fr-FR')}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.total_price} {order.currency}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -553,7 +553,7 @@ export default function EspaceClientPage() {
                                                 {order.financial_status === 'paid' ? 'Payée' : order.financial_status}
                                             </span>
                                             {order.order_status_url && (
-                                              <a href={order.order_status_url} target="_blank" className="text-teal-600 text-xs ml-2 underline">Suivi</a>
+                                              <a href={order.order_status_url} target="_blank" className="text-ridery-teal text-xs ml-2 underline">Suivi</a>
                                             )}
                                         </td>
                                     </tr>
@@ -570,7 +570,7 @@ export default function EspaceClientPage() {
           {activeTab === 'profil' && (
             <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
                 <div className="border-b border-gray-200 pb-4">
-                    <h2 className="text-2xl font-bold text-gray-900">Mes Informations</h2>
+                    <h2 className="text-2xl font-bold text-ridery-dark">Mes Informations</h2>
                 </div>
                 
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -583,11 +583,11 @@ export default function EspaceClientPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
-                                <input type="text" value={customerInfo.first_name} onChange={e => setCustomerInfo({...customerInfo, first_name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+                                <input type="text" value={customerInfo.first_name} onChange={e => setCustomerInfo({...customerInfo, first_name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ridery-teal focus:border-ridery-teal outline-none transition" />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-                                <input type="text" value={customerInfo.last_name} onChange={e => setCustomerInfo({...customerInfo, last_name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+                                <input type="text" value={customerInfo.last_name} onChange={e => setCustomerInfo({...customerInfo, last_name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ridery-teal focus:border-ridery-teal outline-none transition" />
                             </div>
                         </div>
                         <div>
@@ -597,14 +597,14 @@ export default function EspaceClientPage() {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-                            <input type="tel" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+                            <input type="tel" value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ridery-teal focus:border-ridery-teal outline-none transition" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Adresse Postale</label>
-                            <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-teal-500 focus:border-teal-500 outline-none transition" />
+                            <input type="text" value={customerInfo.address} onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-ridery-teal focus:border-ridery-teal outline-none transition" />
                         </div>
                         <div className="pt-4 border-t border-gray-100 flex justify-end">
-                            <button type="submit" className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-md hover:shadow-lg">
+                            <button type="submit" className="bg-ridery-dark text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition shadow-md hover:shadow-lg">
                                 Sauvegarder les modifications
                             </button>
                         </div>
@@ -617,7 +617,7 @@ export default function EspaceClientPage() {
           {(activeTab === 'cours' || activeTab === 'wingboost') && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center text-gray-500 animate-[fadeIn_0.3s_ease-in-out]">
               <div className="text-4xl mb-4">{activeTab === 'cours' ? '👨‍🏫' : '🚀'}</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{activeTab === 'cours' ? 'Mes Cours' : 'Abonnement Wingboost'}</h3>
+              <h3 className="text-xl font-bold text-ridery-dark mb-2">{activeTab === 'cours' ? 'Mes Cours' : 'Abonnement Wingboost'}</h3>
               <p>Cette fonctionnalité est en cours de développement et sera disponible prochainement.</p>
             </div>
           )}
