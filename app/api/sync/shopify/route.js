@@ -105,7 +105,19 @@ export async function POST(request) {
       const allVariants = Array.from(allVariantsMap.values());
       
       if (allVariants.length > 0) {
-        const { data: currentEquipments } = await supabaseAdmin.from('equipment').select('id, reference');
+        const referencesToFetch = allVariants.map(v => v.reference);
+        let currentEquipments = [];
+        
+        // Fetch matching equipments in chunks of 500 to avoid URL length limits
+        for (let i = 0; i < referencesToFetch.length; i += 500) {
+          const chunk = referencesToFetch.slice(i, i + 500);
+          const { data, error } = await supabaseAdmin
+            .from('equipment')
+            .select('id, reference')
+            .in('reference', chunk);
+          if (data) currentEquipments = [...currentEquipments, ...data];
+        }
+        
         let toUpsertEq = [];
         
         for (const item of allVariants) {
