@@ -28,6 +28,37 @@ export default function EspaceClientPage() {
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [infoMessage, setInfoMessage] = useState('');
   const [isInIframe, setIsInIframe] = useState(false);
+
+  // Dynamically inject Tailwind CSS to bypass Shopify App Proxy stripping the <head>
+  useEffect(() => {
+    if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn')) {
+      const configScript = document.createElement('script');
+      configScript.id = 'tailwind-config';
+      configScript.innerHTML = `
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                ridery: {
+                  teal: '#14b8a6',
+                  orange: '#f97316',
+                  dark: '#111827',
+                  light: '#f9fafb'
+                }
+              }
+            }
+          }
+        }
+      `;
+      document.head.appendChild(configScript);
+
+      const script = document.createElement('script');
+      script.id = 'tailwind-cdn';
+      script.src = 'https://cdn.tailwindcss.com';
+      document.head.appendChild(script);
+    }
+  }, []);
+
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'locations', 'cours', 'wingboost', 'commandes', 'profil'
 
   useEffect(() => {
@@ -250,7 +281,9 @@ export default function EspaceClientPage() {
   // LOGIN SCREEN (kept as is with inline styles for stability)
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB', display: 'flex', flexDirection: 'column' }}>
+      <>
+        <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
+        <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB', display: 'flex', flexDirection: 'column' }}>
         {!isInIframe && (
           <header style={{ backgroundColor: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -324,25 +357,7 @@ export default function EspaceClientPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans">
-      <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
-      <Script id="tailwind-config" strategy="beforeInteractive">
-        {`
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  ridery: {
-                    teal: '#14b8a6',
-                    orange: '#f97316',
-                    dark: '#111827',
-                    light: '#f9fafb'
-                  }
-                }
-              }
-            }
-          }
-        `}
-      </Script>
+      {/* Scripts are injected via useEffect to bypass Shopify App Proxy stripping */}
       <style>{`
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
         .status-active { background-color: #dcfce7; color: #166534; }
