@@ -627,11 +627,24 @@ export default function EspaceClientPage() {
             </div>
           )}
 
-          {/* COURS & WINGBOOST (Placholders) */}
-          {(activeTab === 'cours' || activeTab === 'wingboost') && (
+          {/* COURS WINGCLASS */}
+          {activeTab === 'cours' && (
+            <div className="animate-[fadeIn_0.3s_ease-in-out]">
+              <iframe 
+                src={`https://the-ridery-wingclass-zvic.vercel.app/widget?customerId=${customerInfo.id}`}
+                width="100%" 
+                height="800px" 
+                style={{ border: "none", borderRadius: "24px", backgroundColor: "#0a0a0a" }}
+                title="Calendrier Wingclass"
+              />
+            </div>
+          )}
+
+          {/* WINGBOOST (Placeholder) */}
+          {activeTab === 'wingboost' && (
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-500 animate-[fadeIn_0.3s_ease-in-out]">
-              <div className="text-4xl mb-4">{activeTab === 'cours' ? '👨‍🏫' : '🚀'}</div>
-              <h3 className="text-xl font-bold text-ridery-dark mb-2">{activeTab === 'cours' ? 'Mes Cours' : 'Abonnement Wingboost'}</h3>
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-xl font-bold text-ridery-dark mb-2">Abonnement Wingboost</h3>
               <p>Cette fonctionnalité est en cours de développement et sera disponible prochainement.</p>
             </div>
           )}
