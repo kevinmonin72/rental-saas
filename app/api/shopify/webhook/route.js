@@ -134,6 +134,23 @@ export async function POST(req) {
 
     // --- ORDERS (RESERVATIONS) SYNC ---
     if (topic === 'orders/create' || data.line_items) {
+      const shopifyOrderId = String(data.id || '');
+      
+      // Anti-doublon : vérifier si cette commande Shopify a déjà été traitée
+      if (shopifyOrderId) {
+        const { data: existingOrder } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('shopify_order_id', shopifyOrderId)
+          .limit(1)
+          .maybeSingle();
+        
+        if (existingOrder) {
+          console.log(`⚠️ Commande Shopify ${shopifyOrderId} déjà importée, ignorée.`);
+          return NextResponse.json({ message: 'Order already processed' }, { status: 200 });
+        }
+      }
+
       const email = data.customer?.email || data.email;
       const firstName = data.customer?.first_name || data.billing_address?.first_name || 'Client';
       const lastName = data.customer?.last_name || data.billing_address?.last_name || 'Shopify';
@@ -185,11 +202,12 @@ export async function POST(req) {
           await supabase.from('bookings').insert([{
             id: bookingId,
             customer_id: customerId,
-            start_date: startDate || new Date().toISOString().split('T')[0], // Fallback if Wingboost has no dates
-            end_date: endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Wingboost default 1 month
+            start_date: startDate || new Date().toISOString().split('T')[0],
+            end_date: endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
             status: 'active',
             shopify_transfer: true,
-            rental_type: isWingboost ? 'wingboost' : 'ponctuel'
+            rental_type: isWingboost ? 'wingboost' : 'ponctuel',
+            shopify_order_id: shopifyOrderId || null
           }]);
 
           await supabase.from('booking_items').insert([{
