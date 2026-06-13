@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { GENERIC_EQUIPMENTS } from '../../../../lib/catalog';
 
+export const dynamic = 'force-dynamic';
+
 let cachedCatalog = null;
 let lastCacheTime = 0;
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes

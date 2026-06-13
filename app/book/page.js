@@ -73,7 +73,7 @@ export default function PublicBookingPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const catalogRes = await fetch('/api/equipment/catalog');
+        const catalogRes = await fetch(`/api/equipment/catalog?t=${Date.now()}`);
         const catalogData = await catalogRes.json();
 
         const [bookRes, itemsRes] = await Promise.all([
@@ -85,25 +85,6 @@ export default function PublicBookingPage() {
 
         let dbEquipments = catalogData.equipments || [];
         dbEquipments = dbEquipments.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
-        // Call the backend to sync equipment catalog securely
-        try {
-          const syncRes = await fetch('/api/equipment/sync');
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            if (syncData.synced > 0) {
-              // Force refresh the catalog by calling the API again with a cache-busting timestamp
-              const newCatalogRes = await fetch('/api/equipment/catalog?refresh=' + Date.now());
-              if (newCatalogRes.ok) {
-                const newCatalogData = await newCatalogRes.json();
-                if (newCatalogData.equipments) {
-                  dbEquipments = newCatalogData.equipments.filter(e => e.reference !== 'LOK-INITIATION-FOIL-TRACTE');
-                }
-              }
-            }
-          }
-        } catch (syncErr) {
-          console.error("Sync error:", syncErr);
-        }
 
         setEquipmentList(dbEquipments);
         setBookings(bookRes.data || []);
