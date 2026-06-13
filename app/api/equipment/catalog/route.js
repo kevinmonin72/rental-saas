@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
+import { GENERIC_EQUIPMENTS } from '../../../../lib/catalog';
 
 let cachedCatalog = null;
 let lastCacheTime = 0;
@@ -14,39 +15,31 @@ export async function GET(request) {
   }
 
   try {
-    let allData = [];
-    let from = 0;
-    const limit = 1000;
-    let hasMore = true;
+    const references = GENERIC_EQUIPMENTS.map(e => e.reference);
+    
+    // Instead of querying 28,000 rows, only query the generic references we care about
+    const { data: allData, error } = await supabaseAdmin
+      .from('equipment')
+      .select('reference, quantity, name')
+      .in('reference', references);
 
-    // Fetch all equipment to group them
-    while (hasMore) {
-      const { data, error } = await supabaseAdmin.from('equipment').select('*').range(from, from + limit - 1);
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        allData = [...allData, ...data];
-        from += limit;
-        if (data.length < limit) hasMore = false;
-      } else {
-        hasMore = false;
-      }
-    }
+    if (error) throw error;
 
-    // Group by reference to avoid duplicates and sum quantities
+    // We build the grouped response based on GENERIC_EQUIPMENTS as the base
     const grouped = {};
-    for (const item of allData) {
-      const ref = item.reference || item.name;
-      if (!ref) continue;
-      
-      if (!grouped[ref]) {
-        grouped[ref] = { ...item };
-      } else {
-        grouped[ref].quantity += (parseInt(item.quantity) || 1);
+    for (const gen of GENERIC_EQUIPMENTS) {
+      grouped[gen.reference] = { ...gen, quantity: 0 };
+    }
+
+    if (allData) {
+      for (const item of allData) {
+        if (grouped[item.reference]) {
+          grouped[item.reference].quantity += (parseInt(item.quantity) || 1);
+        }
       }
     }
 
-    const uniqueEquipments = Object.values(grouped);
+    const uniqueEquipments = Object.values(grouped).filter(e => e.quantity > 0 || e.reference.includes('-OPT'));
     
     // Update cache
     cachedCatalog = uniqueEquipments;
@@ -54,6 +47,8 @@ export async function GET(request) {
 
     return NextResponse.json({ equipments: uniqueEquipments });
   } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    console.error("API Catalog Error:", err);
+    // Fallback to GENERIC_EQUIPMENTS directly in case of error
+    return NextResponse.json({ equipments: GENERIC_EQUIPMENTS });
   }
 }

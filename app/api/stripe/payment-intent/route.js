@@ -122,29 +122,68 @@ export async function POST(req) {
       return NextResponse.json({ error: "Token Shopify non configuré" }, { status: 500 });
     }
 
-    const lineItems = equipmentReferences.map(ref => {
+    const lineItems = await Promise.all(equipmentReferences.map(async (ref) => {
       let itemPrice = 0;
+      let gridDays = days;
+      if (gridDays > 31) gridDays = 31;
+      
       if (PRICING_GRIDS[ref]) {
         const grid = PRICING_GRIDS[ref];
-        let gridDays = days;
-        if (gridDays > 31) gridDays = 31;
         itemPrice = isHalfDay ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
       } else {
         const pricePerDay = getPricePerDay(ref);
         itemPrice = isHalfDay ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
       }
-      return {
-        title: `Location: ${ref}`,
-        price: itemPrice.toString(),
-        quantity: 1,
-        sku: ref,
-        custom: true,
-        properties: [
-          { name: "Date de début", value: startDate },
-          { name: "Date de fin", value: endDate || startDate }
-        ]
-      };
-    });
+
+      const optionValue = isHalfDay ? "Demi-journée" : (Math.floor(gridDays) === 1 ? "1 jour" : `${Math.floor(gridDays)} jours`);
+      let variantId = null;
+
+      try {
+        const query = `
+          query {
+            productVariants(first: 50, query: "sku:${ref}") {
+              edges { node { id title sku } }
+            }
+          }
+        `;
+        const qRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/graphql.json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': shopifyToken },
+          body: JSON.stringify({ query })
+        });
+        const qData = await qRes.json();
+        const variants = qData.data?.productVariants?.edges || [];
+        const match = variants.find(v => v.node.title === optionValue);
+        if (match) {
+          variantId = parseInt(match.node.id.split('/').pop());
+        }
+      } catch (e) {
+        console.error("Erreur recherche variant Shopify:", e);
+      }
+
+      if (variantId) {
+        return {
+          variant_id: variantId,
+          quantity: 1,
+          properties: [
+            { name: "Date de début", value: startDate },
+            { name: "Date de fin", value: endDate || startDate }
+          ]
+        };
+      } else {
+        return {
+          title: `Location: ${ref}`,
+          price: itemPrice.toString(),
+          quantity: 1,
+          sku: ref,
+          custom: true,
+          properties: [
+            { name: "Date de début", value: startDate },
+            { name: "Date de fin", value: endDate || startDate }
+          ]
+        };
+      }
+    }));
 
     const payload = {
       draft_order: {
