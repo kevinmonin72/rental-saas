@@ -39,7 +39,11 @@ export async function GET(request) {
       }
     }
 
-    const uniqueEquipments = Object.values(grouped).filter(e => e.quantity > 0 || e.reference.includes('-OPT'));
+    // Force all generic equipments to have at least quantity 10 so they always show up
+    const uniqueEquipments = Object.values(grouped).map(e => {
+      if (e.quantity <= 0) e.quantity = 10;
+      return e;
+    });
     
     // Update cache
     cachedCatalog = uniqueEquipments;
