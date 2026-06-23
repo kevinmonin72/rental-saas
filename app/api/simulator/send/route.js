@@ -103,7 +103,9 @@ export async function POST(req) {
     const draftOrderId = data.draft_order.id;
     const invoiceUrl = data.draft_order.invoice_url;
 
-    // 2. Send Invoice Email with Payment Link
+    // 2. We skip sending the native Shopify invoice email, 
+    // because Klaviyo will send the email using the generated invoiceUrl
+    /*
     const sendRes = await fetch(`https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders/${draftOrderId}/send_invoice.json`, {
       method: 'POST',
       headers: {
@@ -123,6 +125,7 @@ export async function POST(req) {
         headers: { 'Access-Control-Allow-Origin': '*' }
       });
     }
+    */
 
     return NextResponse.json({ success: true, url: invoiceUrl }, { 
       status: 200,
