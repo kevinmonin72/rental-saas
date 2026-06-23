@@ -97,7 +97,7 @@ export async function POST(request) {
               const imageUrl = variant.image?.url || product.featuredImage?.url || null;
               allVariantsMap.set(ref, {
                 reference: ref,
-                name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
+                name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.replace(/\s*-\s*\d+\s*jours?\s*$/i, '').trim(),
                 category: product.productType || 'Général',
                 quantity: variant.inventoryQuantity || 0,
                 brand: imageUrl

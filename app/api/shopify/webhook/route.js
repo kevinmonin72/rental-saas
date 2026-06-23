@@ -77,7 +77,7 @@ export async function POST(req) {
 
         const eqData = {
           reference: variant.sku,
-          name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
+          name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.replace(/\s*-\s*\d+\s*jours?\s*$/i, '').trim(),
           category: product.product_type || 'Général',
           quantity: variant.inventory_quantity || 0,
         };
