@@ -36,6 +36,11 @@ export default function BookingsPage() {
   const [endMonthFilter, setEndMonthFilter] = useState(null);
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'new'
   const [duration, setDuration] = useState('1_jour');
+  const [showNewCustomerModal, setShowNewCustomerModal] = useState(false);
+  const [newCustomerFirstName, setNewCustomerFirstName] = useState('');
+  const [newCustomerLastName, setNewCustomerLastName] = useState('');
+  const [newCustomerEmail, setNewCustomerEmail] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
 
   const handleEndDateChange = (val) => {
     setEndDate(val);
@@ -103,6 +108,34 @@ export default function BookingsPage() {
     }
   };
 
+  const handleCreateCustomer = async (e) => {
+    e.preventDefault();
+    if (!newCustomerFirstName.trim() || !newCustomerLastName.trim()) {
+      alert("Le prénom et le nom sont requis.");
+      return;
+    }
+    const customerData = {
+      first_name: newCustomerFirstName.trim(),
+      last_name: newCustomerLastName.trim(),
+      email: newCustomerEmail.trim() || null,
+      phone: newCustomerPhone.trim() || null
+    };
+    try {
+      const created = await addCustomer(customerData);
+      if (created && created.id) {
+        setSelectedCustomerId(created.id);
+        setShowNewCustomerModal(false);
+        setNewCustomerFirstName('');
+        setNewCustomerLastName('');
+        setNewCustomerEmail('');
+        setNewCustomerPhone('');
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Erreur lors de la création du client.");
+    }
+  };
+
   const { 
     customers, 
     equipment, 
@@ -115,7 +148,8 @@ export default function BookingsPage() {
     markBookingCompleted, 
     getDetailedActiveBookings,
     getDetailedPastBookings,
-    toggleShopifyTransfer
+    toggleShopifyTransfer,
+    addCustomer
   } = useStore();
 
   useEffect(() => {
@@ -449,7 +483,10 @@ export default function BookingsPage() {
           ) : (
             <form onSubmit={handleAdd}>
               <div className="form-group">
-                <label>Client</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ margin: 0 }}>Client</label>
+                  <button type="button" onClick={() => setShowNewCustomerModal(true)} className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '12px' }}>+ Nouveau client</button>
+                </div>
                 <input 
                   type="text" 
                   className="input" 
@@ -1115,6 +1152,39 @@ export default function BookingsPage() {
         )}
 
       </div>
+
+      {showNewCustomerModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ margin: 0 }}>Nouveau Client</h2>
+              <button onClick={() => setShowNewCustomerModal(false)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>×</button>
+            </div>
+            <form onSubmit={handleCreateCustomer}>
+              <div className="form-group">
+                <label>Prénom</label>
+                <input type="text" className="input" value={newCustomerFirstName} onChange={e => setNewCustomerFirstName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>Nom</label>
+                <input type="text" className="input" value={newCustomerLastName} onChange={e => setNewCustomerLastName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" className="input" value={newCustomerEmail} onChange={e => setNewCustomerEmail(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Téléphone</label>
+                <input type="tel" className="input" value={newCustomerPhone} onChange={e => setNewCustomerPhone(e.target.value)} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                <button type="button" onClick={() => setShowNewCustomerModal(false)} className="btn btn-secondary">Annuler</button>
+                <button type="submit" className="btn btn-primary">Créer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
