@@ -13,21 +13,20 @@ export async function POST(req) {
     }
 
     // Prepare Line Items
-    // Les prix saisis sont TTC. On envoie le HT à Shopify qui rajoutera la TVA automatiquement.
-    const taxRate = invoiceData.taxRate || 0;
-    const taxDivisor = 1 + (taxRate / 100);
+    // Les prix saisis sont TTC — on les envoie tels quels à Shopify
+    // avec taxable: false pour que Shopify ne rajoute rien.
 
     const lineItems = invoiceData.items.filter(item => {
       if (!item.description && !item.reference && item.quantity === 0 && item.unitPrice === 0) return false;
       return true;
     }).map(item => {
-      const prixHT = taxRate > 0 ? (item.unitPrice / taxDivisor) : item.unitPrice;
       return {
         title: item.description || item.reference || 'Équipement (Ligne vide)',
-        price: prixHT.toFixed(2),
+        price: item.unitPrice.toFixed(2),
         quantity: item.quantity,
         sku: item.reference || '',
-        custom: true
+        custom: true,
+        taxable: false
       };
     }).filter(Boolean);
 
@@ -36,6 +35,7 @@ export async function POST(req) {
         line_items: lineItems,
         email: customerEmail,
         use_customer_default_address: false,
+        tax_exempt: true,
         tags: `invoice_${invoiceData.number || 'rental_saas'}`,
         note: `Facture The Ridery - ${invoiceData.number}`,
         customer: {
