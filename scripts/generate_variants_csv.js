@@ -1,15 +1,52 @@
-import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
+const fs = require('fs');
 
-import { supabaseAdmin as supabase } from '../../../../lib/supabase-admin';
+const GENERIC_EQUIPMENTS = [
+  { reference: 'LOK-BOARDBAG-OPT', name: 'Boardbag opt.', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-PACK-KITE', name: 'Pack Kitesurf - à personnaliser ', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-AILE-BARRE', name: 'Aile + Barre', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-PACK-2AILES-BARRE', name: 'Pack 2 Ailes + Barre', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-BOARD-TWINTIP', name: 'Planche Twintip', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-WING-AILE', name: 'Aile de Wing', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-HARNAIS-CULOTTE', name: 'Harnais culotte', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-AILE-SANSBARRE', name: 'Deuxième aile (sans barre)', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-NEOPRENE-COMBINAISON', name: 'Combinaison', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-PACK-WING-GONFLABLE', name: 'Pack Wing gonflable', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-NEOPRENE-CAGOULE', name: 'Cagoule', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-PACK-WING-RIGIDE', name: 'Pack Wing rigide', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-PACK-WING-DEBUTANT', name: 'Pack Wing débutant', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-WING-FOIL', name: 'Foil de Wing', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-WING-BOARD', name: 'Planche de Wing', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-WING-2AILE', name: 'Deuxième Aile de Wing', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-CAGOULE-OPT', name: 'Cagoule opt.', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-CHAUSSONS-OPT', name: 'Chaussons opt.', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-GANTS-OPT', name: 'Gants opt.', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-HARNAIS-CEINTURE', name: 'Harnais ceinture', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-NEOPRENE-VESTE', name: 'Veste néoprène', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-NEOPRENE-CHAUSSONS', name: 'Chaussons', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-COMBINAISON-OPT', name: 'Combinaison opt.', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-BOARDBAG', name: 'Boardbag', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-NEOPRENE-GANTS', name: 'Gants', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-HARNAIS-CEINTURE-OPT', name: 'Harnais ceinture opt.', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-PROT-CASQUE', name: 'Casque', category: 'Protections', quantity: 10 },
+  { reference: 'LOK-VESTENEOPRENE-OPT', name: 'Veste Néoprène opt.', category: 'Néoprène', quantity: 10 },
+  { reference: 'LOK-PROT-GILET', name: 'Gilet', category: 'Protections', quantity: 10 },
+  { reference: 'LOK-CASQUE-OPT', name: 'Casque opt.', category: 'Protections', quantity: 10 },
+  { reference: 'LOK-GILET-OPT', name: 'Gilet opt.', category: 'Protections', quantity: 10 },
+  { reference: 'LOK-HARNAIS-CULOTTE-OPT', name: 'Harnais Culotte opt.', category: 'Accessoires', quantity: 10 },
+  { reference: 'LOK-3AILE-SANSBARRE', name: 'Troisième aile (sans barre)', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-2AILE-SANSBARRE-CS', name: 'Deuxième aile (sans barre) - carte session', category: 'Carte Session', quantity: 10 },
+  { reference: 'LOK-3AILE-SANSBARRE-CS', name: 'Troisième aile (sans barre) - carte session', category: 'Carte Session', quantity: 10 },
+  { reference: 'LOK-TWINTIP-OPT-CS', name: 'Planche Twintip opt. - carte session', category: 'Carte Session', quantity: 10 },
+  { reference: 'LOK-2WING-AILE-CS', name: 'Deuxième Aile de Wing - carte session', category: 'Carte Session', quantity: 10 },
+  { reference: 'LOK-BARRE', name: 'Barre', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-KITEFOIL', name: 'Kitefoil', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-STRAPLESS', name: 'Strapless', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-TWINTIP-OPT', name: 'Planche Twintip Opt.', category: 'Kitesurf', quantity: 10 },
+  { reference: 'LOK-BOARD-FOIL-WING', name: 'Planche + Foil de Wing', category: 'Wingfoil', quantity: 10 },
+  { reference: 'LOK-PADDLE', name: 'Paddle', category: 'Autres', quantity: 10 },
+  { reference: 'LOK-SURF', name: 'Surf', category: 'Autres', quantity: 10 }
+];
 
-const getPricePerDay = (reference) => {
-  if (reference.includes('PACK')) return 40; // Packs: 40€/jour
-  if (reference.includes('WING') || reference.includes('FOIL') || reference.includes('KITE')) return 25; // Ailes/Foils: 25€/jour
-  if (reference.includes('BOARD') || reference.includes('TWINTIP')) return 20; // Planches: 20€/jour
-  if (reference.includes('NEOPRENE') || reference.includes('COMBINAISON')) return 10; // Néoprène: 10€/jour
-  return 10; // Reste (accessoires, gilets, etc.): 10€/jour
-};
 const PRICING_GRIDS = {
   'LOK-BOARDBAG-OPT': { 0.5: 12.5, 1: 18.75, 2: 31.22, 3: 34.98, 4: 38.73, 5: 42.48, 6: 44.98, 7: 44.99, 8: 44.99, 9: 44.98, 10: 49.98, 11: 49.98, 12: 49.98, 13: 49.98, 14: 49.99, 15: 54.98, 16: 54.98, 17: 54.98, 18: 54.98, 19: 54.98, 20: 54.98, 21: 54.98, 22: 54.98, 23: 54.98, 24: 54.98, 25: 54.98, 26: 54.98, 27: 54.98, 28: 54.98, 29: 54.98, 30: 54.98, 31: 54.98 },
   'LOK-PACK-KITE': { 0.5: 92.5, 1: 98.75, 2: 167.33, 3: 229.84, 4: 254.87, 5: 267.39, 6: 279.9, 7: 306.17, 8: 306.17, 9: 318.6, 10: 336.11, 11: 348.62, 12: 348.63, 13: 348.64, 14: 354.89, 15: 354.9, 16: 354.9, 17: 354.9, 18: 354.9, 19: 354.9, 20: 354.9, 21: 361.14, 22: 361.14, 23: 361.14, 24: 361.14, 25: 361.14, 26: 361.14, 27: 361.14, 28: 361.14, 29: 361.14, 30: 361.14, 31: 361.14 },
@@ -58,195 +95,100 @@ const PRICING_GRIDS = {
   'LOK-AILE-BARRE': { 0.5: 70, 1: 73.75, 2: 123.62, 3: 173.63, 4: 198.65, 5: 211.16, 6: 223.67, 7: 243.69, 8: 243.69, 9: 256.13, 10: 261.14, 11: 273.65, 12: 273.65, 13: 273.66, 14: 279.92, 15: 279.92, 16: 279.92, 17: 279.92, 18: 279.92, 19: 279.92, 20: 279.92, 21: 279.92, 22: 279.92, 23: 279.92, 24: 279.92, 25: 279.92, 26: 279.92, 27: 279.92, 28: 279.92, 29: 279.92, 30: 279.92, 31: 279.92 },
 };
 
-export async function POST(req) {
-  try {
-    const { equipmentReferences, startDate, endDate, rentalType, promoCode, email, customerData } = await req.json();
+const headers = [
+  "Handle",
+  "Title",
+  "Body (HTML)",
+  "Vendor",
+  "Type",
+  "Tags",
+  "Published",
+  "Option1 Name",
+  "Option1 Value",
+  "Variant SKU",
+  "Variant Grams",
+  "Variant Inventory Tracker",
+  "Variant Inventory Qty",
+  "Variant Inventory Policy",
+  "Variant Fulfillment Service",
+  "Variant Price",
+  "Variant Compare At Price",
+  "Variant Requires Shipping",
+  "Variant Taxable",
+  "Variant Barcode",
+  "Image Src",
+  "Image Position",
+  "Image Alt Text",
+  "Gift Card",
+  "SEO Title",
+  "SEO Description",
+  "Status"
+];
 
-    if (!startDate || !equipmentReferences || equipmentReferences.length === 0) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
-    }
+let csvContent = headers.join(',') + '\n';
 
-    // Save/update customer info proactively
-    if (email && customerData) {
-      const { data: existingCust } = await supabase.from('customers').select('id').eq('email', email).maybeSingle();
-      const custPayload = {
-        first_name: customerData.firstName || '',
-        last_name: customerData.lastName || '',
-        email: email,
-        phone: customerData.phone || null,
-        address: customerData.address || null
-      };
+for (const eq of GENERIC_EQUIPMENTS) {
+  const handle = 'location-' + eq.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  const title = `Location ${eq.name.trim()}`;
+  const body = `Louez votre ${eq.name.trim()} avec The Ridery.`;
+  const prices = PRICING_GRIDS[eq.reference] || {};
+  
+  let isFirstVariant = true;
 
-      if (existingCust) {
-        await supabase.from('customers').update(custPayload).eq('id', existingCust.id);
-      } else {
-        await supabase.from('customers').insert({ id: crypto.randomUUID(), ...custPayload });
-      }
-    }
+  // We loop over the durations in the prices object
+  const durations = Object.keys(prices).map(Number).sort((a, b) => a - b);
+  
+  if (durations.length === 0) {
+     // If no prices, maybe just output 1 variant
+     durations.push(1);
+     prices[1] = 0;
+  }
 
-    // Calculate duration in days
-    let days = 1;
-    if (rentalType !== 'demi_matin' && rentalType !== 'demi_aprem' && endDate) {
-      const s = new Date(startDate);
-      const e = new Date(endDate);
-      const diffTime = Math.abs(e - s);
-      days = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
-    }
+  for (const duration of durations) {
+    const priceValue = prices[duration];
+    if (priceValue === 0 && duration > 1) continue; // Skip zero prices for long durations if it means not available
 
-    const isHalfDay = rentalType === 'demi_matin' || rentalType === 'demi_aprem';
-    let subtotal = 0;
+    const optionValue = duration === 0.5 ? "Demi-journée" : (duration === 1 ? "1 jour" : `${duration} jours`);
+    
+    // For Shopify CSV, only the first row of a product needs Title, Body, Vendor, etc.
+    // Subsequent rows for the same handle just need Option1 Value, SKU, Price, etc.
+    const row = [
+      handle, // Handle
+      isFirstVariant ? `"${title}"` : "", // Title
+      isFirstVariant ? `"${body}"` : "", // Body (HTML)
+      isFirstVariant ? "The Ridery" : "", // Vendor
+      isFirstVariant ? "Location" : "", // Type
+      isFirstVariant ? `"Location, ${eq.category}"` : "", // Tags
+      isFirstVariant ? "TRUE" : "", // Published
+      "Durée", // Option1 Name
+      optionValue, // Option1 Value
+      `${eq.reference}-${duration}`, // Variant SKU (differentiating SKU per variant is best practice, or just eq.reference if they prefer. Let's use eq.reference so it matches the DB!)
+      "0", // Variant Grams
+      "", // Variant Inventory Tracker (empty = don't track)
+      "", // Variant Inventory Qty
+      "deny", // Variant Inventory Policy
+      "manual", // Variant Fulfillment Service
+      priceValue.toFixed(2), // Variant Price
+      "", // Variant Compare At Price
+      "FALSE", // Variant Requires Shipping
+      "TRUE", // Variant Taxable
+      "", // Variant Barcode
+      "", // Image Src
+      "", // Image Position
+      "", // Image Alt Text
+      "FALSE", // Gift Card
+      isFirstVariant ? `"${title}"` : "", // SEO Title
+      isFirstVariant ? `"${body}"` : "", // SEO Description
+      "active" // Status
+    ];
+    
+    // Wait, if I use `eq.reference` for SKU for all variants, Shopify allows duplicate SKUs, but it might be better to keep the same SKU because the SaaS matches on it. I will change the SKU back to `eq.reference`.
+    row[9] = eq.reference;
 
-    for (const ref of equipmentReferences) {
-      if (PRICING_GRIDS[ref]) {
-        const grid = PRICING_GRIDS[ref];
-        let gridDays = days;
-        if (gridDays > 31) gridDays = 31;
-        
-        if (isHalfDay) {
-          subtotal += grid[0.5];
-        } else {
-          subtotal += grid[Math.floor(gridDays)] || grid[31];
-        }
-      } else {
-        const pricePerDay = getPricePerDay(ref);
-        subtotal += isHalfDay ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
-      }
-    }
-
-    const shopifyToken = process.env.SHOPIFY_ACCESS_TOKEN;
-    if (!shopifyToken) {
-      return NextResponse.json({ error: "Token Shopify non configuré" }, { status: 500 });
-    }
-
-    const lineItems = await Promise.all(equipmentReferences.map(async (ref) => {
-      let itemPrice = 0;
-      let gridDays = days;
-      if (gridDays > 31) gridDays = 31;
-      
-      if (PRICING_GRIDS[ref]) {
-        const grid = PRICING_GRIDS[ref];
-        itemPrice = isHalfDay ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
-      } else {
-        const pricePerDay = getPricePerDay(ref);
-        itemPrice = isHalfDay ? Math.round(pricePerDay * 0.6) : pricePerDay * days;
-      }
-
-      const optionValue = isHalfDay ? "Demi-journée" : (Math.floor(gridDays) === 1 ? "1 jour" : `${Math.floor(gridDays)} jours`);
-      let variantId = null;
-
-      try {
-        const query = `
-          query {
-            productVariants(first: 50, query: "sku:${ref}") {
-              edges { node { id title sku } }
-            }
-          }
-        `;
-        const qRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/graphql.json', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': shopifyToken },
-          body: JSON.stringify({ query })
-        });
-        const qData = await qRes.json();
-        const variants = qData.data?.productVariants?.edges || [];
-        const match = variants.find(v => v.node.title === optionValue);
-        if (match) {
-          variantId = parseInt(match.node.id.split('/').pop());
-        }
-      } catch (e) {
-        console.error("Erreur recherche variant Shopify:", e);
-      }
-
-      if (variantId) {
-        return {
-          variant_id: variantId,
-          quantity: 1,
-          properties: [
-            { name: "Date de début", value: startDate },
-            { name: "Date de fin", value: endDate || startDate }
-          ]
-        };
-      } else {
-        return {
-          title: `Location: ${ref}`,
-          price: itemPrice.toString(),
-          quantity: 1,
-          sku: ref,
-          custom: true,
-          properties: [
-            { name: "Date de début", value: startDate },
-            { name: "Date de fin", value: endDate || startDate }
-          ]
-        };
-      }
-    }));
-
-    const payload = {
-      draft_order: {
-        line_items: lineItems,
-        email: email || undefined,
-        use_customer_default_address: false,
-        tags: "rental_saas_booking",
-        note: `Réservation Rental SaaS: ${startDate} au ${endDate || startDate}`,
-        customer: customerData ? {
-          first_name: customerData.firstName,
-          last_name: customerData.lastName,
-          email: email,
-          phone: customerData.phone
-        } : undefined,
-        billing_address: customerData ? {
-          first_name: customerData.firstName,
-          last_name: customerData.lastName,
-          phone: customerData.phone,
-          address1: customerData.address
-        } : undefined
-      }
-    };
-
-    // Apply promo if any
-    if (promoCode) {
-      const { data: promo, error } = await supabase.from('promo_codes').select('*').eq('code', promoCode.toUpperCase()).maybeSingle();
-      if (!error && promo && promo.is_active) {
-        let isValid = true;
-        if (promo.max_uses && promo.used_count >= promo.max_uses) isValid = false;
-        if (promo.target_email && email && promo.target_email.toLowerCase() !== email.toLowerCase()) isValid = false;
-
-        if (isValid) {
-          payload.draft_order.applied_discount = {
-            description: "Code promo",
-            value_type: promo.discount_type === 'percentage' ? 'percentage' : 'fixed_amount',
-            value: promo.discount_value.toString(),
-            title: promo.code
-          };
-        }
-      }
-    }
-
-    const shopifyRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders.json', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': shopifyToken
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await shopifyRes.json();
-
-    if (!shopifyRes.ok) {
-      console.error('Erreur Shopify Draft Order:', data);
-      return NextResponse.json({ error: "Erreur Shopify" }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      url: data.draft_order.invoice_url,
-      amount: subtotal,
-      days: isHalfDay ? 0.5 : days,
-      shopify: true
-    });
-
-  } catch (error) {
-    console.error('Erreur API PaymentIntent (Shopify):', error);
-    return NextResponse.json({ error: error.message || 'Erreur serveur' }, { status: 500 });
+    csvContent += row.join(',') + '\n';
+    isFirstVariant = false;
   }
 }
+
+fs.writeFileSync('/Users/kevinmonin/Desktop/shopify_rental_products_with_variants.csv', csvContent, 'utf-8');
+console.log("CSV created on Desktop successfully!");

@@ -546,23 +546,63 @@ export default function EspaceClientPage() {
                               <span className="text-sm font-medium text-gray-700">Du {sDate.toLocaleDateString('fr-FR')} au {eDate.toLocaleDateString('fr-FR')}</span>
                           </div>
                           <div className="p-6 flex flex-col gap-4">
-                              {bItems.map(item => {
-                                const eq = equipmentList.find(e => e.id === item.equipment_id);
-                                if (!eq) return null;
-                                return (
-                                  <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
-                                      <div className="flex items-center space-x-6">
-                                          <div className="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center text-3xl">
-                                              {eq.category.includes('Wing') ? '🪁' : eq.category.includes('Kite') ? '🌊' : '🏄‍♂️'}
-                                          </div>
-                                          <div>
-                                              <h3 className="text-lg font-bold text-ridery-dark">{eq.name}</h3>
-                                              <p className="text-gray-500 mt-1">Quantité : {item.quantity}</p>
+                              {(() => {
+                                // Try to match Shopify order
+                                const shopifyOrder = booking.shopify_order_id
+                                  ? shopifyOrders.find(o => o.id.toString() === booking.shopify_order_id.toString())
+                                  : null;
+                                
+                                const rentalItems = shopifyOrder
+                                  ? shopifyOrder.line_items.filter(item => 
+                                      (item.sku && item.sku.startsWith('LOK-')) || 
+                                      (item.title && item.title.toLowerCase().startsWith('location'))
+                                    )
+                                  : [];
+                                
+                                if (rentalItems.length > 0) {
+                                  return rentalItems.map(item => {
+                                    const titleLower = (item.title || '').toLowerCase();
+                                    let emoji = '📦';
+                                    if (titleLower.includes('wing')) emoji = '🪁';
+                                    else if (titleLower.includes('kite')) emoji = '🌊';
+                                    else if (titleLower.includes('surf') || titleLower.includes('paddle') || titleLower.includes('board') || titleLower.includes('twintip')) emoji = '🏄‍♂️';
+                                    else if (titleLower.includes('combinaison') || titleLower.includes('néoprène') || titleLower.includes('chausson') || titleLower.includes('gant') || titleLower.includes('cagoule')) emoji = '🤿';
+                                    
+                                    return (
+                                      <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+                                          <div className="flex items-center space-x-6">
+                                              <div className="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center text-3xl">
+                                                  {emoji}
+                                              </div>
+                                              <div>
+                                                  <h3 className="text-lg font-bold text-ridery-dark">{item.title}</h3>
+                                                  <p className="text-gray-500 mt-1">Quantité : {item.quantity}</p>
+                                              </div>
                                           </div>
                                       </div>
-                                  </div>
-                                )
-                              })}
+                                    );
+                                  });
+                                }
+                                
+                                // Fallback to bItems
+                                return bItems.map(item => {
+                                  const eq = equipmentList.find(e => e.id === item.equipment_id);
+                                  if (!eq) return null;
+                                  return (
+                                    <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+                                        <div className="flex items-center space-x-6">
+                                            <div className="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center text-3xl">
+                                                {eq.category.includes('Wing') ? '🪁' : eq.category.includes('Kite') ? '🌊' : '🏄‍♂️'}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-ridery-dark">{eq.name}</h3>
+                                                <p className="text-gray-500 mt-1">Quantité : {item.quantity}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
                           </div>
                       </div>
                     )

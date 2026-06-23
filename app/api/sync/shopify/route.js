@@ -48,6 +48,9 @@ export async function POST(request) {
                 title
                 productType
                 updatedAt
+                featuredImage {
+                  url
+                }
                 variants(first: 50) {
                   edges {
                     node {
@@ -56,6 +59,9 @@ export async function POST(request) {
                       sku
                       barcode
                       inventoryQuantity
+                      image {
+                        url
+                      }
                     }
                   }
                 }
@@ -88,11 +94,13 @@ export async function POST(request) {
           for (const { node: variant } of product.variants.edges) {
             const ref = variant.sku || variant.barcode || variant.id.split('/').pop();
             if (ref) {
+              const imageUrl = variant.image?.url || product.featuredImage?.url || null;
               allVariantsMap.set(ref, {
                 reference: ref,
                 name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
                 category: product.productType || 'Général',
                 quantity: variant.inventoryQuantity || 0,
+                brand: imageUrl
               });
             }
           }

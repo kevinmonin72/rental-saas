@@ -74,7 +74,8 @@ export async function GET(request) {
         id: item.id,
         title: item.title,
         quantity: item.quantity,
-        price: item.price
+        price: item.price,
+        sku: item.sku
       }))
     }));
 

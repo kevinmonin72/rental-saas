@@ -40,11 +40,15 @@ export async function GET(request) {
     for (const product of data.products) {
       for (const variant of product.variants) {
         if (variant.sku) {
+           const varImg = product.images?.find(img => img.id === variant.image_id);
+           const imageUrl = varImg ? varImg.src : (product.image ? product.image.src : null);
+           
            allVariants.push({
              reference: variant.sku,
              name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
              category: product.product_type || 'Général',
              quantity: variant.inventory_quantity || 0,
+             brand: imageUrl
            });
         }
       }
@@ -78,7 +82,8 @@ export async function GET(request) {
        await supabase.from('equipment').update({
          quantity: item.quantity,
          name: item.name,
-         category: item.category
+         category: item.category,
+         brand: item.brand
        }).eq('id', existing.id);
        maj++;
     } else {

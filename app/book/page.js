@@ -6,7 +6,6 @@ import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 // GENERIC_EQUIPMENTS moved to lib/catalog.js to avoid syncing from the client
-import { GENERIC_EQUIPMENTS } from '../../lib/catalog';
 
 const CATEGORY_ICONS = {
   Kitesurf: '',
@@ -668,8 +667,7 @@ export default function PublicBookingPage() {
                   </button>
                   {Object.keys(CATEGORY_ICONS).map(cat => {
                     const count = equipmentList.filter(e => {
-                      const gen = GENERIC_EQUIPMENTS.find(g => g.reference === e.reference);
-                      return gen && gen.category === cat;
+                      return e.category === cat;
                     }).length;
                     
                     if (count === 0) return null;
@@ -702,8 +700,7 @@ export default function PublicBookingPage() {
                     if (activeCategory !== 'All' && activeCategory !== cat) return null;
 
                     const catEquipments = equipmentList.filter(e => {
-                      const gen = GENERIC_EQUIPMENTS.find(g => g.reference === e.reference);
-                      return gen && gen.category === cat && 
+                      return e.category === cat && 
                              (searchQuery === '' || e.name.toLowerCase().includes(searchQuery.toLowerCase()));
                     });
 
@@ -744,25 +741,34 @@ export default function PublicBookingPage() {
                                   backgroundColor: isOutOfStock ? '#F9FAFB' : (isSelected ? '#FFF7ED' : 'white'),
                                   cursor: isOutOfStock ? 'not-allowed' : (isSelected ? 'default' : 'pointer'),
                                   opacity: isOutOfStock ? 0.6 : 1,
-                                  overflow: 'hidden'
+                                  overflow: 'hidden',
+                                  transition: 'all 0.2s',
+                                  boxShadow: isSelected ? '0 4px 12px rgba(249, 115, 22, 0.1)' : '0 1px 3px rgba(0, 0, 0, 0.05)'
                                 }}
                               >
-                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', backgroundColor: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #E5E7EB' }}>
-                                  <img 
-                                    src={`/images/products/${e.reference}.png?v=2`} 
-                                    alt={e.name}
-                                    onError={(evt) => {
-                                      evt.target.style.display = 'none';
-                                    }}
-                                    style={{ 
-                                      width: '100%', 
-                                      height: '100%', 
-                                      objectFit: 'contain',
-                                      padding: '0',
-                                      transform: 'scale(1.15)',
-                                      transition: 'transform 0.2s ease'
-                                    }} 
-                                  />
+                                <div style={{ position: 'relative', width: '100%', aspectRatio: '1/1', backgroundColor: e.imageUrl ? '#FFFFFF' : '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid #E5E7EB' }}>
+                                  {e.imageUrl ? (
+                                    <img 
+                                      src={e.imageUrl} 
+                                      alt={e.name}
+                                      style={{ 
+                                        width: '100%', 
+                                        height: '100%', 
+                                        objectFit: 'contain',
+                                        padding: '12px',
+                                        transition: 'transform 0.2s ease'
+                                      }} 
+                                    />
+                                  ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: '#9CA3AF' }}>
+                                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                                        <circle cx="9" cy="9" r="2" />
+                                        <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                      </svg>
+                                      <span style={{ fontSize: '10px', fontWeight: 500, letterSpacing: '0.3px', textTransform: 'uppercase' }}>Pas d'image</span>
+                                    </div>
+                                  )}
                                   <div style={{ position: 'absolute', top: '8px', right: '8px' }}>
                                     {isOutOfStock ? (
                                       <span style={{ fontSize: '11px', color: '#EF4444', backgroundColor: '#FEE2E2', padding: '4px 8px', borderRadius: '6px', fontWeight: 700, boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Rupture</span>
@@ -772,12 +778,12 @@ export default function PublicBookingPage() {
                                   </div>
                                 </div>
                                 
-                                <div style={{ display: 'flex', flexDirection: 'column', padding: '12px', flex: 1 }}>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', marginBottom: '12px', flex: 1 }}>
-                                    <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.3' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', padding: '16px', flex: 1 }}>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', marginBottom: '16px', flex: 1 }}>
+                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.4' }}>
                                       {e.name}
                                     </h4>
-                                    <span style={{ fontSize: '16px', color: '#F97316', fontWeight: '900' }}>
+                                    <span style={{ fontSize: '18px', color: '#F97316', fontWeight: '900', marginTop: '4px' }}>
                                       {getItemPrice(e.reference, getBookingDuration(), rentalType)} €
                                     </span>
                                     <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
@@ -1039,39 +1045,39 @@ export default function PublicBookingPage() {
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
                 <div>
-                  <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Dates de location</span>
+                  <span style={{ color: '#4B5563', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Dates de location</span>
                   {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? (
                     halfDayDate ? (
-                      <strong style={{ color: '#F3F4F6' }}>
+                      <strong style={{ color: '#1F2937' }}>
                         Le {new Date(halfDayDate).toLocaleDateString('fr-FR')} ({halfDaySlot === 'demi_matin' ? 'Matin' : 'Aprem'})
                       </strong>) : (
                       <em style={{ color: '#9CA3AF' }}>Non définies</em>)) : (
                     startDate && endDate ? (
-                      <strong style={{ color: '#F3F4F6' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>) : (
+                      <strong style={{ color: '#1F2937' }}>Du {new Date(startDate).toLocaleDateString('fr-FR')} au {new Date(endDate).toLocaleDateString('fr-FR')} ({getBookingDuration()} jours)</strong>) : (
                       <em style={{ color: '#9CA3AF' }}>Non définies</em>))}
                 </div>
 
                 {/* Type de location masqué car uniquement Ponctuel */}
 
                 <div>
-                  <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel choisi ({selectedEquipmentIds.length})</span>
+                  <span style={{ color: '#4B5563', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Matériel choisi ({selectedEquipmentIds.length})</span>
                   {selectedEquipmentIds.length > 0 ? (
-                    <ul style={{ margin: 0, paddingLeft: '16px', color: '#F3F4F6', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <ul style={{ margin: 0, paddingLeft: '16px', color: '#1F2937', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {Object.entries(
                         selectedEquipmentIds.reduce((acc, id) => {
                           acc[id] = (acc[id] || 0) + 1;
                           return acc;
                         }, {})).map(([id, qty]) => {
-                        const item = equipmentList.find(e => e.id === id);
-                        return <li key={id}>{item ? <><span style={{ color: '#F97316', fontWeight: 'bold', marginRight: '6px' }}>{qty}x</span>{item.name}</> : 'Équipement'}</li>;
-                      })}
+                          const item = equipmentList.find(e => e.id === id);
+                          return <li key={id}>{item ? <><span style={{ color: '#F97316', fontWeight: 'bold', marginRight: '6px' }}>{qty}x</span>{item.name}</> : 'Équipement'}</li>;
+                        })}
                     </ul>) : (
                     <em style={{ color: '#9CA3AF' }}>Aucun matériel choisi</em>)}
                 </div>
 
                 {selectedEquipmentIds.length > 0 && startDate && endDate && (
                   <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
-                    <span style={{ color: '#6B7280', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Montant total</span>
+                    <span style={{ color: '#4B5563', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Montant total</span>
                     <strong style={{ color: '#F97316', fontSize: '20px' }}>{getBookingTotal()} €</strong>
                     <span style={{ color: '#6B7280', display: 'block', fontSize: '11px', marginTop: '2px' }}>
                       Taxes incluses {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') && '(60% du tarif jour)'}
@@ -1089,10 +1095,10 @@ export default function PublicBookingPage() {
                   </div>)}
 
                 {(firstName || lastName || email) && (
-                  <div style={{ borderTop: '1px solid #374151', paddingTop: '16px' }}>
-                    <span style={{ color: '#9CA3AF', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Vos coordonnées</span>
-                    <strong style={{ color: '#F3F4F6', display: 'block' }}>{firstName} {lastName}</strong>
-                    <span style={{ color: '#9CA3AF', fontSize: '13px' }}>{email}</span>
+                  <div style={{ borderTop: '1px solid #E5E7EB', paddingTop: '16px' }}>
+                    <span style={{ color: '#4B5563', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Vos coordonnées</span>
+                    <strong style={{ color: '#1F2937', display: 'block' }}>{firstName} {lastName}</strong>
+                    <span style={{ color: '#4B5563', fontSize: '13px' }}>{email}</span>
                   </div>)}
               </div>
             </div>)}
