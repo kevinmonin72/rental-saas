@@ -37,6 +37,72 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState('list'); // 'list' | 'new'
   const [duration, setDuration] = useState('1_jour');
 
+  const handleEndDateChange = (val) => {
+    setEndDate(val);
+    if (startDate && val) {
+      const start = new Date(startDate);
+      start.setHours(0,0,0,0);
+      const end = new Date(val);
+      end.setHours(0,0,0,0);
+      if (end >= start) {
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        const startYear = start.getFullYear();
+        const startMonth = start.getMonth();
+        const startDay = start.getDate();
+        
+        const endYear = end.getFullYear();
+        const endMonth = end.getMonth();
+        const endDay = end.getDate();
+
+        const diffMonths = (endYear - startYear) * 12 + (endMonth - startMonth);
+
+        if (diffMonths > 0 && startDay === endDay) {
+          const durationStr = `${diffMonths}_mois`;
+          setDuration(durationStr);
+          if (rentalType !== 'wingboost') {
+            setRentalType(durationStr);
+          }
+        } else {
+          const expectedEnd = new Date(startDate);
+          expectedEnd.setMonth(expectedEnd.getMonth() + diffMonths);
+          expectedEnd.setHours(0,0,0,0);
+          const diffTimeExpected = Math.abs(end - expectedEnd);
+          const diffDaysExpected = Math.ceil(diffTimeExpected / (1000 * 60 * 60 * 24));
+          
+          if (diffMonths > 0 && diffDaysExpected <= 2) {
+            const durationStr = `${diffMonths}_mois`;
+            setDuration(durationStr);
+            if (rentalType !== 'wingboost') {
+              setRentalType(durationStr);
+            }
+          } else {
+            if (diffDays === 1) {
+              setDuration('1_jour');
+              if (rentalType !== 'wingboost') {
+                setRentalType('1_jour');
+              }
+            } else if (diffDays >= 2 && diffDays <= 31) {
+              const durationStr = `${diffDays}_jours`;
+              setDuration(durationStr);
+              if (rentalType !== 'wingboost') {
+                setRentalType(durationStr);
+              }
+            } else {
+              const closestMonths = Math.max(1, Math.min(12, Math.round(diffDays / 30)));
+              const durationStr = `${closestMonths}_mois`;
+              setDuration(durationStr);
+              if (rentalType !== 'wingboost') {
+                setRentalType(durationStr);
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+
   const { 
     customers, 
     equipment, 
@@ -436,6 +502,18 @@ export default function BookingsPage() {
                     }
                   }
                 }} required />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Date de fin</label>
+                <input 
+                  type="date" 
+                  name="endDate" 
+                  className="input" 
+                  value={endDate} 
+                  onChange={(e) => handleEndDateChange(e.target.value)} 
+                  required 
+                />
               </div>
 
               <div className="form-group">
