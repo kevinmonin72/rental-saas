@@ -14,6 +14,9 @@ export default function RootLayout({ children }) {
   if (isPublicPage) {
     return (
       <html lang="fr">
+        <head>
+          <title>THE RIDERY LOCATION - Admin</title>
+        </head>
         <body>
           <main style={{ minHeight: '100vh' }}>
             {children}
@@ -25,6 +28,9 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="fr">
+      <head>
+        <title>THE RIDERY LOCATION - Admin</title>
+      </head>
       <body>
         <ClientAuth>
           <div className="app-layout">

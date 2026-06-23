@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
+import { tailwindStyles } from './styles';
 
 export default function EspaceClientPage() {
   const [user, setUser] = useState(null);
@@ -23,6 +24,8 @@ export default function EspaceClientPage() {
   const [bookingItems, setBookingItems] = useState([]);
   const [shopifyOrders, setShopifyOrders] = useState([]);
   const [fetchingShopify, setFetchingShopify] = useState(false);
+  const [myCourses, setMyCourses] = useState([]);
+  const [showCourseWidget, setShowCourseWidget] = useState(false);
 
   const [customerInfo, setCustomerInfo] = useState({ id: null, first_name: '', last_name: '', phone: '', address: '' });
   const [isEditingInfo, setIsEditingInfo] = useState(false);
@@ -40,6 +43,11 @@ export default function EspaceClientPage() {
     } catch (e) {
       isIframe = true;
     }
+    
+    // Inject custom Tailwind CSS styles to prevent Shopify App Proxy header stripping
+    const styleEl = document.createElement('style');
+    styleEl.innerHTML = tailwindStyles;
+    document.head.appendChild(styleEl);
     
     if (isIframe) {
       setIsInIframe(true);
@@ -63,6 +71,9 @@ export default function EspaceClientPage() {
     fetchEquipment();
     
     return () => {
+      if (document.head.contains(styleEl)) {
+        document.head.removeChild(styleEl);
+      }
       if (observer) observer.disconnect();
       if (sendHeight) window.removeEventListener('resize', sendHeight);
     };
@@ -119,6 +130,16 @@ export default function EspaceClientPage() {
               .in('booking_id', bkIds);
             if (items) setBookingItems(items);
           }
+        }
+
+        // Fetch Wingclass data (courses)
+        const { data: participations } = await supabase
+          .from('session_participants')
+          .select('*, sessions(*, course_types(*))')
+          .eq('customer_id', customer.id);
+        
+        if (participations) {
+          setMyCourses(participations);
         }
       }
     } catch (err) {
@@ -289,50 +310,68 @@ export default function EspaceClientPage() {
             </div>
           </header>
         )}
-        <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-          <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', width: '100%', maxWidth: '400px' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '8px', color: '#111827', textAlign: 'center' }}>Mon Espace Client</h1>
-            <p style={{ fontSize: '14px', color: '#6B7280', marginBottom: '32px', textAlign: 'center' }}>Connectez-vous pour retrouver vos réservations et achats.</p>
+        <main className="flex-1 flex items-center justify-center p-6 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&q=80&w=2000')" }}>
+          <div className="absolute inset-0 bg-ridery-dark/80 backdrop-blur-sm z-0"></div>
+          
+          <div className="relative z-10 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-3xl shadow-2xl animate-[fadeIn_0.5s_ease-out]">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-ridery-orange/20 text-ridery-orange mb-4 shadow-inner">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              </div>
+              <h1 className="text-3xl font-bold text-white tracking-tight mb-2">Mon Espace Client</h1>
+              <p className="text-gray-300 text-sm">Connectez-vous pour retrouver vos réservations, vos abonnements Wingboost et vos cours.</p>
+            </div>
+
             {authError && (
-              <div style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '20px', textAlign: 'center' }}>{authError}</div>
+              <div className="bg-red-500/20 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl text-sm mb-6 flex items-center">
+                <svg className="w-5 h-5 mr-2 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path></svg>
+                {authError}
+              </div>
             )}
-            <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            <form onSubmit={handleLogin} className="space-y-5">
               {isSignUp && (
-                <>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Prénom</label>
-                      <input type="text" value={signUpFirstName} onChange={e => setSignUpFirstName(e.target.value)} placeholder="Jean" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} required={isSignUp} />
+                <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Prénom</label>
+                      <input type="text" value={signUpFirstName} onChange={e => setSignUpFirstName(e.target.value)} placeholder="Jean" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" required={isSignUp} />
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Nom</label>
-                      <input type="text" value={signUpLastName} onChange={e => setSignUpLastName(e.target.value)} placeholder="Dupont" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} required={isSignUp} />
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Nom</label>
+                      <input type="text" value={signUpLastName} onChange={e => setSignUpLastName(e.target.value)} placeholder="Dupont" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" required={isSignUp} />
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Téléphone</label>
-                    <input type="tel" value={signUpPhone} onChange={e => setSignUpPhone(e.target.value)} placeholder="06 12 34 56 78" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Téléphone</label>
+                    <input type="tel" value={signUpPhone} onChange={e => setSignUpPhone(e.target.value)} placeholder="06 12 34 56 78" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" />
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Postale</label>
-                    <input type="text" value={signUpAddress} onChange={e => setSignUpAddress(e.target.value)} placeholder="123 rue de la mer, 75000 Paris" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Adresse Postale</label>
+                    <input type="text" value={signUpAddress} onChange={e => setSignUpAddress(e.target.value)} placeholder="123 rue de la mer, 75000 Paris" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" />
                   </div>
-                </>
+                </div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@example.com" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} required />
+              
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Adresse Email</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="jean@example.com" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" required />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Mot de passe</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '15px', width: '100%', boxSizing: 'border-box' }} required />
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-300 uppercase tracking-wider">Mot de passe</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 text-white placeholder-gray-400 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-ridery-orange transition-all" required />
               </div>
-              <button type="submit" style={{ backgroundColor: '#F97316', color: 'white', padding: '14px', borderRadius: '8px', fontSize: '16px', fontWeight: 600, border: 'none', cursor: 'pointer', marginTop: '8px' }}>
-                {isSignUp ? "Créer mon compte" : "Se connecter"}
+
+              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-ridery-orange to-[#ff5e00] hover:from-[#ff5e00] hover:to-ridery-orange text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-ridery-orange/30 transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed mt-4">
+                {loading ? "Chargement..." : (isSignUp ? "Créer mon compte" : "Se connecter")}
               </button>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center', marginTop: '8px' }}>
-                <button type="button" onClick={() => setIsSignUp(!isSignUp)} style={{ fontSize: '14px', color: '#F97316', textDecoration: 'none', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-                  {isSignUp ? "Déjà un compte ? Se connecter" : "S'inscrire"}
+
+              <div className="text-center pt-4 border-t border-white/10">
+                <p className="text-sm text-gray-400">
+                  {isSignUp ? "Vous avez déjà un compte ?" : "Nouveau sur l'Espace Client ?"}
+                </p>
+                <button type="button" onClick={() => setIsSignUp(!isSignUp)} className="text-ridery-orange font-semibold hover:text-white transition-colors mt-1">
+                  {isSignUp ? "Connectez-vous ici" : "Créer mon compte"}
                 </button>
               </div>
             </form>
@@ -629,14 +668,65 @@ export default function EspaceClientPage() {
 
           {/* COURS WINGCLASS */}
           {activeTab === 'cours' && (
-            <div className="animate-[fadeIn_0.3s_ease-in-out]">
-              <iframe 
-                src={`https://the-ridery-wingclass-zvic.vercel.app/widget?customerId=${customerInfo.id}`}
-                width="100%" 
-                height="800px" 
-                style={{ border: "none", borderRadius: "24px", backgroundColor: "#0a0a0a" }}
-                title="Calendrier Wingclass"
-              />
+            <div className="space-y-6 animate-[fadeIn_0.3s_ease-in-out]">
+                <div className="flex justify-between items-center border-b border-gray-200 pb-4">
+                    <h2 className="text-2xl font-bold text-ridery-dark">Mes Cours</h2>
+                    <button 
+                      onClick={() => setShowCourseWidget(!showCourseWidget)} 
+                      className="bg-ridery-dark text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
+                    >
+                      {showCourseWidget ? 'Voir mes cours' : 'Réserver un cours'}
+                    </button>
+                </div>
+
+                {!showCourseWidget ? (
+                  <>
+                    {myCourses.length === 0 ? (
+                      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">
+                        Aucun cours réservé pour le moment.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {myCourses
+                          .sort((a, b) => new Date(b.sessions?.start_time) - new Date(a.sessions?.start_time))
+                          .map(part => {
+                            const isPast = new Date(part.sessions?.end_time) < new Date();
+                            const sDate = new Date(part.sessions?.start_time);
+                            return (
+                              <div key={part.id} className={`bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-between hover:shadow-md transition ${isPast ? 'opacity-75' : ''}`}>
+                                <div className="flex items-center space-x-6">
+                                  <div className="h-16 w-16 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-2xl">
+                                    🏄‍♂️
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-3 mb-1">
+                                      <h3 className="text-lg font-bold text-ridery-dark">{part.sessions?.course_types?.name || 'Cours'}</h3>
+                                      <span className={`status-badge ${isPast ? 'status-past' : 'status-active'}`}>
+                                        {isPast ? 'Terminé' : 'À venir'}
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-500 font-medium text-sm">
+                                      Le {sDate.toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} à {sDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                    <iframe 
+                      src={`https://the-ridery-wingclass.vercel.app/widget?customerId=${customerInfo.id}`}
+                      width="100%" 
+                      height="800px" 
+                      style={{ border: "none", backgroundColor: "#0a0a0a" }}
+                      title="Calendrier Wingclass"
+                    />
+                  </div>
+                )}
             </div>
           )}
 

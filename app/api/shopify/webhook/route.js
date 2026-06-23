@@ -47,8 +47,8 @@ export async function POST(req) {
       .digest('base64');
       
     if (hash !== shopifySignature) {
-      console.warn("ATTENTION: Signature Shopify invalide ! Le webhook secret ne correspond pas. Autorisé temporairement pour éviter la perte de données.");
-      // return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error("[SECURITY] Invalid Shopify Webhook signature in rental-saas!");
+      return NextResponse.json({ error: 'Unauthorized: Invalid Signature' }, { status: 401 });
     }
 
     const topic = req.headers.get('x-shopify-topic') || '';
@@ -173,7 +173,7 @@ export async function POST(req) {
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           email: email.trim().toLowerCase(),
-          phone: phone.trim() || null
+          phone: phone ? phone.trim() : null
         }]);
       }
 

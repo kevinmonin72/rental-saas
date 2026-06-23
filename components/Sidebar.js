@@ -12,7 +12,7 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <img src="/logo.png" alt="THE RIDERY WINGBOOST" style={{ maxWidth: '100%', height: 'auto', maxHeight: '60px' }} />
+        <img src="/logo.png" alt="THE RIDERY LOCATION" style={{ maxWidth: '100%', height: 'auto', maxHeight: '60px' }} />
       </div>
       <nav className="sidebar-nav">
         <Link href="/" className={`sidebar-link ${pathname === '/' ? 'active' : ''}`}>

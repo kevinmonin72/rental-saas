@@ -103,7 +103,7 @@ export default function ClientAuth({ children }) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-color)' }}>
         <div style={{ width: '100%', maxWidth: '400px', padding: '40px', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--shadow-sm)', textAlign: 'center' }}>
-          <img src="/logo.png" alt="THE RIDERY WINGBOOST" style={{ maxWidth: '200px', marginBottom: '32px' }} />
+          <img src="/logo.png" alt="THE RIDERY LOCATION" style={{ maxWidth: '200px', marginBottom: '32px' }} />
           <h1 style={{ fontSize: '24px', marginBottom: '24px', fontFamily: 'var(--font-display)' }}>Accès sécurisé</h1>
           
           {step === 1 ? (
