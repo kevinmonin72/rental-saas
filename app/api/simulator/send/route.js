@@ -80,6 +80,20 @@ export async function POST(req) {
       payload.draft_order.applied_discount = appliedDiscount;
     }
 
+    // Map vendeur to Shopify user_id
+    const USER_MAP = {
+      'kevin': 169839081,
+      'theo': 84059404
+      // Ajouter les autres ici quand Kevin les donnera
+    };
+
+    if (vendeur) {
+      const vKey = vendeur.toLowerCase().trim();
+      if (USER_MAP[vKey]) {
+        payload.draft_order.user_id = USER_MAP[vKey];
+      }
+    }
+
     // 1. Create Draft Order
     const shopifyRes = await fetch('https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders.json', {
       method: 'POST',
