@@ -19,6 +19,7 @@ export async function middleware(req) {
     '/api/auth/verify', 
     '/api/auth/logout', 
     '/api/2fa',
+    '/api/auth/callback',
     '/api/stripe/',
     '/api/bookings/create',
     '/api/shopify/',
