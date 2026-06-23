@@ -422,10 +422,8 @@ export default function InvoiceGenerator() {
     window.print();
   };
   const calculateTotal = () => {
-    const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-    const taxAmount = subtotal * (invoiceData.taxRate / 100);
-    const total = subtotal + taxAmount;
-    return total;
+    // Les prix sont déjà TTC, on retourne directement la somme
+    return invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
   };
 
   const handleGeneratePaymentLink = async () => {

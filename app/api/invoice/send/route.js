@@ -13,37 +13,31 @@ export async function POST(req) {
     }
 
     // Prepare Line Items
+    // Les prix saisis sont TTC (toutes taxes comprises).
+    // On les envoie directement à Shopify et on désactive les taxes auto de Shopify
+    // pour éviter qu'il en rajoute par-dessus.
+
     const lineItems = invoiceData.items.filter(item => {
-      // Ignorer uniquement si c'est vraiment vide (0 qté, 0 prix, pas de description)
       if (!item.description && !item.reference && item.quantity === 0 && item.unitPrice === 0) return false;
       return true;
     }).map(item => {
       return {
         title: item.description || item.reference || 'Équipement (Ligne vide)',
-        price: item.unitPrice.toString(),
+        price: item.unitPrice.toFixed(2),
         quantity: item.quantity,
         sku: item.reference || '',
-        custom: true
+        custom: true,
+        taxable: false
       };
     }).filter(Boolean);
-
-    // Prepare tax if necessary
-    const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.unitPrice), 0);
-    const taxAmount = subtotal * (invoiceData.taxRate / 100);
-    if (taxAmount > 0) {
-      lineItems.push({
-        title: `TVA (${invoiceData.taxRate}%)`,
-        price: taxAmount.toString(),
-        quantity: 1,
-        custom: true
-      });
-    }
 
     const payload = {
       draft_order: {
         line_items: lineItems,
         email: customerEmail,
         use_customer_default_address: false,
+        tax_exempt: true,
+        taxes_included: true,
         tags: `invoice_${invoiceData.number || 'rental_saas'}`,
         note: `Facture The Ridery - ${invoiceData.number}`,
         customer: {
