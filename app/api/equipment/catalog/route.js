@@ -87,6 +87,7 @@ export async function GET(request) {
     // Force all generic equipments to have at least quantity 10 so they always show up
     const uniqueEquipments = Object.values(grouped).map(e => {
       if (e.quantity <= 0) e.quantity = 10;
+      e.id = e.reference;
       return e;
     });
 
