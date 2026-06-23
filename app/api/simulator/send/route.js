@@ -82,9 +82,10 @@ export async function POST(req) {
 
     // Map vendeur to Shopify user_id
     const USER_MAP = {
-      'kevin': 169839081,
-      'theo': 84059404
-      // Ajouter les autres ici quand Kevin les donnera
+      'adrien caruso': 169839081,
+      'adrien': 169839081,
+      'lucas jacquier': 84059404,
+      'lucas': 84059404
     };
 
     if (vendeur) {
