@@ -57,6 +57,7 @@ export async function POST(req) {
         line_items: lineItems,
         email: customer.email,
         use_customer_default_address: false,
+        note: vendeur ? `Vendeur : ${vendeur}` : "",
         tags: tags,
         note_attributes: [
           {
