@@ -37,11 +37,14 @@ async function syncShopify() {
       for (const variant of product.variants) {
         // On n'importe que les articles qui ont un SKU
         if (variant.sku) {
+           const varImg = product.images?.find(img => img.id === variant.image_id);
+           const imageUrl = varImg ? varImg.src : (product.image ? product.image.src : null);
            allVariants.push({
              reference: variant.sku,
              name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
              category: product.product_type || 'Général',
              quantity: variant.inventory_quantity || 0,
+             brand: imageUrl
            });
         }
       }
@@ -75,7 +78,8 @@ async function syncShopify() {
        await supabase.from('equipment').update({
          quantity: item.quantity,
          name: item.name,
-         category: item.category
+         category: item.category,
+         brand: item.brand
        }).eq('id', existing.id);
        maj++;
     } else {

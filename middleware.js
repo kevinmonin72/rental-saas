@@ -24,7 +24,7 @@ export async function middleware(req) {
     '/api/bookings/create',
     '/api/shopify/',
     '/api/notify',
-    '/api/equipment/sync',
+    '/api/equipment/',
     '/api/cron/',
     '/api/simulator/'
   ];

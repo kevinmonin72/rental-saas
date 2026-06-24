@@ -85,11 +85,14 @@ export async function GET(request) {
     }
 
     // Force all generic equipments to have at least quantity 10 so they always show up
-    const uniqueEquipments = Object.values(grouped).map(e => {
-      if (e.quantity <= 0) e.quantity = 10;
-      e.id = e.reference;
-      return e;
-    });
+    // and exclude optional (-OPT) and Location Strapless (LOK-STRAPLESS) items from the client view
+    const uniqueEquipments = Object.values(grouped)
+      .filter(e => !e.reference.toUpperCase().includes('-OPT') && e.reference.toUpperCase() !== 'LOK-STRAPLESS')
+      .map(e => {
+        if (e.quantity <= 0) e.quantity = 10;
+        e.id = e.reference;
+        return e;
+      });
 
     return NextResponse.json({ equipments: uniqueEquipments });
   } catch (err) {

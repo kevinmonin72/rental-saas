@@ -30,7 +30,7 @@ async function syncShopify() {
 
   // --- EQUIPMENTS ---
   console.log("\n--- Syncing Active Products ---");
-  let url = `https://${domain}/admin/api/2024-01/products.json?status=active&limit=250`;
+  let url = `https://${domain}/admin/api/2024-01/products.json?limit=250`;
   let hasNext = true;
   let allVariantsMap = new Map();
 
@@ -44,11 +44,14 @@ async function syncShopify() {
     for (const product of data.products) {
       for (const variant of product.variants) {
         if (variant.sku) {
+           const varImg = product.images?.find(img => img.id === variant.image_id);
+           const imageUrl = varImg ? varImg.src : (product.image ? product.image.src : null);
            allVariantsMap.set(variant.sku, {
              reference: variant.sku,
-             name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.trim(),
+             name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.replace(/\s*-\s*\d+\s*jours?\s*$/i, '').trim(),
              category: product.product_type || 'Général',
              quantity: variant.inventory_quantity || 0,
+             brand: imageUrl
            });
         }
       }
