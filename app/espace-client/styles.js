@@ -905,7 +905,7 @@ export const tailwindStyles = `
 
 :root {
   /* Clean, Flat, Professional Palette */
-  --bg-color: #F3F4F6;
+  --bg-color: #ffffff;
   /* Tailwind gray-100 */
   --surface-color: #FFFFFF;
   --primary-color: #F97316;

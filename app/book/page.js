@@ -76,6 +76,9 @@ export default function PublicBookingPage() {
 
   // Fetch all inventory and active bookings, and ensure generic items exist
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.body.style.backgroundColor = '#ffffff';
+    }
     async function loadData() {
       try {
         const catalogRes = await fetch(`/api/equipment/catalog?t=${Date.now()}`);
@@ -594,9 +597,8 @@ export default function PublicBookingPage() {
   };
 
   if (fetchingData) {
-    const isIframeSync = typeof window !== 'undefined' && (window.self !== window.top || window.self !== window.parent);
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: isIframeSync ? 'transparent' : '#F3F4F6', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', backgroundColor: '#ffffff', flexDirection: 'column', gap: '16px' }}>
         <div style={{ width: '40px', height: '40px', border: '4px solid #E5E7EB', borderTopColor: '#F97316', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
         <span style={{ fontFamily: 'sans-serif', color: '#4B5563', fontWeight: 500 }}>Chargement du catalogue...</span>
         <style dangerouslySetInnerHTML={{ __html: `
@@ -606,7 +608,7 @@ export default function PublicBookingPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F3F4F6', fontFamily: 'Inter, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', fontFamily: 'Inter, -apple-system, sans-serif' }}>
       
       {/* Script Stripe loader if configured */}
       {isStripeConfigured && (

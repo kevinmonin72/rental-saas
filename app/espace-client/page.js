@@ -35,6 +35,9 @@ export default function EspaceClientPage() {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard', 'locations', 'cours', 'wingboost', 'commandes', 'profil'
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.body.style.backgroundColor = '#ffffff';
+    }
     let isIframe = false;
     let observer = null;
     let sendHeight = null;
@@ -285,7 +288,7 @@ export default function EspaceClientPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#ffffff' }}>
         <p style={{ color: '#6B7280', fontSize: '18px' }}>Chargement...</p>
       </div>
     );
@@ -295,7 +298,7 @@ export default function EspaceClientPage() {
   if (!user) {
     return (
       <>
-        <div style={{ minHeight: '100vh', backgroundColor: isInIframe ? 'transparent' : '#F9FAFB', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ minHeight: '100vh', backgroundColor: '#ffffff', display: 'flex', flexDirection: 'column' }}>
         {!isInIframe && (
           <header style={{ backgroundColor: 'white', borderBottom: '1px solid #E5E7EB', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 10 }}>
             <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

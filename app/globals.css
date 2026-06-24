@@ -6,7 +6,7 @@
 
 :root {
   /* Clean, Flat, Professional Palette */
-  --bg-color: #F3F4F6; /* Tailwind gray-100 */
+  --bg-color: #ffffff; /* Set to white to fully eliminate gray background */
   --surface-color: #FFFFFF;
   --primary-color: #F97316; /* Tailwind orange-500 */
   --primary-hover: #EA580C; /* Tailwind orange-600 */

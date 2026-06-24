@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
         <head>
           <title>THE RIDERY LOCATION - Admin</title>
         </head>
-        <body>
+        <body style={{ backgroundColor: '#ffffff' }}>
           <main style={{ minHeight: '100vh' }}>
             {children}
           </main>
