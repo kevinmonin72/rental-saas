@@ -592,10 +592,10 @@ export default function PublicBookingPage() {
             ⚠️ {error}
           </div>)}
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
           
           {/* Main Card */}
-          <div className="card booking-main-card" style={{ flex: step === 4 ? '1 1 100%' : '1 1 65%' }}>
+          <div className="card booking-main-card" style={{ flex: step === 4 ? '1 1 100%' : '1 1 60%' }}>
             
             {/* STEP 1: DATES */}
             {step === 1 && (
