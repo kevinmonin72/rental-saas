@@ -134,6 +134,43 @@ export default function PublicBookingPage() {
     loadData();
   }, []);
 
+  // Handle auto-resizing when embedded in an iframe
+  useEffect(() => {
+    if (!isInIframe) return;
+
+    const sendHeight = () => {
+      window.parent.postMessage({
+        type: 'resize',
+        height: document.body.scrollHeight
+      }, '*');
+    };
+
+    // Send initial height
+    sendHeight();
+    
+    // Set up a MutationObserver to detect content changes and resize iframe accordingly
+    const observer = new MutationObserver(sendHeight);
+    observer.observe(document.body, {
+      attributes: true,
+      childList: true,
+      subtree: true
+    });
+
+    // Also send height on window resize and image loads
+    window.addEventListener('resize', sendHeight);
+    window.addEventListener('load', sendHeight);
+
+    // Keep resending height periodically as images load and layout reflows
+    const interval = setInterval(sendHeight, 1000);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', sendHeight);
+      window.removeEventListener('load', sendHeight);
+      clearInterval(interval);
+    };
+  }, [isInIframe, step, selectedEquipmentIds, equipmentList, rentalType]);
+
   const getBookingDuration = () => {
     if (rentalType === 'demi_matin' || rentalType === 'demi_aprem') return 0.5;
     if (!startDate || !endDate) return 0;
@@ -532,22 +569,23 @@ export default function PublicBookingPage() {
         
         {/* Progress Wizard Header */}
         {step < 4 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '40px', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="booking-wizard-container">
+            <div className={`booking-wizard-step ${step === 1 ? 'active' : ''}`}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step >= 1 ? '#F97316' : '#D1D5DB', color: 'white', fontSize: '14px', fontWeight: 'bold' }}>1</span>
-              <span style={{ fontWeight: step === 1 ? 'bold' : 'normal', color: step === 1 ? '#111827' : '#6B7280', fontSize: '14px' }}>Dates</span>
+              <span className="booking-wizard-text" style={{ fontWeight: step === 1 ? 'bold' : 'normal', color: step === 1 ? '#111827' : '#6B7280' }}>Dates</span>
             </div>
-            <div style={{ width: '40px', height: '2px', backgroundColor: step >= 2 ? '#F97316' : '#D1D5DB' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="booking-wizard-line" style={{ backgroundColor: step >= 2 ? '#F97316' : '#D1D5DB' }} />
+            <div className={`booking-wizard-step ${step === 2 ? 'active' : ''}`}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step >= 2 ? '#F97316' : '#D1D5DB', color: 'white', fontSize: '14px', fontWeight: 'bold' }}>2</span>
-              <span style={{ fontWeight: step === 2 ? 'bold' : 'normal', color: step === 2 ? '#111827' : '#6B7280', fontSize: '14px' }}>Matériel</span>
+              <span className="booking-wizard-text" style={{ fontWeight: step === 2 ? 'bold' : 'normal', color: step === 2 ? '#111827' : '#6B7280' }}>Matériel</span>
             </div>
-            <div style={{ width: '40px', height: '2px', backgroundColor: step >= 3 ? '#F97316' : '#D1D5DB' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="booking-wizard-line" style={{ backgroundColor: step >= 3 ? '#F97316' : '#D1D5DB' }} />
+            <div className={`booking-wizard-step ${step === 3 ? 'active' : ''}`}>
               <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '28px', height: '28px', borderRadius: '50%', backgroundColor: step >= 3 ? '#F97316' : '#D1D5DB', color: 'white', fontSize: '14px', fontWeight: 'bold' }}>3</span>
-              <span style={{ fontWeight: step === 3 ? 'bold' : 'normal', color: step === 3 ? '#111827' : '#6B7280', fontSize: '14px' }}>Coordonnées & Paiement</span>
+              <span className="booking-wizard-text" style={{ fontWeight: step === 3 ? 'bold' : 'normal', color: step === 3 ? '#111827' : '#6B7280' }}>Coordonnées & Paiement</span>
             </div>
-          </div>)}
+          </div>
+        )}
 
         {error && (
           <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: '500' }}>
@@ -557,7 +595,7 @@ export default function PublicBookingPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '32px' }}>
           
           {/* Main Card */}
-          <div className="card" style={{ padding: '32px', flex: step === 4 ? '1 1 100%' : '1 1 65%', minWidth: '300px' }}>
+          <div className="card booking-main-card" style={{ flex: step === 4 ? '1 1 100%' : '1 1 65%' }}>
             
             {/* STEP 1: DATES */}
             {step === 1 && (
@@ -712,11 +750,7 @@ export default function PublicBookingPage() {
                           <span>{CATEGORY_ICONS[cat]}</span> {cat}
                         </h3>
                         
-                        <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(4, 1fr)', 
-                          gap: '12px' 
-                        }}>
+                        <div className="booking-grid-equipment">
                           {catEquipments.map(e => {
                             const qtySelected = selectedEquipmentIds.filter(id => id === e.id).length;
                             const isSelected = qtySelected > 0;
@@ -778,12 +812,12 @@ export default function PublicBookingPage() {
                                   </div>
                                 </div>
                                 
-                                <div style={{ display: 'flex', flexDirection: 'column', padding: '16px', flex: 1 }}>
+                                <div className="equipment-card-content" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', width: '100%', marginBottom: '16px', flex: 1 }}>
-                                    <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.4' }}>
+                                    <h4 className="equipment-card-title" style={{ margin: '0 0 8px 0', fontWeight: 'bold', color: isOutOfStock ? '#9CA3AF' : '#111827', lineHeight: '1.4' }}>
                                       {e.name}
                                     </h4>
-                                    <span style={{ fontSize: '18px', color: '#F97316', fontWeight: '900', marginTop: '4px' }}>
+                                    <span className="equipment-card-price" style={{ color: '#F97316', fontWeight: '900', marginTop: '4px' }}>
                                       {getItemPrice(e.reference, getBookingDuration(), rentalType)} €
                                     </span>
                                     <span style={{ fontSize: '11px', color: '#6B7280', marginTop: '2px' }}>
@@ -830,7 +864,7 @@ export default function PublicBookingPage() {
                 </div>
 
                 {authMode !== 'logged_in' && (
-                  <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+                  <div className="booking-flex-row" style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
                     <div 
                       onClick={() => setAuthMode('guest')}
                       style={{ flex: 1, padding: '16px', border: authMode === 'guest' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'guest' ? '#FFF7ED' : 'white' }}
@@ -855,7 +889,7 @@ export default function PublicBookingPage() {
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
-                  <div style={{ display: 'flex', gap: '16px' }}>
+                  <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Prénom</label>
                       <input 
@@ -880,7 +914,7 @@ export default function PublicBookingPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '16px' }}>
+                  <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
                       <input 
@@ -1040,7 +1074,7 @@ export default function PublicBookingPage() {
 
           {/* Sidebar / Reservation Summary */}
           {step < 4 && (
-            <div className="card" style={{ position: 'sticky', top: '100px', height: 'fit-content', flex: '1 1 350px', maxWidth: '400px', minWidth: '300px' }}>
+            <div className="card booking-sidebar-card">
               <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '20px', fontSize: '18px', fontWeight: 700 }}>Votre Réservation</h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '14px' }}>
