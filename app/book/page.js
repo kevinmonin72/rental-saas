@@ -56,6 +56,12 @@ export default function PublicBookingPage() {
   const [password, setPassword] = useState('');
   const [isInIframe, setIsInIframe] = useState(false);
 
+  // Login inline form states
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
   // Payment Form State
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
@@ -412,6 +418,40 @@ export default function PublicBookingPage() {
   const handleCvcChange = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, '');
     setCvc(value.substring(0, 4));
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoginLoading(true);
+    setLoginError('');
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword
+      });
+      if (error) throw error;
+      
+      // Pre-fill user data
+      const user = data.user;
+      const { data: profile } = await supabase.from('customers').select('*').eq('email', user.email).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (profile) {
+        setFirstName(profile.first_name || user.user_metadata?.first_name || '');
+        setLastName(profile.last_name || user.user_metadata?.last_name || '');
+        setEmail(profile.email || user.email);
+        setPhone(profile.phone || '');
+        setAddress(profile.address || '');
+      } else {
+        setFirstName(user.user_metadata?.first_name || user.email.split('@')[0] || '');
+        setLastName(user.user_metadata?.last_name || '');
+        setEmail(user.email);
+      }
+      setAuthMode('logged_in');
+    } catch (err) {
+      console.error(err);
+      setLoginError(err.message || 'Email ou mot de passe incorrect.');
+    } finally {
+      setLoginLoading(false);
+    }
   };
 
   const handleBook = async (e) => {
@@ -866,7 +906,7 @@ export default function PublicBookingPage() {
 
             {/* STEP 3: CUSTOMER COORD & STRIPE PAYMENT */}
             {step === 3 && (
-              <form onSubmit={handleBook}>
+              <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h2 style={{ fontSize: '22px', fontWeight: 700, margin: 0 }}>Vos coordonnées & Règlement</h2>
                   <button type="button" onClick={() => setStep(2)} style={{ color: '#F97316', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer' }}>← Retour matériel</button>
@@ -894,120 +934,199 @@ export default function PublicBookingPage() {
                       </div>
                       <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
                     </div>
+                    <div 
+                      onClick={() => setAuthMode('login')}
+                      style={{ flex: 1, padding: '16px', border: authMode === 'login' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'login' ? '#FFF7ED' : 'white' }}
+                    >
+                      <div style={{ fontWeight: 'bold', color: authMode === 'login' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'login' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
+                        Se connecter
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>J'ai déjà un compte client.</div>
+                    </div>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
-                  <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Prénom</label>
-                      <input 
-                        type="text" 
-                        value={firstName} 
-                        onChange={(e) => setFirstName(e.target.value)} 
-                        placeholder="Jean" 
-                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                        required 
-                      />
-                    </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Nom</label>
-                      <input 
-                        type="text" 
-                        value={lastName} 
-                        onChange={(e) => setLastName(e.target.value)} 
-                        placeholder="Dupont" 
-                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                        required 
-                      />
-                    </div>
+                {authMode === 'logged_in' && (
+                  <div style={{ backgroundColor: '#D1FAE5', border: '1px solid #10B981', color: '#065F46', padding: '14px 16px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', fontWeight: '500', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>✓ Connecté en tant que <strong>{firstName} {lastName} ({email})</strong></span>
+                    <button 
+                      type="button" 
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        setFirstName('');
+                        setLastName('');
+                        setEmail('');
+                        setPhone('');
+                        setAddress('');
+                        setAuthMode('guest');
+                      }}
+                      style={{ color: '#059669', background: 'none', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
+                    >
+                      Se déconnecter
+                    </button>
                   </div>
+                )}
 
-                  <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                {authMode === 'login' ? (
+                  <form onSubmit={handleLoginSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px', padding: '24px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>Connectez-vous à votre Espace Client</h3>
+                    
+                    {loginError && (
+                      <div style={{ backgroundColor: '#FEE2E2', border: '1px solid #FCA5A5', color: '#991B1B', padding: '10px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: '500', marginBottom: '8px' }}>
+                        ⚠️ {loginError}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
                       <input 
                         type="email" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
+                        value={loginEmail} 
+                        onChange={(e) => setLoginEmail(e.target.value)} 
                         placeholder="jean.dupont@example.com" 
                         style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
                         required 
                       />
                     </div>
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Téléphone</label>
-                      <input 
-                        type="tel" 
-                        value={phone} 
-                        onChange={(e) => setPhone(e.target.value)} 
-                        placeholder="+33 6 12 34 56 78" 
-                        style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      />
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Postale / Facturation</label>
-                    <input 
-                      type="text" 
-                      value={address} 
-                      onChange={(e) => setAddress(e.target.value)} 
-                      placeholder="123 rue de la Plage, 75000 Paris" 
-                      style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      required 
-                    />
-                  </div>
-
-                  {authMode === 'create_account' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
-                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Créez votre mot de passe</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Mot de passe</label>
                       <input 
                         type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        placeholder="Minimum 6 caractères" 
+                        value={loginPassword} 
+                        onChange={(e) => setLoginPassword(e.target.value)} 
+                        placeholder="Votre mot de passe" 
                         style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                        required={authMode === 'create_account'} 
+                        required 
                       />
-                      <span style={{ fontSize: '12px', color: '#6B7280' }}>Ce mot de passe vous permettra de vous connecter à votre Espace Client pour gérer vos réservations.</span>
                     </div>
-                  )}
-                </div>
 
-                {/* Promo Code Element */}
-                <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: 'white', marginBottom: '24px' }}>
-                  <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '12px' }}>Code Promo (Optionnel)</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <input 
-                      type="text" 
-                      value={promoInput} 
-                      onChange={(e) => setPromoInput(e.target.value.toUpperCase())} 
-                      placeholder="Ex: WELCOME10" 
-                      style={{ flex: 1, padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
-                      disabled={appliedPromo !== null}
-                    />
-                    {appliedPromo ? (
-                      <button type="button" onClick={() => setAppliedPromo(null)} style={{ padding: '0 16px', backgroundColor: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        Retirer
-                      </button>) : (
-                      <button type="button" onClick={handleApplyPromo} disabled={validatingPromo || !promoInput.trim()} style={{ padding: '0 16px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (!promoInput.trim() || validatingPromo) ? 'not-allowed' : 'pointer' }}>
-                        {validatingPromo ? '...' : 'Appliquer'}
-                      </button>)}
-                  </div>
-                  {promoError && <p style={{ color: '#DC2626', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>{promoError}</p>}
-                  {appliedPromo && <p style={{ color: '#059669', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>Code {appliedPromo.code} appliqué avec succès !</p>}
-                </div>
+                    <button 
+                      type="submit" 
+                      disabled={loginLoading}
+                      className="btn-primary"
+                      style={{ marginTop: '8px', padding: '12px', width: '100%' }}
+                    >
+                      {loginLoading ? 'Connexion en cours...' : 'Se connecter'}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleBook}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
+                      <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Prénom</label>
+                          <input 
+                            type="text" 
+                            value={firstName} 
+                            onChange={(e) => setFirstName(e.target.value)} 
+                            placeholder="Jean" 
+                            style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                            required 
+                          />
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Nom</label>
+                          <input 
+                            type="text" 
+                            value={lastName} 
+                            onChange={(e) => setLastName(e.target.value)} 
+                            placeholder="Dupont" 
+                            style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                            required 
+                          />
+                        </div>
+                      </div>
 
-                <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="btn-primary"
-                  style={{ width: '100%', padding: '14px', fontSize: '16px' }}
-                >
-                  {loading ? 'Redirection vers Shopify...' : `Valider et payer sécurisé (${getBookingTotal()} €) `}
-                </button>
-              </form>)}
+                      <div className="booking-flex-row" style={{ display: 'flex', gap: '16px' }}>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Email</label>
+                          <input 
+                            type="email" 
+                            value={email} 
+                            onChange={(e) => setEmail(e.target.value)} 
+                            placeholder="jean.dupont@example.com" 
+                            style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                            required 
+                          />
+                        </div>
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Téléphone</label>
+                          <input 
+                            type="tel" 
+                            value={phone} 
+                            onChange={(e) => setPhone(e.target.value)} 
+                            placeholder="+33 6 12 34 56 78" 
+                            style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Adresse Postale / Facturation</label>
+                        <input 
+                          type="text" 
+                          value={address} 
+                          onChange={(e) => setAddress(e.target.value)} 
+                          placeholder="123 rue de la Plage, 75000 Paris" 
+                          style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                          required 
+                        />
+                      </div>
+
+                      {authMode === 'create_account' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', padding: '16px', backgroundColor: '#F9FAFB', borderRadius: '12px', border: '1px solid #E5E7EB' }}>
+                          <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151' }}>Créez votre mot de passe</label>
+                          <input 
+                            type="password" 
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            placeholder="Minimum 6 caractères" 
+                            style={{ padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                            required={authMode === 'create_account'} 
+                          />
+                          <span style={{ fontSize: '12px', color: '#6B7280' }}>Ce mot de passe vous permettra de vous connecter à votre Espace Client pour gérer vos réservations.</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Promo Code Element */}
+                    <div style={{ border: '1px solid #E5E7EB', borderRadius: '12px', padding: '24px', backgroundColor: 'white', marginBottom: '24px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '12px' }}>Code Promo (Optionnel)</label>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <input 
+                          type="text" 
+                          value={promoInput} 
+                          onChange={(e) => setPromoInput(e.target.value.toUpperCase())} 
+                          placeholder="Ex: WELCOME10" 
+                          style={{ flex: 1, padding: '12px 14px', border: '1px solid #D1D5DB', borderRadius: '8px', fontSize: '15px', outline: 'none' }}
+                          disabled={appliedPromo !== null}
+                        />
+                        {appliedPromo ? (
+                          <button type="button" onClick={() => setAppliedPromo(null)} style={{ padding: '0 16px', backgroundColor: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                            Retirer
+                          </button>) : (
+                          <button type="button" onClick={handleApplyPromo} disabled={validatingPromo || !promoInput.trim()} style={{ padding: '0 16px', backgroundColor: '#374151', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: (!promoInput.trim() || validatingPromo) ? 'not-allowed' : 'pointer' }}>
+                            {validatingPromo ? '...' : 'Appliquer'}
+                          </button>)}
+                      </div>
+                      {promoError && <p style={{ color: '#DC2626', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>{promoError}</p>}
+                      {appliedPromo && <p style={{ color: '#059669', fontSize: '13px', marginTop: '8px', fontWeight: 500 }}>Code {appliedPromo.code} appliqué avec succès !</p>}
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      disabled={loading}
+                      className="btn-primary"
+                      style={{ width: '100%', padding: '14px', fontSize: '16px' }}
+                    >
+                      {loading ? 'Redirection vers Shopify...' : `Valider et payer sécurisé (${getBookingTotal()} €) `}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
             {/* STEP 4: CONFIRMATION */}
             {step === 4 && (
