@@ -171,6 +171,15 @@ export default function PublicBookingPage() {
     };
   }, [isInIframe, step, selectedEquipmentIds, equipmentList, rentalType]);
 
+  // Scroll to top of the page/iframe when the step changes
+  useEffect(() => {
+    if (isInIframe) {
+      window.parent.postMessage({ type: 'scroll_to_top' }, '*');
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [step, isInIframe]);
+
   const getBookingDuration = () => {
     if (rentalType === 'demi_matin' || rentalType === 'demi_aprem') return 0.5;
     if (!startDate || !endDate) return 0;
