@@ -564,7 +564,7 @@ export default function PublicBookingPage() {
 
       {/* Header removed as requested */}
 
-      <main style={{ maxWidth: '1400px', margin: isInIframe ? '20px auto' : '40px auto', padding: isInIframe ? '0 12px 80px 12px' : '0 24px 80px 24px' }}>
+      <main style={{ maxWidth: '1100px', margin: isInIframe ? '60px auto' : '80px auto', padding: isInIframe ? '0 12px 80px 12px' : '0 24px 80px 24px' }}>
 
         
         {/* Progress Wizard Header */}
