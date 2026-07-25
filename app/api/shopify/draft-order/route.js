@@ -162,6 +162,8 @@ export async function POST(req) {
     ];
     
     let appliedDiscount = undefined;
+    let subtotal = lineItems.reduce((acc, item) => acc + parseFloat(item.price || 0), 0);
+
     if (booking.notes) {
       noteParts.push(`\nNotes: ${booking.notes}`);
       const promoMatch = booking.notes.match(/\[PROMO:\s*([^\]]+)\]/i);
@@ -169,10 +171,22 @@ export async function POST(req) {
         const code = promoMatch[1].trim().toUpperCase();
         const { data: promoData } = await supabaseAdmin.from('promo_codes').select('*').eq('code', code).single();
         if (promoData) {
+          let discountAmount = 0;
+          if (promoData.discount_type === 'percentage') {
+            discountAmount = subtotal * (parseFloat(promoData.discount_value) / 100);
+          } else {
+            discountAmount = parseFloat(promoData.discount_value);
+          }
+          
+          if (subtotal - discountAmount <= 0) {
+             return NextResponse.json({ error: 'Erreur: Le code promo rend la réservation gratuite (0€), ce qui est refusé.' }, { status: 400 });
+          }
+
           appliedDiscount = {
             description: `Promo: ${code}`,
             value: promoData.discount_value.toString(),
             value_type: promoData.discount_type === 'percentage' ? 'percentage' : 'fixed_amount',
+            amount: discountAmount.toFixed(2),
             title: code
           };
         }
@@ -199,19 +213,6 @@ export async function POST(req) {
         use_customer_default_address: false,
       }
     };
-
-    if (appliedDiscount) {
-      let subtotal = lineItems.reduce((acc, item) => acc + parseFloat(item.price || 0), 0);
-      let newTotal = subtotal;
-      if (appliedDiscount.value_type === 'percentage') {
-         newTotal = subtotal * (1 - parseFloat(appliedDiscount.value) / 100);
-      } else {
-         newTotal = subtotal - parseFloat(appliedDiscount.value);
-      }
-      if (newTotal <= 0) {
-         return NextResponse.json({ error: 'Erreur: Le code promo rend la réservation gratuite (0€), ce qui est refusé.' }, { status: 400 });
-      }
-    }
 
     const res = await fetch(`https://${domain}/admin/api/2024-04/draft_orders.json`, {
       method: 'POST',
