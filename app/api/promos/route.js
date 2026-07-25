@@ -137,7 +137,17 @@ export async function POST(req) {
 
 export async function PUT(req) {
   try {
-    const { id, is_active } = await req.json();
+    const body = await req.json();
+    
+    if (body.action === 'increment' && body.code) {
+      const { data: promoData } = await supabaseAdmin.from('promo_codes').select('id, used_count').eq('code', body.code).single();
+      if (promoData) {
+        await supabaseAdmin.from('promo_codes').update({ used_count: (promoData.used_count || 0) + 1 }).eq('id', promoData.id);
+      }
+      return NextResponse.json({ success: true });
+    }
+
+    const { id, is_active } = body;
     const { error } = await supabaseAdmin.from('promo_codes').update({ is_active }).eq('id', id);
     if (error) throw error;
     return NextResponse.json({ success: true });

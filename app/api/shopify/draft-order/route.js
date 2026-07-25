@@ -179,9 +179,8 @@ export async function POST(req) {
             discountAmount = parseFloat(promoData.discount_value);
           }
           
-          if (subtotal - discountAmount <= 0) {
-             return NextResponse.json({ error: 'Erreur: Le code promo rend la réservation gratuite (0€), ce qui est refusé.' }, { status: 400 });
-          }
+          // Note: Shopify allows 100% discounts. We just mark it as 100% off.
+          // Removed restriction on 0€ to allow 100% promo codes.
 
           appliedDiscount = {
             description: `Promo: ${code}`,

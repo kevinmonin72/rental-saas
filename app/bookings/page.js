@@ -252,6 +252,14 @@ export default function BookingsPage() {
         pauseEnd: rentalType === 'wingboost' ? pauseEnd : null,
         notes: promoCode ? `${notes}\n[PROMO: ${promoCode}]`.trim() : notes
       });
+
+      if (promoCode) {
+        customFetch('/api/promos', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'increment', code: promoCode.trim().toUpperCase() })
+        }).catch(err => console.error('Failed to increment promo code', err));
+      }
     }
     
     setSelectedEquipments([]);
