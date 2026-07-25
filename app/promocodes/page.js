@@ -50,10 +50,14 @@ export default function PromoCodesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(promoData)
       });
+      const data = await res.json();
+      
       if (!res.ok) {
-        const err = await res.json();
-        alert(`Erreur création: ${err.error}`);
+        alert(`Erreur création: ${data.error}`);
       } else {
+        if (data.warning) {
+          alert(`⚠️ INFORMATION : ${data.warning}`);
+        }
         setCode(''); setDiscountType('percentage'); setDiscountValue('');
         setTargetEmail(''); setMaxUses('');
         fetchPromos();

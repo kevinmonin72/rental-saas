@@ -116,14 +116,16 @@ export async function POST(req) {
         if (!resCode.ok) {
           const errText = await resCode.text();
           console.error("Erreur création Discount Code:", errText);
-          // Non-bloquant si le price rule a marché, mais on log
         }
       } else {
         const errorText = await resRule.text();
         console.error('Erreur création Price Rule Shopify:', errorText);
-        // Si ça échoue (souvent à cause de entitled_product_ids vide), on supprime le code promo de Supabase
-        await supabaseAdmin.from('promo_codes').delete().eq('code', promoData.code);
-        return NextResponse.json({ error: `Impossible de créer le code sur Shopify. Raison: ${errorText}` }, { status: 500 });
+        // Au lieu de supprimer le code du SaaS et de bloquer, on le garde dans le SaaS
+        // et on renvoie un statut de succès avec un avertissement.
+        return NextResponse.json({ 
+          success: true, 
+          warning: `Le code a été créé dans le SaaS avec succès, mais n'a pas pu être envoyé à Shopify (Manque de permissions). Vous devrez le créer manuellement sur Shopify si vous voulez qu'il marche côté client.` 
+        });
       }
     }
 
