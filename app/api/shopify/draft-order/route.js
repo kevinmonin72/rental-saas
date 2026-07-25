@@ -127,6 +127,7 @@ export async function POST(req) {
           if (shopifyVariant) {
             lineItems.push({
               variant_id: shopifyVariant.variant_id,
+              price: shopifyVariant.price, // Used for discount calculation
               quantity: 1,
               requires_shipping: false,
               taxable: true,
