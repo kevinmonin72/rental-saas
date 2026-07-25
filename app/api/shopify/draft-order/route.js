@@ -231,6 +231,15 @@ export async function POST(req) {
     const storeName = domain.replace('.myshopify.com', '');
     const admin_url = `https://admin.shopify.com/store/${storeName}/draft_orders/${draft_order.id}`;
 
+    // If a discount was successfully applied, increment the used_count
+    if (appliedDiscount && appliedDiscount.title) {
+      const code = appliedDiscount.title;
+      const { data: promoData } = await supabaseAdmin.from('promo_codes').select('id, used_count').eq('code', code).single();
+      if (promoData) {
+        await supabaseAdmin.from('promo_codes').update({ used_count: (promoData.used_count || 0) + 1 }).eq('id', promoData.id);
+      }
+    }
+
     return NextResponse.json({
       id: draft_order.id,
       admin_url,
