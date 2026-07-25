@@ -186,6 +186,7 @@ export async function POST(req) {
         line_items: lineItems,
         email: email || undefined,
         use_customer_default_address: false,
+        location_id: '81944215861', // The Ridery Marseille
         tags: "rental_saas_booking",
         note: `Réservation Rental SaaS: ${startDate} au ${endDate || startDate}`,
         customer: customerData ? {

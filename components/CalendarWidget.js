@@ -174,6 +174,22 @@ export default function CalendarWidget({ bookings }) {
             if (startCol < 1) startCol = 1;
             if (endCol > DAYS_TO_SHOW + 1) endCol = DAYS_TO_SHOW + 1;
 
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isLate = bEnd < today;
+
+            const barStyle = isLate
+              ? { backgroundColor: '#FEE2E2', color: '#991B1B', boxShadow: '0 1px 3px rgba(153,27,27,0.15)' }
+              : b.rental_type !== 'wingboost'
+              ? { backgroundColor: '#EFF6FF', color: '#1E40AF', boxShadow: '0 1px 3px rgba(59,130,246,0.15)' }
+              : undefined;
+
+            const barLabel = b.rental_type === 'wingboost'
+              ? `🚀 Wingboost${isLate ? ' — RETARD' : ''}`
+              : b.rental_type === 'demi_matin' ? '☀️ ½j. Matin'
+              : b.rental_type === 'demi_aprem' ? '⛅ ½j. Aprem'
+              : `Ponctuelle${isLate ? ' — RETARD' : ''}`;
+
             return (
               <div key={`${b.id}-${i}`} className={styles.row}>
                 <div className={styles.cellName} style={{ backgroundColor: 'var(--surface-color)' }}>
@@ -186,17 +202,16 @@ export default function CalendarWidget({ bookings }) {
                   {days.map((_, i) => (
                     <div key={i} className={styles.dayCell} style={{ gridRow: 1, gridColumn: i + 1 }}></div>
                   ))}
-                  
+
                   {/* The booking bar */}
-                  <div 
+                  <div
                     className={styles.barContainer}
                     style={{ gridColumn: `${startCol} / ${endCol}`, gridRow: 1 }}
                   >
                     <Link href={`/bookings?bookingId=${b.id}`} style={{ display: 'block', height: '100%', textDecoration: 'none' }}>
-                      <div className={styles.bar} title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
-                        {b.rental_type === 'wingboost' ? '🚀 Wingboost' : 
-                         b.rental_type === 'demi_matin' ? '☀️ ½j. Matin' :
-                         b.rental_type === 'demi_aprem' ? '⛅ ½j. Aprem' : '🕒 Ponctuelle'}
+                      <div className={styles.bar} style={barStyle}
+                        title={(b.equipments?.map(eq => `${eq.name} (Réf: ${eq.reference || 'N/A'})`) || []).join(', ')}>
+                        {barLabel}
                       </div>
                     </Link>
                   </div>

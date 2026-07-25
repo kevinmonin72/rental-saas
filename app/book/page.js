@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { supabase } from '../../lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -13,7 +14,6 @@ const CATEGORY_ICONS = {
   Néoprène: '',
   Accessoires: '',
   Protections: '️',
-  'Carte Session': '️',
   Autres: ''
 };
 
@@ -81,12 +81,12 @@ export default function PublicBookingPage() {
     }
     async function loadData() {
       try {
-        const catalogRes = await fetch(`/api/equipment/catalog?t=${Date.now()}`);
-        const catalogData = await catalogRes.json();
-
-        const [bookRes, itemsRes] = await Promise.all([
+        const [catalogRes, bookRes, itemsRes] = await Promise.all([
+          fetch('/api/equipment/catalog'),
           supabase.from('bookings').select('*').eq('status', 'active'),
-          supabase.from('booking_items').select('*')]);
+          supabase.from('booking_items').select('*')
+        ]);
+        const catalogData = await catalogRes.json();
 
         if (bookRes.error) throw bookRes.error;
         if (itemsRes.error) throw itemsRes.error;
@@ -303,8 +303,30 @@ export default function PublicBookingPage() {
       if (!res.ok) {
         setPromoError(data.error || 'Code promo invalide.');
       } else {
-        setAppliedPromo(data.promo);
-        setPromoError('');
+        const promo = data.promo;
+        let subtotal = 0;
+        const days = getBookingDuration();
+        for (const eqId of selectedEquipmentIds) {
+          const item = equipmentList.find(e => e.id === eqId);
+          if (item) {
+            subtotal += getItemPrice(item.reference, days, rentalType);
+          }
+        }
+        
+        let newTotal = subtotal;
+        if (promo.discount_type === 'percentage') {
+          newTotal = subtotal * (1 - promo.discount_value / 100);
+        } else if (promo.discount_type === 'amount') {
+          newTotal = subtotal - promo.discount_value;
+        }
+        
+        if (newTotal <= 0) {
+          setPromoError('Le montant total ne peut pas être de 0€ ou moins après réduction.');
+          setAppliedPromo(null);
+        } else {
+          setAppliedPromo(promo);
+          setPromoError('');
+        }
       }
     } catch (err) {
       setPromoError('Erreur de validation.');
@@ -521,7 +543,7 @@ export default function PublicBookingPage() {
 
       const piData = await piRes.json();
 
-      if (piData.shopify && piData.url) {
+      if (piData.url) {
         // Shopify checkout takes a moment to be available after API creation
         await new Promise(resolve => setTimeout(resolve, 2500));
         try {
@@ -537,57 +559,9 @@ export default function PublicBookingPage() {
           link.click();
         }
         return;
-      }
-      
-      if (piData.mock) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        console.log("Paiement simulé validé avec succès.");
       } else {
-        const stripe = window.Stripe ? window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
-        if (!stripe) {
-          throw new Error('Erreur de chargement du module Stripe.');
-        }
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        throw new Error('Erreur lors de la création du lien de paiement Shopify.');
       }
-
-      // 3. Create Booking securely via backend (fallback only if not shopify)
-      const itemCounts = {};
-      selectedEquipmentIds.forEach(id => {
-        itemCounts[id] = (itemCounts[id] || 0) + 1;
-      });
-      const itemsPayload = Object.entries(itemCounts).map(([eqId, qty]) => ({
-        equipment_id: eqId,
-        quantity: qty
-      }));
-
-      const createRes = await fetch('/api/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          paymentIntentId: piData.clientSecret, // Used as an ID for now
-          customerData: {
-            firstName,
-            lastName,
-            email,
-            phone,
-            address
-          },
-          bookingData: {
-            startDate,
-            endDate,
-            rentalType
-          },
-          items: itemsPayload,
-          appliedPromo
-        })
-      });
-
-      if (!createRes.ok) {
-        const errData = await createRes.json();
-        throw new Error(errData.error || 'Erreur lors de la création de la réservation côté serveur.');
-      }
-
-      setStep(4);
     } catch (err) {
       console.error(err);
       setError(err.message || 'Une erreur est survenue lors de la transaction. Veuillez réessayer.');
@@ -612,7 +586,7 @@ export default function PublicBookingPage() {
       
       {/* Script Stripe loader if configured */}
       {isStripeConfigured && (
-        <script src="https://js.stripe.com/v3/" async></script>)}
+        <Script src="https://js.stripe.com/v3/" strategy="beforeInteractive" />)}
 
       {/* Header removed as requested */}
 
@@ -928,24 +902,24 @@ export default function PublicBookingPage() {
                       <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Rapide, sans création de compte.</div>
                     </div>
                     <div 
-                      onClick={() => setAuthMode('create_account')}
-                      style={{ flex: 1, padding: '16px', border: authMode === 'create_account' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'create_account' ? '#FFF7ED' : 'white' }}
+                      style={{ flex: 1, padding: '16px', border: '1px solid #E5E7EB', borderRadius: '12px', cursor: 'not-allowed', backgroundColor: '#F9FAFB', opacity: 0.6 }}
                     >
-                      <div style={{ fontWeight: 'bold', color: authMode === 'create_account' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'create_account' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
-                        Créer un Espace Client
+                      <div style={{ fontWeight: 'bold', color: '#9CA3AF', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: '1px solid #D1D5DB' }}></span>
+                        <span>Créer un Espace Client</span>
+                        <span style={{ fontSize: '10px', backgroundColor: '#E5E7EB', color: '#4B5563', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700 }}>Bientôt disponible</span>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
+                      <div style={{ fontSize: '13px', color: '#9CA3AF', paddingLeft: '24px' }}>Gérez vos réservations facilement.</div>
                     </div>
                     <div 
-                      onClick={() => setAuthMode('login')}
-                      style={{ flex: 1, padding: '16px', border: authMode === 'login' ? '2px solid #F97316' : '1px solid #E5E7EB', borderRadius: '12px', cursor: 'pointer', backgroundColor: authMode === 'login' ? '#FFF7ED' : 'white' }}
+                      style={{ flex: 1, padding: '16px', border: '1px solid #E5E7EB', borderRadius: '12px', cursor: 'not-allowed', backgroundColor: '#F9FAFB', opacity: 0.6 }}
                     >
-                      <div style={{ fontWeight: 'bold', color: authMode === 'login' ? '#C2410C' : '#374151', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: authMode === 'login' ? '5px solid #F97316' : '1px solid #D1D5DB' }}></span>
-                        Se connecter
+                      <div style={{ fontWeight: 'bold', color: '#9CA3AF', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', border: '1px solid #D1D5DB' }}></span>
+                        <span>Se connecter</span>
+                        <span style={{ fontSize: '10px', backgroundColor: '#E5E7EB', color: '#4B5563', padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase', fontWeight: 700 }}>Bientôt disponible</span>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#6B7280', paddingLeft: '24px' }}>J'ai déjà un compte client.</div>
+                      <div style={{ fontSize: '13px', color: '#9CA3AF', paddingLeft: '24px' }}>J'ai déjà un compte client.</div>
                     </div>
                   </div>
                 )}
@@ -1175,7 +1149,6 @@ export default function PublicBookingPage() {
                       setStep(1);
                       setStartDate('');
                       setEndDate('');
-                      setHalfDayDate('');
                       setSelectedEquipmentIds([]);
                       setFirstName('');
                       setLastName('');
@@ -1212,9 +1185,9 @@ export default function PublicBookingPage() {
                 <div>
                   <span style={{ color: '#4B5563', display: 'block', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Dates de location</span>
                   {(rentalType === 'demi_matin' || rentalType === 'demi_aprem') ? (
-                    halfDayDate ? (
+                    startDate ? (
                       <strong style={{ color: '#1F2937' }}>
-                        Le {new Date(halfDayDate).toLocaleDateString('fr-FR')} ({halfDaySlot === 'demi_matin' ? 'Matin' : 'Aprem'})
+                        Le {new Date(startDate).toLocaleDateString('fr-FR')} ({rentalType === 'demi_matin' ? 'Matin' : 'Aprem'})
                       </strong>) : (
                       <em style={{ color: '#9CA3AF' }}>Non définies</em>)) : (
                     startDate && endDate ? (

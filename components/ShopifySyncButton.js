@@ -12,9 +12,13 @@ export default function ShopifySyncButton({ type }) {
   const handleSync = async () => {
     setSyncing(true);
     try {
+      const token = typeof window !== 'undefined' ? (sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token')) : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['X-Admin-Token'] = token;
+
       const res = await fetch('/api/sync/shopify', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ type })
       });
       const data = await res.json();

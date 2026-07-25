@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import CsvImporterButton from '../../components/CsvImporterButton';
 import ShopifySyncButton from '../../components/ShopifySyncButton';
 import { useStore } from '../../lib/store';
@@ -13,9 +14,11 @@ export default function CustomersPage() {
     return `${sf} ${sl}`.trim();
   };
 
+  const cleanVal = (v) => (!v || v === 'null' || v === 'undefined' || v.trim() === '') ? null : v;
+
   const [mounted, setMounted] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOrder, setSortOrder] = useState('az');
+  const [sortOrder, setSortOrder] = useState('last_booking');
   const [selectedIds, setSelectedIds] = useState([]);
   
   // Pagination State
@@ -30,7 +33,8 @@ export default function CustomersPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
 
-  const { customers, addCustomer, updateCustomer, deleteCustomer, bulkDeleteCustomers } = useStore();
+  const router = useRouter();
+  const { customers, bookings, addCustomer, updateCustomer, deleteCustomer, bulkDeleteCustomers } = useStore();
 
   useEffect(() => {
     setMounted(true);
@@ -50,10 +54,16 @@ export default function CustomersPage() {
            (c.address && c.address.toLowerCase().includes(term));
   });
 
+  const getLastBookingDate = (customerId) => {
+    const cb = bookings.filter(b => b.customer_id === customerId);
+    if (!cb.length) return 0;
+    return Math.max(...cb.map(b => new Date(b.created_at || b.start_date || 0).getTime()));
+  };
+
   const sortedCustomers = [...filteredCustomers].sort((a, b) => {
+    if (sortOrder === 'last_booking') return getLastBookingDate(b.id) - getLastBookingDate(a.id);
     const strA = formatName(a.first_name, a.last_name).toLowerCase() || (a.email || '').toLowerCase() || 'zzz';
     const strB = formatName(b.first_name, b.last_name).toLowerCase() || (b.email || '').toLowerCase() || 'zzz';
-    
     if (sortOrder === 'az') return strA.localeCompare(strB);
     return strB.localeCompare(strA);
   });
@@ -263,6 +273,7 @@ export default function CustomersPage() {
               onChange={(e) => setSortOrder(e.target.value)}
               style={{ minWidth: '120px' }}
             >
+              <option value="last_booking">Dernière résa</option>
               <option value="az">A à Z</option>
               <option value="za">Z à A</option>
             </select>
@@ -322,34 +333,40 @@ export default function CustomersPage() {
                       {formatName(customer.first_name, customer.last_name)}
                     </h3>
                     <div style={{ color: 'var(--text-light)', fontSize: '14px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                      {customer.email && (
-                        <span>
-                          ✉️ <a href={`mailto:${customer.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>{customer.email}</a>
-                        </span>
+                      {cleanVal(customer.email) && (
+                        <span>✉️ <a href={`mailto:${customer.email}`} style={{ color: 'inherit', textDecoration: 'none' }}>{customer.email}</a></span>
                       )}
-                      {customer.phone && (
-                        <span>
-                          📞 <a href={`tel:${customer.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>{customer.phone}</a>
-                        </span>
+                      {cleanVal(customer.phone) && (
+                        <span>📞 <a href={`tel:${customer.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>{customer.phone}</a></span>
                       )}
-                      {customer.address && (
-                        <span>
-                          📍 {customer.address}
-                        </span>
+                      {cleanVal(customer.address) && (
+                        <span>📍 {customer.address}</span>
                       )}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button 
-                      onClick={() => handleEdit(customer)} 
-                      className="btn btn-secondary" 
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {(() => {
+                      const count = bookings.filter(b => b.customer_id === customer.id).length;
+                      return (
+                        <button
+                          onClick={() => router.push(`/customers/${customer.id}`)}
+                          className="btn btn-secondary"
+                          style={{ padding: '6px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          📋 Historique {count > 0 && <span style={{ background: 'var(--primary-color)', color: 'white', borderRadius: '10px', padding: '1px 7px', fontSize: '11px', fontWeight: '600' }}>{count}</span>}
+                        </button>
+                      );
+                    })()}
+                    <button
+                      onClick={() => handleEdit(customer)}
+                      className="btn btn-secondary"
                       style={{ padding: '6px 12px', fontSize: '13px' }}
                     >
                       ✏️ Modifier
                     </button>
-                    <button 
-                      onClick={() => { if (confirm('Supprimer ce client définitivement ?')) deleteCustomer(customer.id); }} 
-                      className="btn btn-secondary" 
+                    <button
+                      onClick={() => { if (confirm('Supprimer ce client définitivement ?')) deleteCustomer(customer.id); }}
+                      className="btn btn-secondary"
                       style={{ padding: '6px 12px', fontSize: '13px', color: '#ef4444' }}
                     >
                       Supprimer

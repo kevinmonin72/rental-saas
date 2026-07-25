@@ -42,7 +42,8 @@ export default function InventoryPage() {
       category: formData.get('category'),
       brand: formData.get('brand'),
       condition: formData.get('condition'),
-      quantity: parseInt(formData.get('quantity'), 10) || 1
+      quantity: parseInt(formData.get('quantity'), 10) || 1,
+      collection: formData.get('collection') || null,
     };
 
     if (editingEquipmentId) {
@@ -156,6 +157,52 @@ export default function InventoryPage() {
               <label>Quantité en stock</label>
               <input type="number" name="quantity" className="input" defaultValue={editingEquipment?.quantity || 1} min="1" required />
             </div>
+            <div className="form-group">
+              <label>SKU Location Shopify (LOK-*)</label>
+              <input
+                type="text"
+                name="collection"
+                className="input"
+                defaultValue={editingEquipment?.collection || ''}
+                placeholder="ex: LOK-PACK-WING-RIGIDE"
+                list="lok-sku-list"
+              />
+              <datalist id="lok-sku-list">
+                <option value="LOK-PACK-WING-RIGIDE" />
+                <option value="LOK-PACK-WING-GONFLABLE" />
+                <option value="LOK-PACK-WING-DEBUTANT" />
+                <option value="LOK-WING-AILE" />
+                <option value="LOK-WING-2AILE" />
+                <option value="LOK-WING-FOIL" />
+                <option value="LOK-WING-BOARD" />
+                <option value="LOK-BOARD-FOIL-WING" />
+                <option value="LOK-AILE-BARRE" />
+                <option value="LOK-AILE-SANSBARRE" />
+                <option value="LOK-2AILE-SANSBARRE-CS" />
+                <option value="LOK-3AILE-SANSBARRE" />
+                <option value="LOK-PACK-2AILES-BARRE" />
+                <option value="LOK-PACK-KITE" />
+                <option value="LOK-BOARD-TWINTIP" />
+                <option value="LOK-BARRE" />
+                <option value="LOK-KITEFOIL" />
+                <option value="LOK-HARNAIS-CULOTTE" />
+                <option value="LOK-HARNAIS-CEINTURE" />
+                <option value="LOK-NEOPRENE-COMBINAISON" />
+                <option value="LOK-NEOPRENE-VESTE" />
+                <option value="LOK-NEOPRENE-CAGOULE" />
+                <option value="LOK-NEOPRENE-CHAUSSONS" />
+                <option value="LOK-NEOPRENE-GANTS" />
+                <option value="LOK-PROT-CASQUE" />
+                <option value="LOK-PROT-GILET" />
+                <option value="LOK-BOARDBAG" />
+                <option value="LOK-PADDLE" />
+                <option value="LOK-PUMPFOIL" />
+                <option value="LOK-SURF" />
+              </datalist>
+              <small style={{ color: 'var(--text-light)', fontSize: '12px' }}>
+                Lie cet équipement à un vrai produit Shopify pour la facturation automatique
+              </small>
+            </div>
             <button type="submit" className="btn btn-primary">
               {editingEquipmentId ? 'Enregistrer les modifications' : "Ajouter à l'inventaire"}
             </button>
@@ -255,11 +302,14 @@ export default function InventoryPage() {
                             <h4 style={{ margin: 0, fontSize: '15px' }}>{item.name}</h4>
                             <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151' }}>{item.category || 'Autres'}</span>
                           </div>
-                          <div style={{ color: 'var(--text-light)', fontSize: '13px', display: 'flex', gap: '16px' }}>
+                          <div style={{ color: 'var(--text-light)', fontSize: '13px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                             <span><strong>Réf:</strong> {item.reference || 'N/A'}</span>
                             <span><strong>Marque:</strong> {item.brand || 'N/A'}</span>
                             <span><strong>État:</strong> {item.condition || 'Non spécifié'}</span>
                             <span style={{ color: 'var(--primary-color)', fontWeight: 'bold' }}><strong>Stock:</strong> {item.quantity || 1}</span>
+                            {item.collection && item.collection.startsWith('LOK-') && (
+                              <span style={{ color: '#16a34a', fontWeight: '600' }}>🔗 {item.collection}</span>
+                            )}
                           </div>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>

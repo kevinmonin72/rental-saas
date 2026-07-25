@@ -10,7 +10,6 @@ export default function PromoCodesPage() {
   const [sendingPromoId, setSendingPromoId] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', action: null, confirmText: 'Confirmer', confirmStyle: 'primary' });
 
-  // Form State
   const [code, setCode] = useState('');
   const [discountType, setDiscountType] = useState('percentage');
   const [discountValue, setDiscountValue] = useState('');
@@ -30,9 +29,7 @@ export default function PromoCodesPage() {
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchPromos();
-  }, []);
+  useEffect(() => { fetchPromos(); }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,11 +54,8 @@ export default function PromoCodesPage() {
         const err = await res.json();
         alert(`Erreur création: ${err.error}`);
       } else {
-        setCode('');
-        setDiscountType('percentage');
-        setDiscountValue('');
-        setTargetEmail('');
-        setMaxUses('');
+        setCode(''); setDiscountType('percentage'); setDiscountValue('');
+        setTargetEmail(''); setMaxUses('');
         fetchPromos();
       }
     } catch (err) {
@@ -77,9 +71,7 @@ export default function PromoCodesPage() {
         body: JSON.stringify({ id, is_active: !currentStatus })
       });
       if (res.ok) fetchPromos();
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const openDeleteConfirm = (id) => {
@@ -97,9 +89,7 @@ export default function PromoCodesPage() {
     try {
       const res = await fetch(`/api/promos?id=${id}`, { method: 'DELETE' });
       if (res.ok) fetchPromos();
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const openSendConfirm = (promo) => {
@@ -115,6 +105,7 @@ export default function PromoCodesPage() {
   };
 
   const executeSend = async (promo) => {
+    setSendingPromoId(promo.id);
     try {
       const res = await fetch('/api/promos/send', {
         method: 'POST',
@@ -122,11 +113,8 @@ export default function PromoCodesPage() {
         body: JSON.stringify(promo)
       });
       const data = await res.json();
-      if (!res.ok) {
-        alert(`Erreur d'envoi: ${data.error}`);
-      } else {
-        alert('Email envoyé avec succès !');
-      }
+      if (!res.ok) alert(`Erreur d'envoi: ${data.error}`);
+      else alert('Email envoyé avec succès !');
     } catch (err) {
       alert(`Erreur: ${err.message}`);
     } finally {
@@ -135,139 +123,114 @@ export default function PromoCodesPage() {
   };
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <h1 className="page-title">Codes Promo</h1>
-        <p className="page-subtitle">Gérez vos codes de réduction pour le site de réservation.</p>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Codes Promo</h1>
+        <p className="text-gray-500 mt-2">Gérez vos codes de réduction pour le site de réservation.</p>
       </div>
 
-      {/* Modal de confirmation */}
+      {/* Modal */}
       {confirmModal.isOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(2px)', animation: 'fadeIn 0.2s ease-out' }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '12px', padding: '24px', width: '400px', maxWidth: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', animation: 'slideUp 0.3s ease-out' }}>
-            <h3 style={{ marginTop: 0, marginBottom: '12px', fontSize: '18px', fontWeight: 'bold', color: '#111827' }}>{confirmModal.title}</h3>
-            <p style={{ margin: '0 0 24px 0', color: '#4B5563', fontSize: '14px', lineHeight: '1.5' }}>{confirmModal.message}</p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-              <button 
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">{confirmModal.title}</h3>
+              <button onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })} className="p-1 hover:bg-gray-100 rounded-lg">
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">{confirmModal.message}</p>
+            <div className="flex gap-3">
+              <button
                 onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #D1D5DB', backgroundColor: 'white', color: '#374151', cursor: 'pointer', fontWeight: '500', transition: 'background-color 0.15s' }}
-                onMouseOver={(e) => e.target.style.backgroundColor = '#F3F4F6'}
-                onMouseOut={(e) => e.target.style.backgroundColor = 'white'}
+                className="flex-1 py-2.5 px-4 bg-white border border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
               >
                 Annuler
               </button>
-              <button 
-                onClick={() => {
-                  confirmModal.action();
-                  setConfirmModal({ ...confirmModal, isOpen: false });
-                }}
-                style={{ 
-                  padding: '8px 16px', 
-                  borderRadius: '6px', 
-                  border: 'none', 
-                  backgroundColor: confirmModal.confirmStyle === 'danger' ? '#EF4444' : '#F97316', 
-                  color: 'white', 
-                  cursor: 'pointer', 
-                  fontWeight: '500',
-                  transition: 'opacity 0.15s'
-                }}
-                onMouseOver={(e) => e.target.style.opacity = '0.9'}
-                onMouseOut={(e) => e.target.style.opacity = '1'}
+              <button
+                onClick={() => { confirmModal.action(); setConfirmModal({ ...confirmModal, isOpen: false }); }}
+                className={`flex-1 py-2.5 px-4 text-white font-medium rounded-xl transition-colors ${confirmModal.confirmStyle === 'danger' ? 'bg-red-500 hover:bg-red-600' : 'bg-orange-500 hover:bg-orange-600'}`}
               >
                 {confirmModal.confirmText}
               </button>
             </div>
           </div>
-          <style dangerouslySetInnerHTML={{__html: `
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-          `}} />
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-        <div className="card" style={{ flex: '1' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Liste des codes</h2>
-            <input 
-              type="text" 
-              className="input" 
-              placeholder="Rechercher (code, email)..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ width: '250px', margin: 0 }}
-            />
+      <div className="flex gap-6 items-start">
+        {/* Liste */}
+        <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center">
+              <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+              Liste des codes
+            </h2>
+            <div className="relative">
+              <svg className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <input
+                type="text"
+                placeholder="Rechercher (code, email)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm w-64 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              />
+            </div>
           </div>
+
           {loading ? (
-            <p>Chargement...</p>
+            <div className="p-12 text-center text-gray-400">Chargement...</div>
           ) : promos.length === 0 ? (
-            <p className="empty-state">Aucun code promo créé.</p>
+            <div className="p-12 text-center text-gray-400">Aucun code promo créé.</div>
           ) : (
-            <div className="table-container">
-              <table className="data-table">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
                 <thead>
-                  <tr>
-                    <th>Code</th>
-                    <th>Valeur</th>
-                    <th>Email ciblé</th>
-                    <th>Utilisations</th>
-                    <th>Statut</th>
-                    <th style={{ width: '80px' }}>Actions</th>
+                  <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                    <th className="px-6 py-3 font-medium">Code</th>
+                    <th className="px-6 py-3 font-medium">Valeur</th>
+                    <th className="px-6 py-3 font-medium">Email ciblé</th>
+                    <th className="px-6 py-3 font-medium">Utilisations</th>
+                    <th className="px-6 py-3 font-medium">Statut</th>
+                    <th className="px-6 py-3 font-medium w-20">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {promos.filter(p => {
                     const q = searchQuery.toLowerCase();
                     return p.code.toLowerCase().includes(q) || (p.target_email && p.target_email.toLowerCase().includes(q));
                   }).map(p => (
-                    <tr key={p.id}>
-                      <td style={{ fontWeight: '600', color: 'var(--primary-color)' }}>{p.code}</td>
-                      <td>{p.discount_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} €`}</td>
-                      <td>{p.target_email || <span style={{color:'#9ca3af'}}>Tous</span>}</td>
-                      <td>{p.used_count} / {p.max_uses ? p.max_uses : '∞'}</td>
-                      <td>
-                        <button 
+                    <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4 font-bold text-orange-600">{p.code}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{p.discount_type === 'percentage' ? `${p.discount_value}%` : `${p.discount_value} €`}</td>
+                      <td className="px-6 py-4 text-sm">{p.target_email || <span className="text-gray-400">Tous</span>}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{p.used_count} / {p.max_uses ? p.max_uses : '∞'}</td>
+                      <td className="px-6 py-4">
+                        <button
                           onClick={() => toggleStatus(p.id, p.is_active)}
-                          style={{
-                            background: p.is_active ? '#dcfce7' : '#fee2e2',
-                            color: p.is_active ? '#166534' : '#991b1b',
-                            border: 'none',
-                            padding: '4px 8px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                          }}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold cursor-pointer border-none ${p.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}
                         >
                           {p.is_active ? 'Actif' : 'Inactif'}
                         </button>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', height: '100%' }}>
+                      <td className="px-6 py-4">
+                        <div className="flex gap-3 items-center">
                           {p.target_email && (
-                            <button 
+                            <button
                               onClick={() => openSendConfirm(p)}
                               disabled={sendingPromoId === p.id}
-                              style={{ 
-                                background: 'none', border: 'none', cursor: 'pointer', 
-                                fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                opacity: sendingPromoId === p.id ? 0.5 : 1, padding: 0 
-                              }}
+                              className="p-1.5 hover:bg-orange-50 rounded-lg transition-colors disabled:opacity-50"
                               title="Envoyer par email"
                             >
-                              {sendingPromoId === p.id ? '⏳' : '✉️'}
+                              <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                             </button>
                           )}
-                          <button 
+                          <button
                             onClick={() => openDeleteConfirm(p.id)}
-                            style={{ 
-                              background: 'none', border: 'none', cursor: 'pointer', 
-                              fontSize: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              padding: 0 
-                            }}
+                            className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                             title="Supprimer"
                           >
-                            🗑️
+                            <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                           </button>
                         </div>
                       </td>
@@ -279,71 +242,86 @@ export default function PromoCodesPage() {
           )}
         </div>
 
-        <div className="card" style={{ width: '360px', alignSelf: 'flex-start', position: 'sticky', top: '24px' }}>
-          <div style={{ marginBottom: '20px', paddingBottom: '16px', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '600', margin: 0 }}>Créer un code</h2>
+        {/* Formulaire */}
+        <div className="w-96 bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
+          <div className="mb-6 pb-4 border-b border-gray-100">
+            <h2 className="text-lg font-bold text-gray-900 flex items-center">
+              <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Créer un code
+            </h2>
           </div>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Code Promo</label>
-              <input 
-                type="text" 
-                className="input" 
-                placeholder="Ex: WELCOME10" 
-                value={code} 
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Code Promo</label>
+              <input
+                type="text"
+                placeholder="Ex: WELCOME10"
+                value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 required
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 font-mono"
               />
             </div>
-            
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Type de réduction</label>
-              <select className="input" value={discountType} onChange={e => setDiscountType(e.target.value)}>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Type de réduction</label>
+              <select
+                value={discountType}
+                onChange={e => setDiscountType(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+              >
                 <option value="percentage">Pourcentage (%)</option>
                 <option value="amount">Montant fixe (€)</option>
               </select>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Valeur de la réduction</label>
-              <input 
-                type="number" 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Valeur de la réduction</label>
+              <input
+                type="number"
                 step="0.01"
                 min="0"
-                className="input" 
-                placeholder={discountType === 'percentage' ? "Ex: 10" : "Ex: 15.50"} 
-                value={discountValue} 
+                placeholder={discountType === 'percentage' ? 'Ex: 10' : 'Ex: 15.50'}
+                value={discountValue}
                 onChange={e => setDiscountValue(e.target.value)}
                 required
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
               />
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Email ciblé <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span></label>
-              <input 
-                type="email" 
-                className="input" 
-                placeholder="Si vide, valable pour tous" 
-                value={targetEmail} 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Email ciblé <span className="text-gray-400 font-normal">(Optionnel)</span>
+              </label>
+              <input
+                type="email"
+                placeholder="Si vide, valable pour tous"
+                value={targetEmail}
                 onChange={e => setTargetEmail(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
               />
-              <span style={{fontSize:'12px', color:'#6b7280', marginTop: '6px'}}>Ce code ne fonctionnera que pour cet email.</span>
+              <span className="text-xs text-gray-400 mt-1 block">Ce code ne fonctionnera que pour cet email.</span>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Nombre d'utilisations <span style={{color: '#9CA3AF', fontWeight: 'normal'}}>(Optionnel)</span></label>
-              <input 
-                type="number" 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Nombre d'utilisations <span className="text-gray-400 font-normal">(Optionnel)</span>
+              </label>
+              <input
+                type="number"
                 min="1"
-                className="input" 
-                placeholder="Ex: 50" 
-                value={maxUses} 
+                placeholder="Ex: 50"
+                value={maxUses}
                 onChange={e => setMaxUses(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
               />
-              <span style={{fontSize:'12px', color:'#6b7280'}}>Laissez vide pour un usage illimité.</span>
+              <span className="text-xs text-gray-400 mt-1 block">Laissez vide pour un usage illimité.</span>
             </div>
 
-            <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
+            <button
+              type="submit"
+              className="w-full mt-2 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-xl transition-colors"
+            >
               Créer le code
             </button>
           </form>

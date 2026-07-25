@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useStore } from '../lib/store';
+// Import store directly for setState without triggering re-render loops
 
 export default function ClientAuth({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,21 +10,32 @@ export default function ClientAuth({ children }) {
   const [adminId, setAdminId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  
+
   // 2FA states
   const [step, setStep] = useState(1);
   const [userCode, setUserCode] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const { fetchData, isLoaded } = useStore();
+
+  const { fetchData, isLoaded, authFailed } = useStore();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        // Pass stored token as header for iframe environments where cookies are blocked
+        const storedToken = typeof window !== 'undefined'
+          ? ((() => { try { return sessionStorage.getItem('admin_token') || localStorage.getItem('admin_token'); } catch(e) { return null; } })())
+          : null;
+        const headers = storedToken ? { 'X-Admin-Token': storedToken } : {};
+        const res = await fetch('/api/auth/me', { headers });
         if (res.ok) {
           const data = await res.json();
           if (data.authenticated) {
+            // Update localStorage with renewed token if server issued a new one
+            const renewedToken = res.headers.get('X-Renewed-Token');
+            if (renewedToken && typeof window !== 'undefined') {
+              try { sessionStorage.setItem('admin_token', renewedToken); } catch (e) {}
+              try { localStorage.setItem('admin_token', renewedToken); } catch (e) {}
+            }
             setIsAuthenticated(true);
           }
         }
@@ -38,25 +50,42 @@ export default function ClientAuth({ children }) {
 
   useEffect(() => {
     if (isAuthenticated && !isLoaded) {
-      fetchData();
+      fetchData().catch(err => {
+        console.error('[fetchData] failed:', err);
+      });
     }
   }, [isAuthenticated, isLoaded, fetchData]);
+
+  // Listen for 401 auth failures from the Supabase proxy fetch interceptor
+  useEffect(() => {
+    const handleAuthFailed = () => {
+      setIsAuthenticated(false);
+      useStore.setState({ authFailed: false, isLoaded: false });
+    };
+    window.addEventListener('rental-auth-failed', handleAuthFailed);
+    return () => window.removeEventListener('rental-auth-failed', handleAuthFailed);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminId, password })
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
+        // Store token in sessionStorage for iframe environments where cookies are blocked
+        if (data.token && typeof window !== 'undefined') {
+          try { sessionStorage.setItem('admin_token', data.token); } catch (e) {}
+          try { localStorage.setItem('admin_token', data.token); } catch (e) {}
+        }
         if (data.bypass2FA) {
           setIsAuthenticated(true);
         } else {
@@ -75,17 +104,21 @@ export default function ClientAuth({ children }) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       const res = await fetch('/api/auth/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: userCode })
       });
-      
+
       const data = await res.json();
-      
+
       if (res.ok) {
+        if (data.token && typeof window !== 'undefined') {
+          try { sessionStorage.setItem('admin_token', data.token); } catch (e) {}
+          try { localStorage.setItem('admin_token', data.token); } catch (e) {}
+        }
         setIsAuthenticated(true);
         setError('');
       } else {
@@ -105,7 +138,7 @@ export default function ClientAuth({ children }) {
         <div style={{ width: '100%', maxWidth: '400px', padding: '40px', backgroundColor: 'var(--surface-color)', borderRadius: 'var(--border-radius-lg)', boxShadow: 'var(--shadow-sm)', textAlign: 'center' }}>
           <img src="/logo.png" alt="THE RIDERY LOCATION" style={{ maxWidth: '200px', marginBottom: '32px' }} />
           <h1 style={{ fontSize: '24px', marginBottom: '24px', fontFamily: 'var(--font-display)' }}>Accès sécurisé</h1>
-          
+
           {step === 1 ? (
             <form onSubmit={handleLogin}>
               <div className="form-group" style={{ textAlign: 'left', marginBottom: '16px' }}>
@@ -128,13 +161,13 @@ export default function ClientAuth({ children }) {
               </div>
               <div className="form-group" style={{ textAlign: 'left', marginBottom: '24px' }}>
                 <label>Code de sécurité</label>
-                <input 
-                  type="text" 
-                  value={userCode} 
-                  onChange={(e) => setUserCode(e.target.value)} 
-                  className="input" 
-                  placeholder="Ex: 123456" 
-                  required 
+                <input
+                  type="text"
+                  value={userCode}
+                  onChange={(e) => setUserCode(e.target.value)}
+                  className="input"
+                  placeholder="Ex: 123456"
+                  required
                   maxLength={6}
                   style={{ textAlign: 'center', fontSize: '20px', letterSpacing: '2px' }}
                 />

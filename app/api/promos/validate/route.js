@@ -10,6 +10,7 @@ export async function POST(req) {
       .from('promo_codes')
       .select('*')
       .eq('code', code.toUpperCase())
+      .eq('type', 'location')
       .maybeSingle();
 
     if (error || !data) return NextResponse.json({ error: 'Code promo invalide.' }, { status: 400 });

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
+    "csv-parser": "^3.2.1",
     "file-saver": "^2.0.5",
     "html2pdf.js": "^0.14.0",
     "jose": "^6.2.3",
@@ -24,6 +25,7 @@
     "sqlite": "^5.1.1",
     "stripe": "^22.2.0",
     "uuid": "^14.0.0",
+    "web-push": "^3.6.7",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

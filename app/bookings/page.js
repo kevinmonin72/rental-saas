@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import CsvImporterButton from '../../components/CsvImporterButton';
+import ShopifySyncButton from '../../components/ShopifySyncButton';
 import { useStore } from '../../lib/store';
+import { customFetch } from '../../lib/supabase-proxy';
 import { GENERIC_EQUIPMENTS } from '../../lib/catalog';
 
 export default function BookingsPage() {
@@ -20,6 +22,7 @@ export default function BookingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for newest first, 'asc' for oldest first
   const [selectedEquipments, setSelectedEquipments] = useState([]);
+  const [initialEquipmentsForEdit, setInitialEquipmentsForEdit] = useState([]);
   const [currentEqSelection, setCurrentEqSelection] = useState('');
   const [currentGenericEqSelection, setCurrentGenericEqSelection] = useState('');
   const [rentalType, setRentalType] = useState('ponctuel');
@@ -41,6 +44,8 @@ export default function BookingsPage() {
   const [newCustomerLastName, setNewCustomerLastName] = useState('');
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
   const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [notes, setNotes] = useState('');
+  const [promoCode, setPromoCode] = useState('');
 
   const handleEndDateChange = (val) => {
     setEndDate(val);
@@ -144,8 +149,11 @@ export default function BookingsPage() {
     addBooking, 
     updateBooking,
     deleteBooking,
+    deleteBookingItem,
     bulkDeleteBookings,
     markBookingCompleted, 
+    updateBookingStatus,
+    updateBookingNotes,
     getDetailedActiveBookings,
     getDetailedPastBookings,
     toggleShopifyTransfer,
@@ -170,11 +178,21 @@ export default function BookingsPage() {
     }
   }
 
-  const filteredEquipmentForSelect = equipment.filter(e => {
+  const filteredEquipmentForSelect = (() => {
     const term = equipmentSearch.toLowerCase();
-    const eqName = `${e.reference || ''} ${e.name}`.toLowerCase();
-    return eqName.includes(term);
-  }).slice(0, 100); // Limit to 100 to prevent DOM lag
+    const filtered = equipment.filter(e => {
+      const eqName = `${e.reference || ''} ${e.name}`.toLowerCase();
+      return eqName.includes(term);
+    });
+    // Deduplicate by reference — keep first occurrence, show total count
+    const seen = new Map();
+    filtered.forEach(e => {
+      const key = e.reference || e.id;
+      if (!seen.has(key)) seen.set(key, { ...e, _count: 1, _allIds: [e.id] });
+      else { seen.get(key)._count++; seen.get(key)._allIds.push(e.id); }
+    });
+    return Array.from(seen.values()).slice(0, 100);
+  })();
 
   const handleAdd = (e) => {
     e.preventDefault();
@@ -188,50 +206,29 @@ export default function BookingsPage() {
     const eNew = new Date(endDate);
     eNew.setHours(23,59,59,999);
 
-    // Check for overlap for all selected equipments
-    const overlappingEq = selectedEquipments.find(eq => {
-      const overlappingBookingsCount = bookings.filter(b => {
-        if (b.status !== 'active') return false;
-        if (editingBookingId && b.id === editingBookingId) return false; // Ignore current booking if editing
-        const bItems = bookingItems.filter(bi => bi.booking_id === b.id);
-        if (!bItems.some(bi => bi.equipment_id === eq.id)) return false;
-        
-        const sExist = new Date(b.start_date);
-        sExist.setHours(0,0,0,0);
-        const eExist = new Date(b.end_date);
-        if (b.pause_start && b.pause_end) {
-          const ps = new Date(b.pause_start);
-          const pe = new Date(b.pause_end);
-          if (pe >= ps) {
-            const diffDays = Math.ceil(Math.abs(pe - ps) / (1000 * 60 * 60 * 24));
-            eExist.setDate(eExist.getDate() + diffDays);
-          }
-        }
-        eExist.setHours(23,59,59,999);
-        
-        let localENew = new Date(eNew);
-        if (rentalType === 'wingboost' && pauseStart && pauseEnd) {
-          const nps = new Date(pauseStart);
-          const npe = new Date(pauseEnd);
-          if (npe >= nps) {
-            const diffDays = Math.ceil(Math.abs(npe - nps) / (1000 * 60 * 60 * 24));
-            localENew.setDate(localENew.getDate() + diffDays);
-          }
-        }
-        
-        return (sNew <= eExist && sExist <= localENew);
-      }).length;
-
-      const totalQty = parseInt(eq.quantity, 10) || 1;
-      return overlappingBookingsCount >= totalQty;
-    });
-
-    if (overlappingEq) {
-      alert(`Impossible : L'article (Réf: ${overlappingEq.reference || 'N/A'} - ${overlappingEq.name}) est déjà réservé sur cette période !`);
-      return;
-    }
 
     if (editingBookingId) {
+      const b = bookings.find(x => x.id === editingBookingId);
+      if (b && b.shopify_transfer) {
+        const addedSkus = selectedEquipments
+          .filter(e => !initialEquipmentsForEdit.find(ie => ie.id === e.id))
+          .map(e => e.reference).filter(Boolean);
+        const returnedSkus = selectedEquipments
+          .filter(e => e.is_returned && !initialEquipmentsForEdit.find(ie => ie.id === e.id && ie.is_returned))
+          .map(e => e.reference).filter(Boolean);
+          
+        if (addedSkus.length > 0 || returnedSkus.length > 0) {
+          customFetch('/api/shopify/sync-items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ bookingId: editingBookingId, addedSkus, returnedSkus })
+          }).then(r => r.json()).then(d => {
+            if(d.success && d.message !== 'Rien à synchroniser') alert('📦 ' + d.message);
+            if(d.error) alert('❌ Erreur Shopify: ' + d.error);
+          }).catch(err => console.error(err));
+        }
+      }
+
       updateBooking(editingBookingId, {
         customerId: selectedCustomerId,
         startDate: startDate,
@@ -239,9 +236,11 @@ export default function BookingsPage() {
         equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null, is_returned: e.is_returned || false })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
-        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
+        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null,
+        notes: promoCode ? `${notes}\n[PROMO: ${promoCode}]`.trim() : notes
       });
       setEditingBookingId(null);
+      setInitialEquipmentsForEdit([]);
     } else {
       addBooking({
         customerId: selectedCustomerId,
@@ -250,7 +249,8 @@ export default function BookingsPage() {
         equipments: selectedEquipments.map(e => ({ id: e.id, customStart: e.customStart || null, customEnd: e.customEnd || null, is_returned: e.is_returned || false })),
         rentalType: rentalType,
         pauseStart: rentalType === 'wingboost' ? pauseStart : null,
-        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null
+        pauseEnd: rentalType === 'wingboost' ? pauseEnd : null,
+        notes: promoCode ? `${notes}\n[PROMO: ${promoCode}]`.trim() : notes
       });
     }
     
@@ -259,26 +259,146 @@ export default function BookingsPage() {
     setEndDate('');
     setPauseStart('');
     setPauseEnd('');
+    setNotes('');
+    setPromoCode('');
     setSelectedCustomerId('');
     setHighlightedBookingId(null);
     setSearchQuery('');
     setStartMonthFilter(null);
     setEndMonthFilter(null);
     setRentalTypeFilter('all');
+    setRentalType('ponctuel');
+    setDuration('1_jour');
     setActiveTab('list');
   };
 
+  const calculateDuration = (startStr, endStr) => {
+    if (!startStr || !endStr) return '1_jour';
+    const start = new Date(startStr);
+    start.setHours(0,0,0,0);
+    const end = new Date(endStr);
+    end.setHours(0,0,0,0);
+    if (end < start) return '1_jour';
+    
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+    const startYear = start.getFullYear();
+    const startMonth = start.getMonth();
+    const startDay = start.getDate();
+    
+    const endYear = end.getFullYear();
+    const endMonth = end.getMonth();
+    const endDay = end.getDate();
+
+    const diffMonths = (endYear - startYear) * 12 + (endMonth - startMonth);
+
+    if (diffMonths > 0 && startDay === endDay) {
+      return `${diffMonths}_mois`;
+    } else {
+      const expectedEnd = new Date(startStr);
+      expectedEnd.setMonth(expectedEnd.getMonth() + diffMonths);
+      expectedEnd.setHours(0,0,0,0);
+      const diffTimeExpected = Math.abs(end - expectedEnd);
+      const diffDaysExpected = Math.ceil(diffTimeExpected / (1000 * 60 * 60 * 24));
+      
+      if (diffMonths > 0 && diffDaysExpected <= 2) {
+        return `${diffMonths}_mois`;
+      } else {
+        if (diffDays === 1) {
+          return '1_jour';
+        } else if (diffDays >= 2 && diffDays <= 31) {
+          return `${diffDays}_jours`;
+        } else {
+          const closestMonths = Math.max(1, Math.min(12, Math.round(diffDays / 30)));
+          return `${closestMonths}_mois`;
+        }
+      }
+    }
+  };
+
+  const [draftOrderLoading, setDraftOrderLoading] = useState({});
+  const [draftStripeLoading, setDraftStripeLoading] = useState({});
+
+  const createDraftOrder = async (booking) => {
+    setDraftOrderLoading(prev => ({ ...prev, [booking.id]: true }));
+    try {
+      const res = await customFetch('/api/shopify/draft-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur Shopify');
+      // Navigate top frame (Shopify admin) directly to draft order
+      (window.top || window).location.href = data.admin_url;
+    } catch (err) {
+      alert('❌ ' + err.message);
+    } finally {
+      setDraftOrderLoading(prev => ({ ...prev, [booking.id]: false }));
+    }
+  };
+
+  const createStripeInvoice = async (booking) => {
+    setDraftStripeLoading(prev => ({ ...prev, [booking.id]: true }));
+    try {
+      const res = await customFetch('/api/stripe/draft-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur Stripe');
+      const width = 1000;
+      const height = 800;
+      const left = (window.innerWidth / 2) - (width / 2);
+      const top = (window.innerHeight / 2) - (height / 2);
+      window.open(data.url, 'StripeInvoice', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+    } catch (err) {
+      alert('❌ ' + err.message);
+    } finally {
+      setDraftStripeLoading(prev => ({ ...prev, [booking.id]: false }));
+    }
+  };
+
+  const triggerShopifyAutoTransfer = async (booking) => {
+    if (!confirm('Créer automatiquement le transfert de stock dans Shopify (The Ridery - Marseille → WINGBOOST MARSEILLE) avec balises et notes ?')) return;
+    try {
+      const res = await customFetch('/api/shopify/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: booking.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur lors du transfert Shopify');
+      
+      alert('✅ ' + data.message);
+      toggleShopifyTransfer(booking.id, true);
+    } catch (err) {
+      alert('❌ Erreur: ' + err.message);
+    }
+  };
+
   const handleEdit = (booking) => {
-    setEditingBookingId(booking.id);
     setSelectedCustomerId(booking.customer_id);
     setStartDate(booking.start_date);
     setEndDate(booking.end_date);
-    setPauseStart(booking.pause_start || '');
-    setPauseEnd(booking.pause_end || '');
     setRentalType(booking.rental_type || 'ponctuel');
-    if (booking.rental_type && booking.rental_type !== 'wingboost') {
-      setDuration(booking.rental_type);
+    setPauseStart(booking.pause_start ? booking.pause_start.split('T')[0] : '');
+    setPauseEnd(booking.pause_end ? booking.pause_end.split('T')[0] : '');
+    setNotes(booking.notes || '');
+    const eqToEdit = bookingItems.filter(bi => bi.booking_id === booking.id).map(bi => ({ ...bi.equipment, customStart: bi.start_date, customEnd: bi.end_date, is_returned: bi.is_returned }));
+    setSelectedEquipments(eqToEdit);
+    setInitialEquipmentsForEdit(eqToEdit);
+    setEditingBookingId(booking.id);
+    
+    if (booking.start_date && booking.end_date) {
+      const calculatedDuration = calculateDuration(booking.start_date, booking.end_date);
+      setDuration(calculatedDuration);
+    } else {
+      setDuration('1_jour');
     }
+    
     setSelectedEquipments(booking.equipments);
     setActiveTab('new');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -291,11 +411,14 @@ export default function BookingsPage() {
     setEndDate('');
     setPauseStart('');
     setPauseEnd('');
+    setNotes('');
     setSelectedCustomerId('');
     setHighlightedBookingId(null);
     setSearchQuery('');
     setStartMonthFilter(null);
     setEndMonthFilter(null);
+    setRentalType('ponctuel');
+    setDuration('1_jour');
     setActiveTab(targetTab);
   };
 
@@ -423,8 +546,8 @@ export default function BookingsPage() {
       const searchStr = `${formatName(b.first_name, b.last_name)} ${eqsStr}`.toLowerCase();
       return searchStr.includes(term);
     }).sort((a, b) => {
-      const dateA = new Date(a.end_date);
-      const dateB = new Date(b.end_date);
+      const dateA = new Date(a.created_at || a.end_date);
+      const dateB = new Date(b.created_at || b.end_date);
       if (sortOrder === 'desc') return dateB - dateA;
       return dateA - dateB;
     });
@@ -435,33 +558,44 @@ export default function BookingsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ marginBottom: 0 }}>Gestion des Réservations</h1>
-        <CsvImporterButton type="bookings" />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+        <div>
+          <h1 style={{ marginBottom: '4px', fontSize: '28px', fontWeight: '700', letterSpacing: '-0.5px' }}>Réservations</h1>
+          <p style={{ color: '#6B7280', fontSize: '14px', margin: 0 }}>Gérez les locations en cours et archivées</p>
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <ShopifySyncButton type="inventory" />
+          <CsvImporterButton type="bookings" />
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-        <button 
-          onClick={() => handleCancelEdit('new')} 
-          className={`btn ${activeTab === 'new' && !editingBookingId ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ padding: '8px 16px', fontSize: '15px' }}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', backgroundColor: '#F1F5F9', borderRadius: '14px', padding: '6px', width: 'fit-content' }}>
+        <button
+          onClick={() => handleCancelEdit('new')}
+          style={{
+            padding: '9px 20px', fontSize: '14px', fontWeight: '600', borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.15s ease',
+            backgroundColor: activeTab === 'new' && !editingBookingId ? '#ffffff' : 'transparent',
+            color: activeTab === 'new' && !editingBookingId ? '#111827' : '#6B7280',
+            boxShadow: activeTab === 'new' && !editingBookingId ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+          }}
         >
-          ➕ Nouvelle Réservation
+          + Nouvelle Réservation
         </button>
         {editingBookingId && (
-          <button 
-            className={`btn ${activeTab === 'new' && editingBookingId ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ padding: '8px 16px', fontSize: '15px' }}
-          >
-            ✏️ Modifier la Réservation
+          <button style={{ padding: '9px 20px', fontSize: '14px', fontWeight: '600', borderRadius: '10px', border: 'none', cursor: 'pointer', backgroundColor: '#ffffff', color: '#111827', boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }}>
+            Modifier
           </button>
         )}
-        <button 
-          onClick={() => setActiveTab('list')} 
-          className={`btn ${activeTab === 'list' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ padding: '8px 16px', fontSize: '15px' }}
+        <button
+          onClick={() => setActiveTab('list')}
+          style={{
+            padding: '9px 20px', fontSize: '14px', fontWeight: '600', borderRadius: '10px', border: 'none', cursor: 'pointer', transition: 'all 0.15s ease',
+            backgroundColor: activeTab === 'list' ? '#ffffff' : 'transparent',
+            color: activeTab === 'list' ? '#111827' : '#6B7280',
+            boxShadow: activeTab === 'list' ? '0 1px 4px rgba(0,0,0,0.10)' : 'none',
+          }}
         >
-          📋 Liste des Réservations
+          Liste des Réservations
         </button>
       </div>
       
@@ -476,9 +610,9 @@ export default function BookingsPage() {
               <button type="button" onClick={handleCancelEdit} className="btn btn-secondary" style={{ fontSize: '12px' }}>Annuler</button>
             )}
           </div>
-          {customers.length === 0 || equipment.length === 0 ? (
+          {customers.length === 0 ? (
             <p style={{ color: 'var(--text-light)', fontSize: '14px' }}>
-              ⚠️ Vous devez d'abord ajouter au moins un client et un équipement pour créer une réservation.
+              ⚠️ Vous devez d'abord ajouter au moins un client pour créer une réservation.
             </p>
           ) : (
             <form onSubmit={handleAdd}>
@@ -557,7 +691,7 @@ export default function BookingsPage() {
                 <label>Durée</label>
                 <select 
                   className="input" 
-                  value={duration}
+                  value={duration === 'ponctuel' ? (startDate && endDate ? calculateDuration(startDate, endDate) : '1_jour') : duration}
                   onChange={(e) => {
                     const val = e.target.value;
                     setDuration(val);
@@ -644,74 +778,87 @@ export default function BookingsPage() {
                   </div>
                 )}
 
-                <input 
-                  type="text" 
-                  className="input" 
-                  placeholder="🔍 Filtrer par nom ou réf de produit catalogue..." 
-                  style={{ marginBottom: '8px' }}
-                  value={genericEquipmentSearch}
-                  onChange={(e) => setGenericEquipmentSearch(e.target.value)}
-                />
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                  <select 
-                    className="input" 
-                    value={currentGenericEqSelection} 
-                    onChange={(e) => setCurrentGenericEqSelection(e.target.value)} 
-                    style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
-                  >
-                    <option value="">-- Choisir un produit catalogue (Optionnel) --</option>
-                    {GENERIC_EQUIPMENTS.filter(e => {
-                      const term = genericEquipmentSearch.toLowerCase();
-                      return `${e.reference} ${e.name}`.toLowerCase().includes(term);
-                    }).map(eq => (
-                      <option key={eq.reference} value={eq.reference}>{eq.reference} - {eq.name}</option>
-                    ))}
-                  </select>
-                  <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
-                    if (currentGenericEqSelection) {
-                      let eq = equipment.find(e => e.reference === currentGenericEqSelection && !e.serial_number);
-                      if (!eq) eq = equipment.find(e => e.reference === currentGenericEqSelection);
-                      if (eq) {
-                        setSelectedEquipments([...selectedEquipments, eq]);
-                        setCurrentGenericEqSelection('');
-                      } else {
-                        alert("Cet équipement n'est pas dans la base de données. Veuillez synchroniser le catalogue.");
+                {/* Section 1 : Catalogue de locations */}
+                <div style={{ marginBottom: '16px', padding: '14px', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '10px' }}>
+                    Catalogue de locations
+                  </div>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="🔍 Filtrer par nom ou réf de produit catalogue..."
+                    style={{ marginBottom: '8px' }}
+                    value={genericEquipmentSearch}
+                    onChange={(e) => setGenericEquipmentSearch(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <select
+                      className="input"
+                      value={currentGenericEqSelection}
+                      onChange={(e) => setCurrentGenericEqSelection(e.target.value)}
+                      style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
+                    >
+                      <option value="">-- Choisir un produit catalogue (Optionnel) --</option>
+                      {GENERIC_EQUIPMENTS.filter(e => {
+                        const term = genericEquipmentSearch.toLowerCase();
+                        return `${e.reference} ${e.name}`.toLowerCase().includes(term);
+                      }).map(eq => (
+                        <option key={eq.reference} value={eq.reference}>{eq.reference} - {eq.name}</option>
+                      ))}
+                    </select>
+                    <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
+                      if (currentGenericEqSelection) {
+                        let eq = equipment.find(e => e.reference === currentGenericEqSelection && !e.serial_number);
+                        if (!eq) eq = equipment.find(e => e.reference === currentGenericEqSelection);
+                        if (eq) {
+                          setSelectedEquipments([...selectedEquipments, eq]);
+                          setCurrentGenericEqSelection('');
+                        } else {
+                          alert("Cet équipement n'est pas dans la base de données. Veuillez synchroniser le catalogue.");
+                        }
                       }
-                    }
-                  }}>Ajouter Catalogue</button>
+                    }}>Ajouter</button>
+                  </div>
                 </div>
 
-                <input 
-                  type="text" 
-                  className="input" 
-                  placeholder="🔍 Filtrer par nom ou réf d'équipement spécifique..." 
-                  style={{ marginBottom: '8px' }}
-                  value={equipmentSearch}
-                  onChange={(e) => setEquipmentSearch(e.target.value)}
-                />
-                
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  <select 
-                    className="input" 
-                    value={currentEqSelection} 
-                    onChange={(e) => setCurrentEqSelection(e.target.value)} 
-                    style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
-                  >
-                    <option value="">-- Sélectionner un équipement --</option>
-                    {filteredEquipmentForSelect.filter(e => !selectedEquipments.find(se => se.id === e.id)).map(e => (
-                      <option key={e.id} value={e.id}>Réf: {e.reference || 'N/A'} - {e.name}</option>
-                    ))}
-                  </select>
-                  <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
-                    if (currentEqSelection) {
-                      const eq = equipment.find(e => e.id === currentEqSelection);
-                      if (eq) {
-                        setSelectedEquipments([...selectedEquipments, eq]);
-                        setCurrentEqSelection('');
-                        setEquipmentSearch('');
+                {/* Section 2 : Équipement spécifique */}
+                <div style={{ padding: '14px', backgroundColor: '#F8FAFC', borderRadius: '10px', border: '1px solid #E5E7EB' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#6B7280', marginBottom: '10px' }}>
+                    Équipement spécifique
+                  </div>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="🔍 Filtrer par nom ou réf d'équipement spécifique..."
+                    style={{ marginBottom: '8px' }}
+                    value={equipmentSearch}
+                    onChange={(e) => setEquipmentSearch(e.target.value)}
+                  />
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <select
+                      className="input"
+                      value={currentEqSelection}
+                      onChange={(e) => setCurrentEqSelection(e.target.value)}
+                      style={{ marginBottom: 0, flex: '1 1 auto', minWidth: '200px' }}
+                    >
+                      <option value="">-- Sélectionner un équipement --</option>
+                      {filteredEquipmentForSelect.filter(e => !selectedEquipments.find(se => se.id === e.id)).map(e => (
+                        <option key={e.id} value={e.id}>
+                          Réf: {e.reference || 'N/A'} - {e.name}{e._count > 1 ? ` (x${e._count})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <button type="button" className="btn btn-secondary" style={{ flexShrink: 0 }} onClick={() => {
+                      if (currentEqSelection) {
+                        const eq = equipment.find(e => e.id === currentEqSelection);
+                        if (eq) {
+                          setSelectedEquipments([...selectedEquipments, eq]);
+                          setCurrentEqSelection('');
+                          setEquipmentSearch('');
+                        }
                       }
-                    }
-                  }}>Ajouter</button>
+                    }}>Ajouter</button>
+                  </div>
                 </div>
               </div>
 
@@ -732,6 +879,31 @@ export default function BookingsPage() {
                   </div>
                 </details>
               )}
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label>Remarques / Notes (Optionnel)</label>
+                <textarea 
+                  className="input" 
+                  value={notes} 
+                  onChange={(e) => setNotes(e.target.value)} 
+                  placeholder="Annoter des remarques spécifiques pour cette réservation..."
+                  rows="3"
+                  style={{ width: '100%', resize: 'vertical' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '24px' }}>
+                <label>Code Promo (Optionnel)</label>
+                <input 
+                  type="text"
+                  className="input" 
+                  value={promoCode} 
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())} 
+                  placeholder="Ex: SOLDES20"
+                  style={{ width: '100%' }}
+                />
+              </div>
+
               <button type="submit" className="btn btn-primary">{editingBookingId ? 'Mettre à jour' : 'Créer'}</button>
             </form>
           )}
@@ -753,9 +925,6 @@ export default function BookingsPage() {
                 <option value="all">Tous types</option>
                 <option value="wingboost">🚀 Wingboost</option>
                 <option value="ponctuel">🕒 Ponctuelle</option>
-                <option value="journee">🌞 1 Journée</option>
-                <option value="demi_matin">☀️ ½j (Matin)</option>
-                <option value="demi_aprem">⛅ ½j (Aprem)</option>
               </select>
               <select 
                 className="input" 
@@ -875,12 +1044,13 @@ export default function BookingsPage() {
                 const isHighlighted = highlightedBookingId === booking.id;
 
                 return (
-                  <div key={booking.id} className="card" style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div key={booking.id} className="card booking-list-card" style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
                     gap: '16px',
-                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : (isLate ? '#ef4444' : 'var(--primary-color)')}`,
-                    backgroundColor: isHighlighted ? '#FEF3C7' : (isLate ? '#FEF2F2' : 'var(--surface-color)'),
+                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : (booking.status === 'attente_paiement' ? '#f59e0b' : (isLate ? '#ef4444' : 'var(--primary-color)'))}`,
+                    backgroundColor: isHighlighted ? '#FEF3C7' : (booking.status === 'attente_paiement' ? '#FFFBEB' : (isLate ? '#FEF2F2' : 'var(--surface-color)')),
                     padding: '16px',
                     boxShadow: isHighlighted ? '0 0 0 2px #f59e0b' : 'none',
                     transition: 'all 0.3s ease-in-out'
@@ -911,6 +1081,9 @@ export default function BookingsPage() {
                           <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>📆 {booking.rental_type.replace('_mois', ' Mois')}</span>
                         ) : (
                           <span className="badge" style={{ backgroundColor: '#F3F4F6', color: '#374151', border: 'none' }}>🕒 Ponctuelle</span>
+                        )}
+                        {booking.status === 'attente_paiement' && (
+                          <span className="badge" style={{ backgroundColor: '#FEF3C7', color: '#D97706', border: '1px solid #F59E0B' }}>⏳ Attente de paiement</span>
                         )}
                         {isLate && <span className="badge" style={{ backgroundColor: '#ef4444', color: 'white', border: 'none' }}>En Retard</span>}
                       </div>
@@ -961,10 +1134,25 @@ export default function BookingsPage() {
                                 })}
                               </ul>
                               {endMonthFilter && displayedEquipments.length < (booking.equipments?.length || 0) && (
-                                <div style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic' }}>
+                                <div style={{ fontSize: '13px', color: 'var(--text-light)', marginTop: '4px', fontStyle: 'italic' }}>
                                   + {(booking.equipments?.length || 0) - displayedEquipments.length} autre(s) équipement(s) à d'autres dates
                                 </div>
                               )}
+                              
+                              {/* Display/Edit notes */}
+                              <div style={{ marginTop: '8px', width: '100%' }}>
+                                <textarea
+                                  style={{ width: '100%', fontSize: '13px', color: 'var(--text-main)', padding: '6px', borderRadius: '4px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', resize: 'vertical' }}
+                                  placeholder="📝 Ajouter une note (sauvegarde auto)..."
+                                  defaultValue={booking.notes || ''}
+                                  onBlur={(e) => {
+                                    if (e.target.value !== (booking.notes || '')) {
+                                      updateBookingNotes(booking.id, e.target.value);
+                                    }
+                                  }}
+                                  rows="2"
+                                />
+                              </div>
                             </>
                           );
                         })()}
@@ -990,51 +1178,142 @@ export default function BookingsPage() {
                       })()}
                     </div>
                     
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px', backgroundColor: isLate ? '#FEE2E2' : '#F9F9F9', borderRadius: '8px', minWidth: '220px' }}>
+                      <div className="booking-list-actions" style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '190px' }}>
+                        <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                          <button onClick={() => handleEdit(booking)} className="btn btn-secondary" style={{ flex: 1, padding: '7px 6px', fontSize: '13px', borderRadius: '10px', fontWeight: '600' }}>Modifier</button>
+                          <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ padding: '7px 10px', fontSize: '13px', color: '#ef4444', borderRadius: '10px' }}>✕</button>
+                        </div>
+
+                        {booking.status === 'attente_paiement' && (
+                          <button 
+                            onClick={async () => {
+                              if (confirm('Confirmer le paiement de cette réservation ?')) {
+                                await updateBookingStatus(booking.id, 'active');
+                              }
+                            }}
+                            className="btn"
+                            style={{ 
+                              display: 'block', 
+                              width: '100%',
+                              textAlign: 'center', 
+                              padding: '6px', 
+                              backgroundColor: '#10B981', 
+                              color: 'white', 
+                              borderRadius: '6px', 
+                              fontSize: '13px', 
+                              fontWeight: 'bold',
+                              marginBottom: '8px',
+                              border: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            💰 Valider Paiement
+                          </button>
+                        )}
+
+
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                          <button onClick={() => handleEdit(booking)} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px' }}>✏️ Modifier</button>
-                          <button onClick={() => { if(confirm('Supprimer cette réservation ?')) deleteBooking(booking.id); }} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '12px', color: '#ef4444' }}>🗑️ Supprimer</button>
+                          <button
+                            type="button"
+                            onClick={() => createDraftOrder(booking)}
+                            disabled={draftOrderLoading[booking.id]}
+                            style={{
+                              flex: 1,
+                              textAlign: 'center',
+                              padding: '8px 6px',
+                              backgroundColor: '#f97316',
+                              color: 'white',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: draftOrderLoading[booking.id] ? 'wait' : 'pointer',
+                              opacity: draftOrderLoading[booking.id] ? 0.7 : 1,
+                            }}
+                          >
+                            {draftOrderLoading[booking.id] ? '...' : '🧾 Shopify'}
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={() => createStripeInvoice(booking)}
+                            disabled={draftStripeLoading[booking.id]}
+                            style={{
+                              flex: 1,
+                              textAlign: 'center',
+                              padding: '8px 6px',
+                              backgroundColor: '#6366f1',
+                              color: 'white',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: draftStripeLoading[booking.id] ? 'wait' : 'pointer',
+                              opacity: draftStripeLoading[booking.id] ? 0.7 : 1,
+                            }}
+                          >
+                            {draftStripeLoading[booking.id] ? '...' : '💳 Stripe'}
+                          </button>
                         </div>
 
-                        <Link 
-                          href={`/invoice?bookingRef=${booking.reference || booking.id.split('-')[0].toUpperCase()}`}
-                          style={{ 
-                            display: 'block', 
-                            textAlign: 'center', 
-                            padding: '6px', 
-                            backgroundColor: 'var(--primary-color)', 
-                            color: 'white', 
-                            borderRadius: '6px', 
-                            textDecoration: 'none', 
-                            fontSize: '13px', 
-                            fontWeight: 'bold',
-                            marginBottom: '4px'
-                          }}
-                        >
-                          📄 Créer Facture
-                        </Link>
+                        {booking.rental_type === 'wingboost' && !booking.shopify_transfer && (
+                          <button
+                            type="button"
+                            onClick={() => triggerShopifyAutoTransfer(booking)}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              textAlign: 'center',
+                              padding: '8px 6px',
+                              backgroundColor: '#4F46E5',
+                              color: 'white',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Créer Transfert Shopify
+                          </button>
+                        )}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <input 
-                            type="checkbox" 
-                            id={`shopify-${booking.id}`}
-                            checked={booking.shopify_transfer || false}
-                            onChange={(e) => toggleShopifyTransfer(booking.id, e.target.checked)}
-                            style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }} 
-                          />
-                          <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
-                            Transfert Shopify
-                          </label>
-                        </div>
+                        {booking.rental_type === 'wingboost' && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <input
+                              type="checkbox"
+                              id={`shopify-${booking.id}`}
+                              checked={booking.shopify_transfer || false}
+                              onChange={(e) => toggleShopifyTransfer(booking.id, e.target.checked)}
+                              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary-color)' }}
+                            />
+                            <label htmlFor={`shopify-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '500', color: isLate ? '#991B1B' : 'var(--text-muted)', fontSize: '14px' }}>
+                              Transfert Shopify
+                            </label>
+                          </div>
+                        )}
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <input 
                           type="checkbox" 
                           id={`return-${booking.id}`}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             if(e.target.checked) {
-                              if(confirm('Confirmer que ce matériel a bien été rendu ?')) {
+                              const promptMsg = booking.shopify_transfer 
+                                ? 'Confirmer le retour du matériel (et réinjecter automatiquement le stock à Marseille depuis Wingboost) ?'
+                                : 'Confirmer que ce matériel a bien été rendu ?';
+                              
+                              if(confirm(promptMsg)) {
                                 markBookingCompleted(booking.id);
+                                if (booking.shopify_transfer) {
+                                  customFetch('/api/shopify/return', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ bookingId: booking.id })
+                                  }).then(r => r.json()).then(d => {
+                                    if (d.success) alert('📦 ' + d.message);
+                                  }).catch(err => console.error(err));
+                                }
                               } else {
                                 e.target.checked = false;
                               }
@@ -1046,6 +1325,29 @@ export default function BookingsPage() {
                           Matériel Rendu
                         </label>
                       </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                        <input 
+                          type="checkbox" 
+                          id={`paid-${booking.id}`}
+                          checked={booking.notes?.includes('[PAYÉ]') || false}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            let newNotes = booking.notes || '';
+                            if (checked && !newNotes.includes('[PAYÉ]')) {
+                              newNotes = '[PAYÉ] ' + newNotes;
+                            } else if (!checked && newNotes.includes('[PAYÉ]')) {
+                              newNotes = newNotes.replace('[PAYÉ] ', '').replace('[PAYÉ]', '');
+                            }
+                            updateBookingNotes(booking.id, newNotes.trim());
+                          }}
+                          style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10B981' }} 
+                        />
+                        <label htmlFor={`paid-${booking.id}`} style={{ cursor: 'pointer', fontWeight: '600', color: booking.notes?.includes('[PAYÉ]') ? '#10B981' : 'var(--text-main)' }}>
+                          Payé
+                        </label>
+                      </div>
+
                     </div>
                   </div>
                 );
@@ -1061,11 +1363,12 @@ export default function BookingsPage() {
               {pastBookings.map(booking => {
                 const isHighlighted = highlightedBookingId === booking.id;
                 return (
-                  <div key={booking.id} className="card" style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                  <div key={booking.id} className="card booking-list-card" style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
                     gap: '16px',
-                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : '#10B981'}`, // Green for completed, Orange if highlighted
+                    borderLeft: `4px solid ${isHighlighted ? '#f59e0b' : '#10B981'}`,
                     opacity: isHighlighted ? 1 : 0.8,
                     backgroundColor: isHighlighted ? '#FEF3C7' : 'var(--surface-color)',
                     padding: '16px',
@@ -1118,6 +1421,19 @@ export default function BookingsPage() {
                           ))}
                         </ul>
                       </div>
+                      <div style={{ marginTop: '8px', width: '100%' }}>
+                        <textarea
+                          style={{ width: '100%', fontSize: '13px', color: 'var(--text-main)', padding: '6px', borderRadius: '4px', border: '1px solid #E5E7EB', backgroundColor: '#F9FAFB', resize: 'vertical' }}
+                          placeholder="📝 Ajouter une note (sauvegarde auto)..."
+                          defaultValue={booking.notes || ''}
+                          onBlur={(e) => {
+                            if (e.target.value !== (booking.notes || '')) {
+                              updateBookingNotes(booking.id, e.target.value);
+                            }
+                          }}
+                          rows="2"
+                        />
+                      </div>
                       <p style={{ margin: 0, color: 'var(--text-light)', fontSize: '14px' }}>
                         Du {new Date(booking.start_date).toLocaleDateString('fr-FR')} au {new Date(booking.end_date).toLocaleDateString('fr-FR')}
                       </p>
@@ -1137,7 +1453,7 @@ export default function BookingsPage() {
                         return null;
                       })()}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+                    <div className="booking-list-actions" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', minWidth: '160px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span className="badge" style={{ backgroundColor: '#D1FAE5', color: '#065F46', border: 'none' }}>✓ Rendu</span>
                       </div>

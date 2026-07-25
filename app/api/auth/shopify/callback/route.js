@@ -10,7 +10,8 @@ export async function GET(request) {
   }
 
   const clientId = '6416f25b875c33e918b0e62ebb48f6be';
-  const clientSecret = process.env.SHOPIFY_API_SECRET_KEY || 'HIDDEN';
+  const clientSecret = process.env.SHOPIFY_WEBHOOK_SECRET;
+  if (!clientSecret) return NextResponse.json({ error: 'SHOPIFY_WEBHOOK_SECRET not configured' }, { status: 500 });
 
   try {
     const res = await fetch(`https://${shop}/admin/oauth/access_token`, {
@@ -50,10 +51,10 @@ export async function GET(request) {
     return new NextResponse(`
       <html>
         <body style="font-family: sans-serif; padding: 2rem;">
-          <h1>✅ Authentification Shopify Réussie !</h1>
-          <p>Voici votre Token d'accès sécurisé :</p>
-          <pre style="background: #eee; padding: 1rem; border-radius: 8px; font-size: 1.2rem;">${data.access_token}</pre>
-          <p>Veuillez copier ce token et le coller dans le chat à votre assistant IA pour terminer la configuration.</p>
+          <h1>Authentification Shopify Réussie</h1>
+          <p>Voici votre nouveau token avec les droits read_locations. Copiez-le :</p>
+          <pre style="background: #eee; padding: 1rem; border-radius: 8px; font-weight: bold;">${data.access_token}</pre>
+          <p>Vous devez le coller dans vos variables d'environnement Vercel sous <code>SHOPIFY_ACCESS_TOKEN</code>.</p>
         </body>
       </html>
     `, {

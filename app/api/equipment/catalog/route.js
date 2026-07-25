@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
 import { GENERIC_EQUIPMENTS } from '../../../../lib/catalog';
 
-export const dynamic = 'force-dynamic';
-
-let cachedCatalog = null;
-let lastCacheTime = 0;
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+export const revalidate = 30; // 30s cache
 
 const staticCategories = {};
 for (const item of GENERIC_EQUIPMENTS) {
@@ -87,17 +83,19 @@ export async function GET(request) {
     // Force all generic equipments to have at least quantity 10 so they always show up
     // and exclude optional (-OPT) and Location Strapless (LOK-STRAPLESS) items from the client view
     const uniqueEquipments = Object.values(grouped)
-      .filter(e => !e.reference.toUpperCase().includes('-OPT') && e.reference.toUpperCase() !== 'LOK-STRAPLESS')
+      .filter(e => !e.reference.toUpperCase().includes('-OPT') && e.reference.toUpperCase() !== 'LOK-STRAPLESS' && e.reference.toUpperCase() !== 'LOK-PACK-WING-DEBUTANT' && e.category !== 'Carte Session')
       .map(e => {
         if (e.quantity <= 0) e.quantity = 10;
         e.id = e.reference;
         return e;
       });
 
-    return NextResponse.json({ equipments: uniqueEquipments });
+    return NextResponse.json({ equipments: uniqueEquipments }, {
+      headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=30' }
+    });
   } catch (err) {
     console.error("API Catalog Error:", err);
     // Fallback to GENERIC_EQUIPMENTS directly in case of error
-    return NextResponse.json({ equipments: GENERIC_EQUIPMENTS });
+    return NextResponse.json({ equipments: GENERIC_EQUIPMENTS.filter(e => e.category !== 'Carte Session') });
   }
 }

@@ -245,15 +245,33 @@ export default function EspaceClientPage() {
         setLoading(false);
       } else {
         if (data.user) {
-          const newId = crypto.randomUUID();
-          await supabase.from('customers').insert([{
-            id: newId,
-            email: email,
-            first_name: signUpFirstName,
-            last_name: signUpLastName,
-            phone: signUpPhone,
-            address: signUpAddress
-          }]);
+          // Vérifier si un client existe déjà avec cet email pour éviter les doublons
+          const { data: existingCusts } = await supabase
+            .from('customers')
+            .select('id')
+            .eq('email', email.trim().toLowerCase())
+            .limit(1);
+
+          const existingCust = existingCusts && existingCusts.length > 0 ? existingCusts[0] : null;
+
+          if (existingCust) {
+            await supabase.from('customers').update({
+              first_name: signUpFirstName,
+              last_name: signUpLastName,
+              phone: signUpPhone,
+              address: signUpAddress
+            }).eq('id', existingCust.id);
+          } else {
+            const newId = crypto.randomUUID();
+            await supabase.from('customers').insert([{
+              id: newId,
+              email: email.trim().toLowerCase(),
+              first_name: signUpFirstName,
+              last_name: signUpLastName,
+              phone: signUpPhone,
+              address: signUpAddress
+            }]);
+          }
           setUser(data.user);
           fetchCustomerData(data.user.email);
           fetchShopifyData(data.user.email);
@@ -283,7 +301,27 @@ export default function EspaceClientPage() {
     await supabase.auth.signOut();
     setUser(null);
     setBookings([]);
+    setBookingItems([]);
     setShopifyOrders([]);
+    setMyCourses([]);
+    setCustomerInfo({ id: null, first_name: '', last_name: '', phone: '', address: '' });
+  };
+
+  const refreshData = async () => {
+    const emailToFetch = user?.email || (await supabase.auth.getSession()).data.session?.user?.email;
+    if (emailToFetch) {
+      setFetchingShopify(true);
+      try {
+        await Promise.all([
+          fetchCustomerData(emailToFetch),
+          fetchShopifyData(emailToFetch)
+        ]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setFetchingShopify(false);
+      }
+    }
   };
 
   if (loading) {
@@ -391,7 +429,7 @@ export default function EspaceClientPage() {
 
   const hasWingboost = shopifyOrders.some(order => 
     order.line_items && order.line_items.some(item => item.title && item.title.toLowerCase().includes('wingboost'))
-  );
+  ) || bookings.some(b => b.rental_type === 'wingboost');
 
   return (
     <div className={`min-h-screen text-gray-800 font-sans ${isInIframe ? 'bg-transparent' : 'bg-gray-50'}`}>
@@ -463,6 +501,23 @@ export default function EspaceClientPage() {
 
         {/* Main Content Area */}
         <main className="flex-1">
+          {user && (
+            <div className="flex justify-end items-center gap-4 mb-6">
+              {fetchingShopify && (
+                <span className="text-xs text-gray-400 animate-pulse font-medium">
+                  Synchronisation avec Shopify en cours...
+                </span>
+              )}
+              <button 
+                onClick={refreshData}
+                disabled={loading || fetchingShopify}
+                className="text-xs text-gray-500 hover:text-ridery-dark hover:bg-gray-100 flex items-center gap-1.5 bg-white border border-gray-200 px-3 py-2 rounded-xl shadow-sm hover:shadow transition active:scale-95 disabled:opacity-50 font-semibold"
+              >
+                <svg className={`w-3.5 h-3.5 ${fetchingShopify ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 7.89M9 11l3 3L22 4"></path></svg>
+                Actualiser 🔄
+              </button>
+            </div>
+          )}
           
           {/* DASHBOARD TAB */}
           {activeTab === 'dashboard' && (
@@ -595,7 +650,7 @@ export default function EspaceClientPage() {
                                     <div key={item.id} className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4 last:border-0 last:pb-0">
                                         <div className="flex items-center space-x-6">
                                             <div className="h-20 w-20 bg-gray-100 rounded-xl flex items-center justify-center text-3xl">
-                                                {eq.category.includes('Wing') ? '🪁' : eq.category.includes('Kite') ? '🌊' : '🏄‍♂️'}
+                                                {(eq.category || '').includes('Wing') ? '🪁' : (eq.category || '').includes('Kite') ? '🌊' : '🏄‍♂️'}
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-bold text-ridery-dark">{eq.name}</h3>
@@ -731,10 +786,11 @@ export default function EspaceClientPage() {
                     ) : (
                       <div className="space-y-4">
                         {myCourses
-                          .sort((a, b) => new Date(b.sessions?.start_time) - new Date(a.sessions?.start_time))
+                          .filter(part => part.sessions)
+                          .sort((a, b) => new Date(b.sessions.start_time) - new Date(a.sessions.start_time))
                           .map(part => {
-                            const isPast = new Date(part.sessions?.end_time) < new Date();
-                            const sDate = new Date(part.sessions?.start_time);
+                            const isPast = new Date(part.sessions.end_time) < new Date();
+                            const sDate = new Date(part.sessions.start_time);
                             return (
                               <div key={part.id} className={`bg-white rounded-2xl shadow-sm border border-gray-200 p-6 flex items-center justify-between hover:shadow-md transition ${isPast ? 'opacity-75' : ''}`}>
                                 <div className="flex items-center space-x-6">

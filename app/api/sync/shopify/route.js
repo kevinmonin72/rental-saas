@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '../../../../lib/supabase-admin';
+import crypto from 'crypto';
 
 async function fetchWithRetry(url, token) {
   let attempts = 0;
   while (attempts < 3) {
-    const res = await fetch(url, { headers: { 'X-Shopify-Access-Token': token } });
+    const res = await fetch(url, { 
+      headers: { 'X-Shopify-Access-Token': token },
+      cache: 'no-store'
+    });
     if (res.status === 429) {
       await new Promise(r => setTimeout(r, 1000));
       attempts++;
@@ -27,17 +31,16 @@ export async function POST(request) {
 
   try {
     if (type === 'inventory') {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
       let allVariantsMap = new Map();
       let hasNextPage = true;
       let cursor = null;
       let pageCount = 0;
 
-      while (hasNextPage && pageCount < 5) {
+      while (hasNextPage && pageCount < 100) { // max 100 * 20 = 2000 products
         pageCount++;
         const query = `
         {
-          products(first: 250, sortKey: UPDATED_AT, reverse: true${cursor ? `, after: "${cursor}"` : ''}) {
+          products(first: 20, sortKey: UPDATED_AT, reverse: true${cursor ? `, after: "${cursor}"` : ''}) {
             pageInfo {
               hasNextPage
               endCursor
@@ -51,16 +54,25 @@ export async function POST(request) {
                 featuredImage {
                   url
                 }
-                variants(first: 50) {
+                variants(first: 10) {
                   edges {
                     node {
                       id
                       title
                       sku
                       barcode
-                      inventoryQuantity
                       image {
                         url
+                      }
+                      inventoryItem {
+                        inventoryLevels(first: 3) {
+                          edges {
+                            node {
+                              location { id }
+                              quantities(names: ["available"]) { quantity }
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -85,23 +97,34 @@ export async function POST(request) {
 
         const products = data.data.products.edges;
         for (const { node: product } of products) {
-          // If we reach products older than 30 days, we can stop
-          if (new Date(product.updatedAt) < new Date(thirtyDaysAgo)) {
-            hasNextPage = false;
-            break;
-          }
-
           for (const { node: variant } of product.variants.edges) {
             const ref = variant.sku || variant.barcode || variant.id.split('/').pop();
             if (ref) {
               const imageUrl = variant.image?.url || product.featuredImage?.url || null;
-              allVariantsMap.set(ref, {
+              
+              let qtyMarseille = 0;
+              let qtyParis = 0;
+              
+              if (variant.inventoryItem?.inventoryLevels?.edges) {
+                for (const { node: level } of variant.inventoryItem.inventoryLevels.edges) {
+                  const locId = level.location?.id;
+                  const qty = level.quantities?.[0]?.quantity || 0;
+                  // 90826146123 = Location Marseille
+                  // 89633751371 = Location Paris
+                  if (locId === 'gid://shopify/Location/90826146123') qtyMarseille = qty;
+                  if (locId === 'gid://shopify/Location/89633751371') qtyParis = qty;
+                }
+              }
+
+              const baseItem = {
                 reference: ref,
                 name: `${product.title} ${variant.title !== 'Default Title' ? '- ' + variant.title : ''}`.replace(/\s*-\s*\d+\s*jours?\s*$/i, '').trim(),
                 category: product.productType || 'Général',
-                quantity: variant.inventoryQuantity || 0,
                 brand: imageUrl
-              });
+              };
+
+              allVariantsMap.set(`${ref}-marseille`, { ...baseItem, quantity: qtyMarseille, location: 'marseille' });
+              allVariantsMap.set(`${ref}-paris`, { ...baseItem, quantity: qtyParis, location: 'paris' });
             }
           }
         }
@@ -121,7 +144,7 @@ export async function POST(request) {
           const chunk = referencesToFetch.slice(i, i + 500);
           const { data, error } = await supabaseAdmin
             .from('equipment')
-            .select('id, reference')
+            .select('id, reference, location')
             .in('reference', chunk);
           if (data) currentEquipments = [...currentEquipments, ...data];
         }
@@ -129,9 +152,10 @@ export async function POST(request) {
         let toUpsertEq = [];
         
         for (const item of allVariants) {
-          const existing = currentEquipments.find(e => e.reference === item.reference);
+          // Find existing item with same reference AND same location
+          const existing = currentEquipments.find(e => e.reference === item.reference && e.location === item.location);
           toUpsertEq.push({
-            id: existing ? existing.id : require('crypto').randomUUID(),
+            id: existing ? existing.id : crypto.randomUUID(),
             ...item
           });
         }
@@ -160,11 +184,11 @@ export async function POST(request) {
         
         const data = await res.json();
         for (const customer of data.customers) {
-          const key = customer.email || customer.phone || customer.id.toString();
-          allCustomersMap.set(key, {
+          if (!customer.email) continue;
+          allCustomersMap.set(customer.email, {
             first_name: customer.first_name || '',
             last_name: customer.last_name || '',
-            email: customer.email || null,
+            email: customer.email,
             phone: customer.phone || null,
             address: customer.default_address ? `${customer.default_address.address1}, ${customer.default_address.city}` : null
           });
@@ -189,7 +213,7 @@ export async function POST(request) {
                          dbCustomers.find(dbC => dbC.phone === c.phone && c.phone);
           
           toUpsertCus.push({
-            id: existing ? existing.id : require('crypto').randomUUID(),
+            id: existing ? existing.id : crypto.randomUUID(),
             first_name: c.first_name,
             last_name: c.last_name,
             email: c.email,

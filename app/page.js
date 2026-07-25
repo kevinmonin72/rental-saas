@@ -217,13 +217,13 @@ export default function DashboardHome() {
           </div>
           <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
             <h2 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Matériel Loué</h2>
-            <p style={{ fontSize: '48px', fontWeight: 'bold', color: '#10B981', margin: '0', lineHeight: '1' }}>{stats.activeItems}</p>
+            <p style={{ fontSize: '48px', fontWeight: 'bold', color: 'var(--primary-color)', margin: '0', lineHeight: '1' }}>{stats.activeItems}</p>
             <p style={{ fontSize: '14px', color: 'var(--text-light)', marginTop: '8px' }}>Sur le terrain actuellement</p>
           </div>
-          <div className="card" style={{ padding: '24px', textAlign: 'center', backgroundColor: '#FEF3C7', border: '1px solid #F59E0B' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '600', color: '#B45309', marginBottom: '8px', textTransform: 'uppercase' }}>Chiffre d'Affaires Mensuel</h2>
-            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#D97706', margin: '8px 0', lineHeight: '1' }}>{revenuePlaceholder}</p>
-            <p style={{ fontSize: '12px', color: '#B45309', marginTop: '8px' }}>(Nécessite d'associer des prix au matériel)</p>
+          <div className="card" style={{ padding: '24px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>Chiffre d'Affaires Mensuel</h2>
+            <p style={{ fontSize: '32px', fontWeight: 'bold', color: '#D1D5DB', margin: '8px 0', lineHeight: '1' }}>{revenuePlaceholder}</p>
+            <p style={{ fontSize: '12px', color: 'var(--text-light)', marginTop: '8px' }}>(Nécessite d'associer des prix au matériel)</p>
           </div>
         </div>
       )}

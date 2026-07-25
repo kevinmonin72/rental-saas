@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
 const GENERIC_EQUIPMENTS = [
@@ -62,6 +63,9 @@ const getPricePerDay = (reference, name = '', category = '') => {
 };
 
 export default function InvoiceGenerator() {
+  const searchParams = useSearchParams();
+  const autoLoadedRef = useRef(false);
+
   const [invoiceData, setInvoiceData] = useState({
     number: `FA-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-001`,
     date: new Date().toISOString().split('T')[0],
@@ -82,9 +86,21 @@ export default function InvoiceGenerator() {
   const [paymentLink, setPaymentLink] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [isSendingReceipt, setIsSendingReceipt] = useState(false);
+  const [isSendingLink, setIsSendingLink] = useState(false);
   const [showSendOptions, setShowSendOptions] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [shopifyPrices, setShopifyPrices] = useState({});
+  const [loadedBookingId, setLoadedBookingId] = useState(null);
+  const [isCreatingShopifyInvoice, setIsCreatingShopifyInvoice] = useState(false);
+  const [isCreatingStripeInvoice, setIsCreatingStripeInvoice] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/shopify/product-prices')
+      .then(r => r.json())
+      .then(d => { if (d.prices) setShopifyPrices(d.prices); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
@@ -102,11 +118,32 @@ export default function InvoiceGenerator() {
         // Search booking if it matches pattern
         const possibleBookingRef = term.replace(/^#/, '').toUpperCase();
         if (possibleBookingRef.length >= 2) {
-          const { data: bookData } = await supabase
-            .from('bookings')
-            .select('*, customers(first_name, last_name, email)')
-            .ilike('reference', `%${possibleBookingRef}%`)
-            .limit(3);
+          let bookData = [];
+          const isEmail = term.includes('@');
+          
+          if (isEmail) {
+            const { data: custData } = await supabase.from('customers').select('id').ilike('email', `%${term}%`).limit(1);
+            if (custData && custData.length > 0) {
+               const { data } = await supabase.from('bookings').select('*, customers(first_name, last_name, email)').eq('customer_id', custData[0].id).order('created_at', { ascending: false }).limit(3);
+               bookData = data;
+            }
+          } else {
+            const { data } = await supabase
+              .from('bookings')
+              .select('*, customers(first_name, last_name, email)')
+              .ilike('reference', `%${possibleBookingRef}%`)
+              .limit(3);
+            bookData = data;
+            
+            // Fallback to search by last name if reference yields no results
+            if ((!bookData || bookData.length === 0) && term.length > 2) {
+               const { data: custData } = await supabase.from('customers').select('id').ilike('last_name', `%${term}%`).limit(1);
+               if (custData && custData.length > 0) {
+                 const { data: d2 } = await supabase.from('bookings').select('*, customers(first_name, last_name, email)').eq('customer_id', custData[0].id).order('created_at', { ascending: false }).limit(3);
+                 bookData = d2;
+               }
+            }
+          }
             
           if (bookData && bookData.length > 0) {
             const bookingResults = bookData.map(b => ({
@@ -176,6 +213,9 @@ export default function InvoiceGenerator() {
       let gridDays = days;
       if (gridDays > 31) gridDays = 31;
       finalPrice = gridDays === 0.5 ? grid[0.5] : (grid[Math.floor(gridDays)] || grid[31]);
+    } else if (shopifyPrices[ref]) {
+      const perDay = shopifyPrices[ref];
+      finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
     } else {
       const perDay = getPricePerDay(ref, name, category);
       finalPrice = days === 0.5 ? Math.round(perDay * 0.6) : perDay * days;
@@ -240,11 +280,13 @@ export default function InvoiceGenerator() {
         : `${eq.booking.first_name || ''} ${eq.booking.last_name || ''}`.trim();
         
       const newClientEmail = (eq.booking.customers ? eq.booking.customers.email : eq.booking.email) || '';
+      const newClientAddress = (eq.booking.customers ? eq.booking.customers.address : eq.booking.address) || '';
 
       setInvoiceData(prev => ({
         ...prev,
         clientName: prev.clientName || newClientName,
-        clientEmail: prev.clientEmail || newClientEmail
+        clientEmail: prev.clientEmail || newClientEmail,
+        clientAddress: prev.clientAddress || newClientAddress
       }));
 
       let days = 1;
@@ -265,64 +307,67 @@ export default function InvoiceGenerator() {
       }
 
       const { data: bItems } = await supabase.from('booking_items').select('*').eq('booking_id', eq.id);
+      let newItems = [];
+      
       if (bItems && bItems.length > 0) {
         const eqIds = bItems.map(bi => bi.equipment_id);
         const { data: equipments } = await supabase.from('equipment').select('*').in('id', eqIds);
         
         if (equipments && equipments.length > 0) {
-          setInvoiceData(prev => {
-            let newItems = [];
-            
-            if (eq.booking.rental_type === 'wingboost') {
-              newItems = [{
-                id: Date.now(),
-                reference: 'WINGBOOST',
-                description: `Abonnement Wingboost ${durationDisplay}\nMatériel inclus :\n${equipments.map(e => '- ' + e.name).join('\n')}`,
-                quantity: 1,
-                duration: days,
-                unitPrice: 0
-              }];
-            } else {
-              newItems = equipments.map((itemEq, idx) => {
-                const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
-                let finalPrice = getCalculatedPrice(ref, days, itemEq.name, itemEq.category);
-                let descriptionSuffix = ` (${durationDisplay})`;
-                
-                return {
-                  id: Date.now() + idx,
-                  reference: ref,
-                  description: (itemEq.name || 'Équipement importé') + descriptionSuffix,
-                  quantity: 1,
-                  duration: days,
-                  unitPrice: finalPrice
-                };
-              });
-            }
-            
-            const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
-            return {
-              ...prev,
-              items: [...prevItemsCleaned, ...newItems]
-            };
+          // Only LOK-* catalogue items in invoice
+          const lokEquipments = equipments.filter(e => {
+            const r = (e.reference || '').replace(/^'/, '');
+            return r.startsWith('LOK');
           });
-        }
-      } else if (eq.booking.rental_type === 'wingboost') {
-        // Handle Wingboost with no equipments
-        setInvoiceData(prev => {
-          const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
-          return {
-            ...prev,
-            items: [...prevItemsCleaned, {
+          const displayEquipments = lokEquipments.length > 0 ? lokEquipments : equipments;
+
+          if (eq.booking.rental_type === 'wingboost') {
+            newItems = [{
               id: Date.now(),
               reference: 'WINGBOOST',
-              description: `Abonnement Wingboost ${durationDisplay}`,
+              description: `Abonnement Wingboost ${durationDisplay}\nMatériel inclus :\n${displayEquipments.map(e => '- ' + e.name).join('\n')}`,
               quantity: 1,
               duration: days,
               unitPrice: 0
-            }]
-          };
-        });
+            }];
+          } else {
+            newItems = displayEquipments.map((itemEq, idx) => {
+              const ref = itemEq.reference ? itemEq.reference.replace(/^'/, '') : '';
+              let finalPrice = getCalculatedPrice(ref, days, itemEq.name, itemEq.category);
+              let descriptionSuffix = ` (${durationDisplay})`;
+              
+              return {
+                id: Date.now() + idx,
+                reference: ref,
+                description: (itemEq.name || 'Équipement importé') + descriptionSuffix,
+                quantity: 1,
+                duration: days,
+                unitPrice: finalPrice
+              };
+            });
+          }
+        }
       }
+      
+      if (newItems.length === 0) {
+        const title = eq.booking.rental_type === 'wingboost' ? 'Abonnement Wingboost' : 'Location Matériel';
+        newItems = [{
+          id: Date.now(),
+          reference: eq.booking.reference || 'LOC',
+          description: `${title} (${durationDisplay})`,
+          quantity: 1,
+          duration: days,
+          unitPrice: eq.booking.total_amount || 0
+        }];
+      }
+
+      setInvoiceData(prev => {
+        const prevItemsCleaned = prev.items.filter(i => i.reference || i.description || i.unitPrice > 0);
+        return {
+          ...prev,
+          items: [...prevItemsCleaned, ...newItems]
+        };
+      });
     } else {
       // Direct equipment manual addition
       setInvoiceData(prev => ({
@@ -346,25 +391,62 @@ export default function InvoiceGenerator() {
 
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const bookingRef = params.get('bookingRef');
-      if (bookingRef) {
-        supabase.from('bookings').select('*, customers(first_name, last_name, email)').eq('reference', bookingRef).maybeSingle().then(({ data }) => {
-          if (data) {
-            addEqToInvoice({
-              isBooking: true,
-              id: data.id,
-              reference: data.reference,
-              name: `Importer le matériel de la réservation ${data.first_name || ''} ${data.last_name || ''}`.trim(),
-              booking: data
-            });
-            window.history.replaceState({}, document.title, '/invoice');
-          }
-        });
+    if (autoLoadedRef.current) return;
+
+    // sessionStorage priority (most reliable in Shopify embedded), then URL params fallback
+    let bookingId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('invoice_booking_id') : null;
+    let bookingRef = null;
+
+    if (bookingId) {
+      sessionStorage.removeItem('invoice_booking_id');
+    } else {
+      bookingId = searchParams?.get('bookingId');
+      bookingRef = searchParams?.get('bookingRef');
+      // Also try window.location as last resort
+      if ((!bookingId || bookingId === 'undefined') && (!bookingRef || bookingRef === 'undefined') && typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        bookingId = params.get('bookingId');
+        bookingRef = params.get('bookingRef');
       }
     }
-  }, []);
+
+    const validId = bookingId && bookingId !== 'undefined' ? bookingId : null;
+    const validRef = bookingRef && bookingRef !== 'undefined' ? bookingRef : null;
+    if (!validId && !validRef) return;
+
+    autoLoadedRef.current = true;
+
+    const loadBooking = async () => {
+      let data = null;
+      if (validId) {
+        // Use admin API route to bypass RLS and get customer data
+        const res = await fetch(`/api/bookings/${validId}`).catch(() => null);
+        if (res?.ok) {
+          const json = await res.json();
+          data = json.booking;
+        }
+      }
+      if (!data && validRef) {
+        const { data: d } = await supabase
+          .from('bookings')
+          .select('*, customers(first_name, last_name, email, phone, address)')
+          .eq('reference', validRef)
+          .maybeSingle();
+        data = d;
+      }
+      if (data) {
+        setLoadedBookingId(data.id);
+        addEqToInvoice({
+          isBooking: true,
+          id: data.id,
+          reference: data.reference,
+          name: `Importer le matériel de la réservation ${(data.customers?.first_name || data.first_name) || ''} ${(data.customers?.last_name || data.last_name) || ''}`.trim(),
+          booking: data
+        });
+      }
+    };
+    loadBooking();
+  }, [searchParams]);
 
   const handleAddItem = () => {
     setInvoiceData({
@@ -460,8 +542,8 @@ export default function InvoiceGenerator() {
       alert("Veuillez saisir une adresse email.");
       return;
     }
-
-    setIsSending(true);
+    if (isAlreadyPaid) setIsSendingReceipt(true);
+    else setIsSendingLink(true);
     try {
       const payloadData = { ...invoiceData, isAlreadyPaid };
       const res = await fetch('/api/invoice/send', {
@@ -476,7 +558,11 @@ export default function InvoiceGenerator() {
       const data = await res.json();
       if (res.ok) {
         if (data.url && !isAlreadyPaid) {
-          window.open(data.url, '_blank');
+          const width = 1000;
+          const height = 800;
+          const left = (window.innerWidth / 2) - (width / 2);
+          const top = (window.innerHeight / 2) - (height / 2);
+          window.open(data.url, 'StripeInvoice', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
         }
         if (isAlreadyPaid) {
           alert("Le reçu de paiement a été généré et envoyé au client avec succès !");
@@ -490,7 +576,8 @@ export default function InvoiceGenerator() {
       console.error(err);
       alert("Erreur réseau ou serveur lors de l'envoi.");
     } finally {
-      setIsSending(false);
+      if (isAlreadyPaid) setIsSendingReceipt(false);
+      else setIsSendingLink(false);
     }
   };
   return (
@@ -535,11 +622,75 @@ export default function InvoiceGenerator() {
         <div>
           <h1 style={{ margin: 0 }}>Générateur de Facture</h1>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          {loadedBookingId && (
+            <button
+              className="btn"
+              disabled={isCreatingShopifyInvoice}
+              style={{ backgroundColor: '#4F46E5', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', opacity: isCreatingShopifyInvoice ? 0.7 : 1 }}
+              onClick={async () => {
+                setIsCreatingShopifyInvoice(true);
+                try {
+                  const res = await fetch('/api/shopify/draft-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bookingId: loadedBookingId }),
+                  });
+                  const data = await res.json();
+                  if (data.admin_url) {
+                    // Navigate parent frame if embedded in Shopify, otherwise same tab
+                    (window.top || window).location.href = data.admin_url;
+                  } else {
+                    alert('Erreur: ' + (data.error || 'Impossible de créer la facture Shopify'));
+                  }
+                } catch {
+                  alert('Erreur réseau');
+                } finally {
+                  setIsCreatingShopifyInvoice(false);
+                }
+              }}
+            >
+              {isCreatingShopifyInvoice ? 'Création...' : '🛍️ Facture Shopify'}
+            </button>
+          )}
+          
+          <button
+            className="btn"
+            disabled={isCreatingStripeInvoice}
+            style={{ backgroundColor: '#6366f1', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', opacity: isCreatingStripeInvoice ? 0.7 : 1 }}
+            onClick={async () => {
+              setIsCreatingStripeInvoice(true);
+              try {
+                const res = await fetch('/api/stripe/create-custom-invoice', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ invoiceData, bookingId: loadedBookingId }),
+                });
+                const data = await res.json();
+                if (data.url) {
+                  // Ouvrir le pop-up / nouvel onglet Stripe !
+                  const width = 1000;
+                  const height = 800;
+                  const left = (window.innerWidth / 2) - (width / 2);
+                  const top = (window.innerHeight / 2) - (height / 2);
+                  window.open(data.url, 'StripeInvoice', `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+                } else {
+                  alert('Erreur: ' + (data.error || 'Impossible de créer la facture Stripe'));
+                }
+              } catch {
+                alert('Erreur réseau');
+              } finally {
+                setIsCreatingStripeInvoice(false);
+              }
+            }}
+          >
+            {isCreatingStripeInvoice ? 'Création...' : '💳 Facture Stripe'}
+          </button>
+
           <div style={{ position: 'relative' }}>
-            <button 
-              className="btn" 
-              style={{ backgroundColor: '#8B5CF6', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }} 
+            <button
+              className="btn"
+              style={{ backgroundColor: '#4F46E5', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', padding: '12px 24px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '500' }}
               onClick={() => setIsSendModalOpen(true)}
             >
               <span>💳</span> Envoyer au client
@@ -674,6 +825,7 @@ export default function InvoiceGenerator() {
           <div style={{ marginBottom: '48px', padding: '24px', backgroundColor: '#F9FAFB', borderRadius: '8px', display: 'inline-block', minWidth: '300px' }}>
             <h3 style={{ margin: '0 0 8px 0', fontSize: '12px', color: '#6B7280', textTransform: 'uppercase' }}>Facturé à</h3>
             <h2 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#111827' }}>{invoiceData.clientName || 'Nom du client'}</h2>
+            {invoiceData.clientEmail && <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#6B7280' }}>{invoiceData.clientEmail}</p>}
             <p style={{ margin: 0, fontSize: '14px', color: '#4B5563', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{invoiceData.clientAddress || 'Adresse du client'}</p>
           </div>
 
@@ -746,39 +898,18 @@ export default function InvoiceGenerator() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button 
-                className="btn" 
+              <button
+                className="btn"
                 onClick={async () => {
-                  await handleSendEmail(true); // isAlreadyPaid = true
+                  await handleSendEmail(false);
                   setIsSendModalOpen(false);
-                }} 
-                style={{ padding: '12px', backgroundColor: '#6366F1', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                disabled={isSending}
+                }}
+                style={{ padding: '12px', backgroundColor: '#F59E0B', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', opacity: isSendingLink ? 0.7 : 1 }}
+                disabled={isSendingLink}
               >
-                <span>🧾</span> {isSending ? 'Envoi en cours...' : 'Envoyer juste le reçu (Facture déjà payée)'}
+                <span>🚀</span> {isSendingLink ? 'Envoi en cours...' : 'Envoyer facture + Lien de paiement direct'}
               </button>
 
-              <button 
-                className="btn" 
-                onClick={async () => {
-                  await handleSendEmail(false); // isAlreadyPaid = false
-                  setIsSendModalOpen(false);
-                }} 
-                style={{ padding: '12px', backgroundColor: '#F59E0B', border: 'none', borderRadius: '8px', cursor: 'pointer', color: 'white', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}
-                disabled={isSending}
-              >
-                <span>🚀</span> {isSending ? 'Envoi en cours...' : 'Envoyer facture + Lien de paiement direct'}
-              </button>
-
-              {paymentLink ? (
-                  <button className="btn" style={{ width: '100%', backgroundColor: '#10B981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => { navigator.clipboard.writeText(paymentLink); alert("Lien copié dans le presse-papier !"); }}>
-                    <span>📋</span> Lien copié ! ({paymentLink.substring(0, 30)}...)
-                  </button>
-                ) : (
-                  <button className="btn" style={{ width: '100%', backgroundColor: '#3B82F6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => handleGeneratePaymentLink()} disabled={isGeneratingLink}>
-                    <span>🔗</span> {isGeneratingLink ? 'Création...' : 'Générer le lien de paiement seul (Copier)'}
-                  </button>
-                )}
             </div>
           </div>
         </div>

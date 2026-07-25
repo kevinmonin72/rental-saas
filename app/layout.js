@@ -30,6 +30,7 @@ export default function RootLayout({ children }) {
     <html lang="fr">
       <head>
         <title>THE RIDERY LOCATION - Admin</title>
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
         <ClientAuth>

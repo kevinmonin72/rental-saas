@@ -1,0 +1,117 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
+<title>Confirme ton Espace Client - The Ridery</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+  img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; display: block; }
+  body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #f8f9fa; }
+  a { text-decoration: none; }
+  
+  @media screen and (max-width:600px) {
+    .container { width: 100% !important; max-width: 100% !important; }
+    .px-mobile { padding-left: 20px !important; padding-right: 20px !important; }
+  }
+</style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif; color: #1a1a2e; -webkit-font-smoothing: antialiased;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 40px 0;">
+  <tr>
+    <td align="center">
+      
+      <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(26, 26, 46, 0.05), 0 8px 10px -6px rgba(26, 26, 46, 0.05);" align="center">
+        
+        <!-- Header / Logo Area (Dark theme like The Ridery) -->
+        <tr>
+          <td bgcolor="#1a1a2e" align="center" style="background-color: #1a1a2e; padding: 48px 32px; text-align: center;">
+            <div style="font-size: 11px; letter-spacing: 5px; color: #0a9a9a; margin-bottom: 8px; font-weight: 800; text-transform: uppercase;">
+              THE RIDERY
+            </div>
+            <h1 style="font-size: 24px; letter-spacing: 2px; color: #ffffff; margin: 0; font-weight: 900; text-transform: uppercase; line-height: 1.2;">
+              ACTIVE TON ESPACE CLIENT 🚀
+            </h1>
+          </td>
+        </tr>
+        
+        <!-- Body Content -->
+        <tr>
+          <td class="px-mobile" style="padding: 40px 40px 20px 40px; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;">
+            <p style="margin: 0 0 20px 0; font-size: 16px; color: #1a1a2e; line-height: 1.7; font-weight: 700;">
+              Hello Rider,
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 15px; color: #4b5563; line-height: 1.7; font-weight: 500;">
+              Bienvenue chez <strong style="color: #0a9a9a;">The Ridery</strong> ! Ton compte est prêt à être activé.
+            </p>
+            <p style="margin: 0 0 24px 0; font-size: 14px; color: #4b5563; line-height: 1.7;">
+              Pour confirmer ton adresse e-mail et accéder directement à ton Espace Client, clique simplement sur le bouton ci-dessous. Tu y retrouveras tes réservations, tes commandes et tout ton historique.
+            </p>
+          </td>
+        </tr>
+        
+        <!-- Action Button -->
+        <tr>
+          <td align="center" style="padding: 10px 40px 40px 40px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td bgcolor="#0a9a9a" style="border-radius: 14px; background-color: #0a9a9a;" align="center">
+                  <a href="{{ .ConfirmationURL }}" target="_blank" style="display: inline-block; padding: 18px 36px; font-size: 15px; font-weight: 800; color: #ffffff; text-decoration: none; border-radius: 14px; letter-spacing: 0.5px; border: 1px solid #0a9a9a; text-align: center; transition: all 0.2s ease; text-transform: uppercase;">
+                    Confirmer mon adresse e-mail
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Extra Note / Link fallback -->
+        <tr>
+          <td class="px-mobile" style="padding: 0 40px 30px 40px; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif; border-top: 1px solid #f3f4f6;">
+            <p style="margin: 20px 0 0 0; font-size: 12px; color: #9ca3af; line-height: 1.6; text-align: center;">
+              Si le bouton ci-dessus ne fonctionne pas, copie et colle ce lien dans ton navigateur :
+            </p>
+            <p style="margin: 8px 0 0 0; font-size: 11px; color: #0a9a9a; line-height: 1.6; text-align: center; word-break: break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color: #0a9a9a; text-decoration: underline;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+        
+        <!-- Footer / Contact (Matching brand colors) -->
+        <tr>
+          <td bgcolor="#f8f9fa" style="background-color: #f8f9fa; padding: 30px 40px; text-align: center; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; border-top: 1px solid #f3f4f6;">
+            <p style="margin: 0 0 12px 0; font-size: 12px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px;">
+              Une question ? Notre team est là
+            </p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 12px;">
+              <tr>
+                <td width="50%" align="center" style="font-size: 12px; color: #4b5563; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;">
+                  <span style="color: #9ca3af; display: block; font-size: 10px; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Marseille</span>
+                  <a href="tel:+33767440517" style="color: #1a1a2e; font-weight: 800; text-decoration: none;">07 67 44 05 17</a>
+                </td>
+                <td width="50%" align="center" style="font-size: 12px; color: #4b5563; font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;">
+                  <span style="color: #9ca3af; display: block; font-size: 10px; text-transform: uppercase; font-weight: 700; margin-bottom: 2px;">Paris</span>
+                  <a href="tel:+33769472584" style="color: #1a1a2e; font-weight: 800; text-decoration: none;">07 69 47 25 84</a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin: 16px 0 0 0; font-size: 11px; color: #9ca3af; font-weight: 500;">
+              THE RIDERY — Paris &middot; Marseille
+            </p>
+          </td>
+        </tr>
+
+      </table>
+      
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

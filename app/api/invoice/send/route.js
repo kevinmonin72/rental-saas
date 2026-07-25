@@ -75,7 +75,28 @@ export async function POST(req) {
     await new Promise(resolve => setTimeout(resolve, 1500));
 
     if (invoiceData.isAlreadyPaid) {
-      // 2A. Complete Draft Order to create a Paid Order
+      // 2A. Send the real Shopify invoice email first (with PDF attachment)
+      const sendRes = await fetch(`https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders/${draftOrderId}/send_invoice.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': shopifyToken
+        },
+        body: JSON.stringify({
+          draft_order_invoice: {
+            to: customerEmail,
+            subject: `Votre facture The Ridery - ${invoiceData.number || ''}`,
+            custom_message: "Merci pour votre réservation. Veuillez trouver ci-joint votre facture acquittée. Aucun paiement supplémentaire n'est requis."
+          }
+        })
+      });
+      if (!sendRes.ok) {
+        const sendErr = await sendRes.json();
+        console.error('Erreur Shopify Send Invoice:', sendErr);
+        return NextResponse.json({ error: "Erreur lors de l'envoi de la facture Shopify" }, { status: 500 });
+      }
+
+      // Then complete the draft order (mark as paid)
       const completeRes = await fetch(`https://shop-theridery.myshopify.com/admin/api/2024-01/draft_orders/${draftOrderId}/complete.json?payment_pending=false`, {
         method: 'PUT',
         headers: {

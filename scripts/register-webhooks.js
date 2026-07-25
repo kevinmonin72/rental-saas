@@ -12,6 +12,7 @@ async function registerWebhooks() {
 
   const topics = [
     'orders/create',
+    'orders/paid',
     'inventory_levels/update',
     'products/create',
     'products/update',
