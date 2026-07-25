@@ -48,6 +48,7 @@ export async function POST(req) {
 
       // 1. Restriction au client si email fourni
       if (promoData.target_email) {
+        let customerFound = false;
         try {
           const custRes = await fetch(`https://${domain}/admin/api/2024-04/customers/search.json?query=email:${promoData.target_email}`, {
             headers: { 'X-Shopify-Access-Token': token }
@@ -56,14 +57,21 @@ export async function POST(req) {
             const custData = await custRes.json();
             if (custData.customers && custData.customers.length > 0) {
               priceRulePayload.price_rule.prerequisite_customer_ids = [custData.customers[0].id];
+              customerFound = true;
             }
           }
         } catch (e) {
           console.error("Shopify customer search error:", e);
         }
+
+        if (!customerFound) {
+          await supabaseAdmin.from('promo_codes').delete().eq('code', promoData.code);
+          return NextResponse.json({ error: `Impossible de créer le code sur Shopify : le client avec l'email ${promoData.target_email} est introuvable sur Shopify.` }, { status: 400 });
+        }
       }
 
       // 2. Restriction aux produits LOK (jusqu'à 250 produits via GraphQL)
+      let productsFound = false;
       try {
         const query = `{ products(first: 250, query: "sku:LOK-*") { edges { node { id } } } }`;
         const prodRes = await fetch(`https://${domain}/admin/api/2024-04/graphql.json`, {
@@ -77,11 +85,17 @@ export async function POST(req) {
             const productIds = prodData.data.products.edges.map(e => parseInt(e.node.id.split('/').pop(), 10));
             if (productIds.length > 0) {
               priceRulePayload.price_rule.entitled_product_ids = productIds;
+              productsFound = true;
             }
           }
         }
       } catch (e) {
          console.error("Shopify product search error:", e);
+      }
+
+      if (!productsFound) {
+        await supabaseAdmin.from('promo_codes').delete().eq('code', promoData.code);
+        return NextResponse.json({ error: `Impossible de créer le code sur Shopify : Aucun produit avec un SKU commençant par "LOK-" n'a été trouvé.` }, { status: 400 });
       }
 
       const resRule = await fetch(`https://${domain}/admin/api/2024-04/price_rules.json`, {
@@ -92,15 +106,24 @@ export async function POST(req) {
 
       if (resRule.ok) {
         const { price_rule } = await resRule.json();
-        await fetch(`https://${domain}/admin/api/2024-04/price_rules/${price_rule.id}/discount_codes.json`, {
+        const resCode = await fetch(`https://${domain}/admin/api/2024-04/price_rules/${price_rule.id}/discount_codes.json`, {
            method: 'POST',
            headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': token },
            body: JSON.stringify({
              discount_code: { code: promoData.code }
            })
         });
+        if (!resCode.ok) {
+          const errText = await resCode.text();
+          console.error("Erreur création Discount Code:", errText);
+          // Non-bloquant si le price rule a marché, mais on log
+        }
       } else {
-        console.error('Erreur création Price Rule Shopify:', await resRule.text());
+        const errorText = await resRule.text();
+        console.error('Erreur création Price Rule Shopify:', errorText);
+        // Si ça échoue (souvent à cause de entitled_product_ids vide), on supprime le code promo de Supabase
+        await supabaseAdmin.from('promo_codes').delete().eq('code', promoData.code);
+        return NextResponse.json({ error: `Impossible de créer le code sur Shopify. Raison: ${errorText}` }, { status: 500 });
       }
     }
 
